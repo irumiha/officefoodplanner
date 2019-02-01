@@ -2,17 +2,17 @@ package org.codecannery.lunchplanner.infrastructure.repository
 
 import cats.implicits._
 import cats.effect.{Async, ContextShift, Effect, IO}
-import io.github.pauljamescleary.petstore.config._
 import _root_.doobie.Transactor
 import io.circe.config.parser
+import org.codecannery.lunchplanner.config.{DatabaseConfig, LunchPlannerConfig}
 
 import scala.concurrent.ExecutionContext
 
 package object doobie {
   def getTransactor[F[_] : Async : ContextShift](cfg : DatabaseConfig) : Transactor[F] =
     Transactor.fromDriverManager[F](
-      cfg.driver, // driver classname
-      cfg.url, // connect URL (driver-specific)
+      cfg.driver,            // driver classname
+      cfg.url,               // connect URL (driver-specific)
       cfg.user,              // user
       cfg.password           // password
     )
@@ -21,8 +21,8 @@ package object doobie {
    * Provide a transactor for testing once schema has been migrated.
    */
   def initializedTransactor[F[_] : Effect : Async : ContextShift] : F[Transactor[F]] = for {
-    petConfig <- parser.decodePathF[F, PetStoreConfig]("petstore")
-    _ <- DatabaseConfig.initializeDb(petConfig.db)
+    petConfig <- parser.decodePathF[F, LunchPlannerConfig]("lunchplanner")
+    _         <- DatabaseConfig.initializeDb(petConfig.db)
   } yield getTransactor(petConfig.db)
 
   lazy val testEc = ExecutionContext.Implicits.global

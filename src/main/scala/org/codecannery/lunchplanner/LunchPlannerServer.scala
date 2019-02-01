@@ -9,11 +9,9 @@ import cats.implicits._
 
 import config._
 import domain.users._
-import domain.orders._
-import domain.pets._
 
-import infrastructure.endpoint.{OrderEndpoints, PetEndpoints, UserEndpoints}
-import infrastructure.repository.doobie.{DoobieOrderRepositoryInterpreter, DoobiePetRepositoryInterpreter, DoobieUserRepositoryInterpreter}
+import infrastructure.endpoint.UserEndpoints
+import infrastructure.repository.doobie.DoobieUserRepositoryInterpreter
 
 import tsec.passwordhashers.jca.BCrypt
 
@@ -22,21 +20,14 @@ import scala.concurrent.ExecutionContext.Implicits.global
 object LunchPlannerServer extends IOApp {
   def createServer[F[_] : ContextShift : ConcurrentEffect : Timer]: Resource[F, Server[F]] =
     for {
-      conf           <- Resource.liftF(parser.decodePathF[F, PetStoreConfig]("petstore"))
+      conf           <- Resource.liftF(parser.decodePathF[F, LunchPlannerConfig]("lunchplanner"))
       xa             <- DatabaseConfig.dbTransactor(conf.db, global, global)
-      petRepo        =  DoobiePetRepositoryInterpreter[F](xa)
-      orderRepo      =  DoobieOrderRepositoryInterpreter[F](xa)
       userRepo       =  DoobieUserRepositoryInterpreter[F](xa)
-      petValidation  =  PetValidationInterpreter[F](petRepo)
-      petService     =  PetService[F](petRepo, petValidation)
       userValidation =  UserValidationInterpreter[F](userRepo)
-      orderService   =  OrderService[F](orderRepo)
       userService    =  UserService[F](userRepo, userValidation)
-      services       =  PetEndpoints.endpoints[F](petService) <+>
-                            OrderEndpoints.endpoints[F](orderService) <+>
-                            UserEndpoints.endpoints[F, BCrypt](userService, BCrypt.syncPasswordHasher[F])
-      httpApp = Router("/" -> services).orNotFound
-      _ <- Resource.liftF(DatabaseConfig.initializeDb(conf.db))
+      services       =  UserEndpoints.endpoints[F, BCrypt](userService, BCrypt.syncPasswordHasher[F])
+      httpApp        =  Router("/" -> services).orNotFound
+      _              <- Resource.liftF(DatabaseConfig.initializeDb(conf.db))
       server <-
         BlazeServerBuilder[F]
         .bindHttp(conf.server.port, conf.server.host)

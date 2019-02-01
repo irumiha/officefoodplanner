@@ -5,7 +5,7 @@ import cats.effect.IO
 import doobie.scalatest.IOChecker
 import doobie.util.transactor.Transactor
 
-import PetStoreArbitraries.user
+import org.codecannery.lunchplanner.infrastructure.LunchPlannerArbitraries.user
 
 class UserQueryTypeCheckSpec extends FunSuite with Matchers with IOChecker {
   override val transactor : Transactor[IO] = testTransactor

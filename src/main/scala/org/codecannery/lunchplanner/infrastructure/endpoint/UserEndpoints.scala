@@ -104,11 +104,11 @@ class UserEndpoints[F[_]: Effect, A] extends Http4sDsl[F] {
     }
 
   def endpoints(userService: UserService[F], cryptService: PasswordHasher[F, A]): HttpRoutes[F] =
-    loginEndpoint(userService, cryptService) <+>
+    loginEndpoint(userService, cryptService)  <+>
     signupEndpoint(userService, cryptService) <+>
-    updateEndpoint(userService) <+>
-    listEndpoint(userService)   <+>
-    searchByNameEndpoint(userService)   <+>
+    updateEndpoint(userService)               <+>
+    listEndpoint(userService)                 <+>
+    searchByNameEndpoint(userService)         <+>
     deleteUserEndpoint(userService)
 }
 
