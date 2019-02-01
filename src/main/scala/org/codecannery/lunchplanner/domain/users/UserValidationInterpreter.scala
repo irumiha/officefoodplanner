@@ -25,7 +25,10 @@ class UserValidationInterpreter[F[_]: Monad](userRepo: UserRepositoryAlgebra[F])
       )
     }
 
-  def validChanges(storedUser: User,newUser: User): EitherT[F, UserValidationError, User] = ???
+  def validChanges(storedUser: User, newUser: User): EitherT[F, UserValidationError, User] =
+    EitherT {
+      Either.right[UserValidationError, User](newUser).pure[F]
+    }
 }
 
 object UserValidationInterpreter {
