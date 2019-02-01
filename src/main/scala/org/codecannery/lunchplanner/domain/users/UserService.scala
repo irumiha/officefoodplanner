@@ -3,7 +3,7 @@ package org.codecannery.lunchplanner.domain.users
 import cats._
 import cats.data._
 import cats.syntax.functor._
-import org.codecannery.lunchplanner.domain.{UserAlreadyExistsError, UserNotFoundError}
+import org.codecannery.lunchplanner.domain.{UserAlreadyExistsError, UserNotFoundError, UserValidationError}
 
 class UserService[F[_]: Monad](userRepo: UserRepositoryAlgebra[F], validation: UserValidationAlgebra[F]) {
 
@@ -24,10 +24,11 @@ class UserService[F[_]: Monad](userRepo: UserRepositoryAlgebra[F], validation: U
   def deleteByUserName(userName: String): F[Unit] =
     userRepo.deleteByUserName(userName).as(())
 
-  def update(user: User): EitherT[F, UserNotFoundError.type, User] =
+  def update(user: User): EitherT[F, UserValidationError, User] =
     for {
-      _ <- validation.exists(user.id)
-      saved <- EitherT.fromOptionF(userRepo.update(user), UserNotFoundError)
+      storedUser   <- validation.exists(user.id)
+      _            <- validation.validChanges(storedUser, user)
+      saved        <- EitherT.fromOptionF(userRepo.update(user), UserNotFoundError: UserValidationError)
     } yield saved
 
   def list(pageSize: Int, offset: Int): F[List[User]] =

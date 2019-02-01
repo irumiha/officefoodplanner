@@ -23,8 +23,8 @@ class UserEndpointsSpec
   with Http4sDsl[IO]
   with Http4sClientDsl[IO] {
 
-  implicit val userEnc : EntityEncoder[IO, User] = jsonEncoderOf
-  implicit val userDec : EntityDecoder[IO, User] = jsonOf
+  implicit val userEnc          : EntityEncoder[IO, User]          = jsonEncoderOf
+  implicit val userDec          : EntityDecoder[IO, User]          = jsonOf
   implicit val signupRequestEnc : EntityEncoder[IO, SignupRequest] = jsonEncoderOf
   implicit val signupRequestDec : EntityDecoder[IO, SignupRequest] = jsonOf
 

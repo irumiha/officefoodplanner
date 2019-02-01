@@ -3,7 +3,7 @@ package org.codecannery.lunchplanner.domain.users
 import cats._
 import cats.data.EitherT
 import cats.implicits._
-import org.codecannery.lunchplanner.domain.{UserAlreadyExistsError, UserNotFoundError}
+import org.codecannery.lunchplanner.domain.{UserAlreadyExistsError, UserValidationError, UserNotFoundError}
 
 class UserValidationInterpreter[F[_]: Monad](userRepo: UserRepositoryAlgebra[F]) extends UserValidationAlgebra[F] {
   def doesNotExist(user: User) = EitherT {
@@ -13,17 +13,19 @@ class UserValidationInterpreter[F[_]: Monad](userRepo: UserRepositoryAlgebra[F])
     }
   }
 
-  def exists(userId: Option[Long]): EitherT[F, UserNotFoundError.type, Unit] =
+  def exists(userId: Option[Long]): EitherT[F, UserNotFoundError.type, User] =
     EitherT {
       userId.map { id =>
         userRepo.get(id).map {
-          case Some(_) => Right(())
+          case Some(u) => Right((u))
           case _ => Left(UserNotFoundError)
         }
       }.getOrElse(
-        Either.left[UserNotFoundError.type, Unit](UserNotFoundError).pure[F]
+        Either.left[UserNotFoundError.type, User](UserNotFoundError).pure[F]
       )
     }
+
+  def validChanges(storedUser: User,newUser: User): EitherT[F, UserValidationError, User] = ???
 }
 
 object UserValidationInterpreter {

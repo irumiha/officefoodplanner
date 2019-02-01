@@ -5,7 +5,7 @@ import cats.effect.Effect
 import cats.implicits._
 import io.circe.generic.auto._
 import io.circe.syntax._
-import org.codecannery.lunchplanner.domain.{UserAlreadyExistsError, UserAuthenticationFailedError, UserNotFoundError}
+import org.codecannery.lunchplanner.domain.{UserAlreadyExistsError, UserAuthenticationFailedError, UserNotFoundError, UsernameAlredyTakenError}
 import org.codecannery.lunchplanner.domain.authentication.{LoginRequest, SignupRequest}
 import org.codecannery.lunchplanner.domain.users.{User, UserService}
 import org.codecannery.lunchplanner.infrastructure.endpoint.Pagination.{OptionalOffsetMatcher, OptionalPageSizeMatcher}
@@ -22,7 +22,6 @@ class UserEndpoints[F[_]: Effect, A] extends Http4sDsl[F] {
 
   implicit val userDecoder: EntityDecoder[F, User] = jsonOf
   implicit val loginReqDecoder: EntityDecoder[F, LoginRequest] = jsonOf
-
   implicit val signupReqDecoder: EntityDecoder[F, SignupRequest] = jsonOf
 
   private def loginEndpoint(userService: UserService[F], cryptService: PasswordHasher[F, A]): HttpRoutes[F] =
@@ -72,7 +71,9 @@ class UserEndpoints[F[_]: Effect, A] extends Http4sDsl[F] {
 
         action.flatMap {
           case Right(saved) => Ok(saved.asJson)
-          case Left(UserNotFoundError) => NotFound("User not found")
+          case Left(UserNotFoundError) => NotFound("User not found.")
+          case Left(UsernameAlredyTakenError(username)) => NotFound(s"Username $username not available.")
+          case _ => InternalServerError("Unexpected error")
         }
     }
 
