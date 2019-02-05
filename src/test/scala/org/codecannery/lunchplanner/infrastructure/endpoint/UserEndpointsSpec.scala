@@ -2,8 +2,9 @@ package org.codecannery.lunchplanner.infrastructure.endpoint
 
 import cats.effect._
 import io.circe.generic.auto._
-import org.codecannery.lunchplanner.domain.authentication.SignupRequest
-import org.codecannery.lunchplanner.domain.users.{User, UserService, UserValidationInterpreter}
+import org.codecannery.lunchplanner.domain.authentication.command.SignupRequest
+import org.codecannery.lunchplanner.domain.users.model.User
+import org.codecannery.lunchplanner.domain.users.{UserService, UserValidationInterpreter}
 import org.codecannery.lunchplanner.infrastructure.LunchPlannerArbitraries
 import org.codecannery.lunchplanner.infrastructure.repository.inmemory.UserRepositoryInMemoryInterpreter
 import org.http4s._

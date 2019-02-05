@@ -6,8 +6,10 @@ import cats.implicits._
 import io.circe.generic.auto._
 import io.circe.syntax._
 import org.codecannery.lunchplanner.domain.{UserAlreadyExistsError, UserAuthenticationFailedError, UserNotFoundError, UsernameAlredyTakenError}
-import org.codecannery.lunchplanner.domain.authentication.{LoginRequest, SignupRequest}
-import org.codecannery.lunchplanner.domain.users.{User, UserService}
+import org.codecannery.lunchplanner.domain.authentication.command.{LoginRequest, SignupRequest}
+import org.codecannery.lunchplanner.domain.users.UserService
+import org.codecannery.lunchplanner.domain.users.command.{CreateUser, UpdateUser}
+import org.codecannery.lunchplanner.domain.users.model.User
 import org.codecannery.lunchplanner.infrastructure.endpoint.Pagination.{OptionalOffsetMatcher, OptionalPageSizeMatcher}
 import org.http4s.circe._
 import org.http4s.dsl.Http4sDsl
@@ -20,7 +22,8 @@ import scala.language.higherKinds
 class UserEndpoints[F[_]: Effect, A] extends Http4sDsl[F] {
   /* Jsonization of our User type */
 
-  implicit val userDecoder: EntityDecoder[F, User] = jsonOf
+  implicit val userUpdateDecoder: EntityDecoder[F, UpdateUser] = jsonOf
+  implicit val userCreateDecoder: EntityDecoder[F, CreateUser] = jsonOf
   implicit val loginReqDecoder: EntityDecoder[F, LoginRequest] = jsonOf
   implicit val signupReqDecoder: EntityDecoder[F, SignupRequest] = jsonOf
 
@@ -49,14 +52,14 @@ class UserEndpoints[F[_]: Effect, A] extends Http4sDsl[F] {
         val action = for {
           signup <- req.as[SignupRequest]
           hash <- crypt.hashpw(signup.password)
-          user <- signup.asUser(hash).pure[F]
+          user <- signup.asCreateUser(hash).pure[F]
           result <- userService.createUser(user).value
         } yield result
 
         action.flatMap {
           case Right(saved) => Ok(saved.asJson)
           case Left(UserAlreadyExistsError(existing)) =>
-            Conflict(s"The user with user name ${existing.userName} already exists")
+            Conflict(s"The user with user name $existing already exists")
         }
     }
 
@@ -64,7 +67,7 @@ class UserEndpoints[F[_]: Effect, A] extends Http4sDsl[F] {
     HttpRoutes.of[F] {
       case req @ PUT -> Root / "users" / name =>
         val action = for {
-          user <- req.as[User]
+          user <- req.as[UpdateUser]
           updated = user.copy(userName = name)
           result <- userService.update(updated).value
         } yield result

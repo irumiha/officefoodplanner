@@ -1,6 +1,6 @@
-package org.codecannery.lunchplanner.domain.users
+package org.codecannery.lunchplanner.domain.users.view
 
-case class User(
+case class UserListView(
     userName: String,
     firstName: String,
     lastName: String,

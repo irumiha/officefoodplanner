@@ -1,6 +1,5 @@
-package org.codecannery.lunchplanner.domain.authentication
-
-import org.codecannery.lunchplanner.domain.users.User
+package org.codecannery.lunchplanner.domain.authentication.command
+import org.codecannery.lunchplanner.domain.users.command.CreateUser
 import tsec.passwordhashers.PasswordHash
 
 final case class LoginRequest(
@@ -16,7 +15,7 @@ final case class SignupRequest(
   password: String,
   phone: String,
 ){
-  def asUser[A](hashedPassword: PasswordHash[A]) : User = User(
+  def asCreateUser[A](hashedPassword: PasswordHash[A]) : CreateUser = CreateUser(
     userName,
     firstName,
     lastName,

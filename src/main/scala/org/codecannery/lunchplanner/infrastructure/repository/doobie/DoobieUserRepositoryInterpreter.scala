@@ -5,7 +5,11 @@ import cats.data.OptionT
 import cats.implicits._
 import doobie._
 import doobie.implicits._
-import org.codecannery.lunchplanner.domain.users.{User, UserRepositoryAlgebra}
+import io.bfil.automapper._
+import org.codecannery.lunchplanner.domain.users.UserRepositoryAlgebra
+import org.codecannery.lunchplanner.domain.users.command.{CreateUser, UpdateUser}
+import org.codecannery.lunchplanner.domain.users.model.User
+import org.codecannery.lunchplanner.domain.users.view.UserListView
 import org.codecannery.lunchplanner.infrastructure.repository.doobie.SQLPagination._
 
 private object UserSQL {
@@ -47,11 +51,14 @@ class DoobieUserRepositoryInterpreter[F[_]: Monad](val xa: Transactor[F])
 
   import UserSQL._
 
-  def create(user: User): F[User] =
-    insert(user).withUniqueGeneratedKeys[Long]("ID").map(id => user.copy(id = id.some)).transact(xa)
+  def create(user: CreateUser): F[User] = {
+    val userToStore = automap(user).to[User]
+    insert(userToStore).withUniqueGeneratedKeys[Long]("ID").map(id => userToStore.copy(id = id.some)).transact(xa)
+  }
 
-  def update(user: User): F[Option[User]] = OptionT.fromOption[F](user.id).semiflatMap { id =>
-    UserSQL.update(user, id).run.transact(xa).as(user)
+  def update(user: UpdateUser): F[Option[User]] = OptionT.fromOption[F](user.id).semiflatMap { id =>
+    val userToStore = automap(user).to[User]
+    UserSQL.update(userToStore, id).run.transact(xa).as(userToStore)
   }.value
 
   def get(userId: Long): F[Option[User]] = select(userId).option.transact(xa)
@@ -65,8 +72,8 @@ class DoobieUserRepositoryInterpreter[F[_]: Monad](val xa: Transactor[F])
   def deleteByUserName(userName: String): F[Option[User]] =
     OptionT(findByUserName(userName)).mapFilter(_.id).flatMapF(delete).value
 
-  def list(pageSize: Int, offset: Int): F[List[User]] =
-    paginate(pageSize, offset)(selectAll).to[List].transact(xa)
+  def list(pageSize: Int, offset: Int): F[List[UserListView]] =
+    paginate(pageSize, offset)(selectAll).to[List].map(lu => lu.map(automap(_).to[UserListView])).transact(xa)
 }
 
 object DoobieUserRepositoryInterpreter {

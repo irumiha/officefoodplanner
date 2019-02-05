@@ -18,6 +18,7 @@ val ScalaCheckVersion      = "1.14.0"
 val ScalaTestVersion       = "3.0.5"
 val FlywayVersion          = "5.2.4"
 val TsecVersion            = "0.0.1-RC1"
+val AutomapperVersion      = "0.6.1"
 
 libraryDependencies ++= Seq(
   "org.typelevel"         %% "cats-core"              % CatsVersion,
@@ -40,6 +41,7 @@ libraryDependencies ++= Seq(
   "org.http4s"            %% "http4s-twirl"           % Http4sVersion,
   "ch.qos.logback"        %  "logback-classic"        % LogbackVersion,
   "org.flywaydb"          %  "flyway-core"            % FlywayVersion,
+  "io.bfil"               %% "automapper"             % AutomapperVersion,
   "org.http4s"            %% "http4s-blaze-client"    % Http4sVersion     % Test,
   "org.scalacheck"        %% "scalacheck"             % ScalaCheckVersion % Test,
   "org.scalatest"         %% "scalatest"              % ScalaTestVersion  % Test,

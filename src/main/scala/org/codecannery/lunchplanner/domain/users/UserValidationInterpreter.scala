@@ -3,13 +3,16 @@ package org.codecannery.lunchplanner.domain.users
 import cats._
 import cats.data.EitherT
 import cats.implicits._
-import org.codecannery.lunchplanner.domain.{UserAlreadyExistsError, UserValidationError, UserNotFoundError}
+import io.bfil.automapper.automap
+import org.codecannery.lunchplanner.domain.users.command.UpdateUser
+import org.codecannery.lunchplanner.domain.users.model.User
+import org.codecannery.lunchplanner.domain.{UserAlreadyExistsError, UserNotFoundError, UserValidationError}
 
 class UserValidationInterpreter[F[_]: Monad](userRepo: UserRepositoryAlgebra[F]) extends UserValidationAlgebra[F] {
-  def doesNotExist(user: User) = EitherT {
-    userRepo.findByUserName(user.userName).map {
+  def doesNotExist(userName: String) = EitherT {
+    userRepo.findByUserName(userName).map {
       case None => Right(())
-      case Some(_) => Left(UserAlreadyExistsError(user))
+      case Some(_) => Left(UserAlreadyExistsError(userName))
     }
   }
 
@@ -25,9 +28,10 @@ class UserValidationInterpreter[F[_]: Monad](userRepo: UserRepositoryAlgebra[F])
       )
     }
 
-  def validChanges(storedUser: User, newUser: User): EitherT[F, UserValidationError, User] =
+  def validChanges(storedUser: User, newUser: UpdateUser): EitherT[F, UserValidationError, User] =
     EitherT {
-      Either.right[UserValidationError, User](newUser).pure[F]
+      val changed = automap(newUser).to[User]
+      Either.right[UserValidationError, User](changed).pure[F]
     }
 }
 

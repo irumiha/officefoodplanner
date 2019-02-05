@@ -4,7 +4,12 @@ import java.util.Random
 
 import cats.Applicative
 import cats.implicits._
-import org.codecannery.lunchplanner.domain.users.{User, UserRepositoryAlgebra}
+import io.bfil.automapper.automap
+import org.codecannery.lunchplanner.domain.users.UserRepositoryAlgebra
+import org.codecannery.lunchplanner.domain.users.command.CreateUser
+import org.codecannery.lunchplanner.domain.users.command.UpdateUser
+import org.codecannery.lunchplanner.domain.users.model.User
+import org.codecannery.lunchplanner.domain.users.view.UserListView
 
 import scala.collection.concurrent.TrieMap
 
@@ -14,16 +19,18 @@ class UserRepositoryInMemoryInterpreter[F[_]: Applicative] extends UserRepositor
 
   private val random = new Random
 
-  def create(user: User): F[User] = {
+  def create(user: CreateUser): F[User] = {
     val id = random.nextLong
     val toSave = user.copy(id = id.some)
-    cache += (id -> toSave)
-    toSave.pure[F]
+    val mapped = automap(toSave).to[User]
+    cache += (id -> mapped)
+    mapped.pure[F]
   }
 
-  def update(user: User): F[Option[User]] = user.id.traverse{ id =>
-    cache.update(id, user)
-    user.pure[F]
+  def update(user: UpdateUser): F[Option[User]] = user.id.traverse{ id =>
+    val mapped = automap(user).to[User]
+    cache.update(id, mapped)
+    mapped.pure[F]
   }
 
   def get(id: Long): F[Option[User]] = cache.get(id).pure[F]
@@ -33,8 +40,9 @@ class UserRepositoryInMemoryInterpreter[F[_]: Applicative] extends UserRepositor
   def findByUserName(userName: String): F[Option[User]] =
     cache.values.find(u => u.userName == userName).pure[F]
 
-  def list(pageSize: Int, offset: Int): F[List[User]] =
-    cache.values.toList.sortBy(_.lastName).slice(offset, offset + pageSize).pure[F]
+  def list(pageSize: Int, offset: Int): F[List[UserListView]] = {
+    cache.values.toList.map(automap(_).to[UserListView]).sortBy(_.lastName).slice(offset, offset + pageSize).pure[F]
+  }
 
   def deleteByUserName(userName: String): F[Option[User]] = {
     val deleted = for {
