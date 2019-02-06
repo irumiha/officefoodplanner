@@ -5,11 +5,11 @@ import cats.effect.Effect
 import cats.implicits._
 import io.circe.generic.auto._
 import io.circe.syntax._
-import org.codecannery.lunchplanner.domain.{UserAlreadyExistsError, UserAuthenticationFailedError, UserNotFoundError, UsernameAlredyTakenError}
 import org.codecannery.lunchplanner.domain.authentication.command.{LoginRequest, SignupRequest}
 import org.codecannery.lunchplanner.domain.users.UserService
 import org.codecannery.lunchplanner.domain.users.command.{CreateUser, UpdateUser}
 import org.codecannery.lunchplanner.domain.users.model.User
+import org.codecannery.lunchplanner.domain.{UserAlreadyExistsError, UserAuthenticationFailedError, UserNotFoundError}
 import org.codecannery.lunchplanner.infrastructure.endpoint.Pagination.{OptionalOffsetMatcher, OptionalPageSizeMatcher}
 import org.http4s.circe._
 import org.http4s.dsl.Http4sDsl
@@ -75,7 +75,7 @@ class UserEndpoints[F[_]: Effect, A] extends Http4sDsl[F] {
         action.flatMap {
           case Right(saved) => Ok(saved.asJson)
           case Left(UserNotFoundError) => NotFound("User not found.")
-          case Left(UsernameAlredyTakenError(username)) => NotFound(s"Username $username not available.")
+          case Left(UserAlreadyExistsError(username)) => NotFound(s"Username $username not available.")
           case _ => InternalServerError("Unexpected error")
         }
     }
