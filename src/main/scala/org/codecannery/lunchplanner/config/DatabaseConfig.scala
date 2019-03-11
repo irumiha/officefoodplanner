@@ -23,9 +23,9 @@ object DatabaseConfig {
       _ <- Resource.liftF {
         t.configure { ds =>
           Async[F].delay {
-            ds setJdbcUrl  dbc.url
-            ds setUsername dbc.user
-            ds setPassword dbc.password
+            ds setJdbcUrl         dbc.url
+            ds setUsername        dbc.user
+            ds setPassword        dbc.password
             ds setMaximumPoolSize dbc.connections.poolSize
           }
         }
