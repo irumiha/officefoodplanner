@@ -5,7 +5,7 @@ import java.util.Random
 import cats.Applicative
 import cats.implicits._
 import io.bfil.automapper.automap
-import org.codecannery.lunchplanner.domain.users.UserRepositoryAlgebra
+import org.codecannery.lunchplanner.domain.users.UserRepository
 import org.codecannery.lunchplanner.domain.users.command.CreateUser
 import org.codecannery.lunchplanner.domain.users.command.UpdateUser
 import org.codecannery.lunchplanner.domain.users.model.User
@@ -13,7 +13,7 @@ import org.codecannery.lunchplanner.domain.users.view.UserListView
 
 import scala.collection.concurrent.TrieMap
 
-class UserRepositoryInMemoryInterpreter[F[_]: Applicative] extends UserRepositoryAlgebra[F] {
+class UserRepositoryInMemoryInterpreter[F[_]: Applicative] extends UserRepository[F] {
 
   private val cache = new TrieMap[Long, User]
 

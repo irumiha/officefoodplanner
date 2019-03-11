@@ -8,7 +8,7 @@ import org.codecannery.lunchplanner.domain.users.model.User
 import org.codecannery.lunchplanner.domain.users.view.UserListView
 import org.codecannery.lunchplanner.domain.{UserAlreadyExistsError, UserNotFoundError, UserValidationError}
 
-class UserService[F[_]: Monad](userRepo: UserRepositoryAlgebra[F], validation: UserValidationAlgebra[F]) {
+class UserService[F[_]: Monad](userRepo: UserRepository[F], validation: UserValidationAlgebra[F]) {
 
   def createUser(user: CreateUser): EitherT[F, UserAlreadyExistsError, User] =
     for {
@@ -39,6 +39,6 @@ class UserService[F[_]: Monad](userRepo: UserRepositoryAlgebra[F], validation: U
 }
 
 object UserService {
-  def apply[F[_]: Monad](repository: UserRepositoryAlgebra[F], validation: UserValidationAlgebra[F]): UserService[F] =
+  def apply[F[_]: Monad](repository: UserRepository[F], validation: UserValidationAlgebra[F]): UserService[F] =
     new UserService[F](repository, validation)
 }

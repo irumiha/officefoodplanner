@@ -6,10 +6,9 @@ import cats.implicits._
 import doobie._
 import doobie.implicits._
 import io.bfil.automapper._
-import org.codecannery.lunchplanner.domain.users.UserRepositoryAlgebra
+import org.codecannery.lunchplanner.domain.users.UserRepository
 import org.codecannery.lunchplanner.domain.users.command.{CreateUser, UpdateUser}
 import org.codecannery.lunchplanner.domain.users.model.User
-import org.codecannery.lunchplanner.domain.users.view.UserListView
 import org.codecannery.lunchplanner.infrastructure.repository.doobie.SQLPagination._
 
 private object UserSQL {
@@ -46,8 +45,7 @@ private object UserSQL {
   """.query
 }
 
-class DoobieUserRepositoryInterpreter[F[_]: Monad](val xa: Transactor[F])
-  extends UserRepositoryAlgebra[F] {
+class DoobieUserRepositoryInterpreter[F[_]: Monad](val xa: Transactor[F]) extends UserRepository[F] {
 
   import UserSQL._
 
@@ -71,9 +69,6 @@ class DoobieUserRepositoryInterpreter[F[_]: Monad](val xa: Transactor[F])
 
   def deleteByUserName(userName: String): F[Option[User]] =
     OptionT(findByUserName(userName)).mapFilter(_.id).flatMapF(delete).value
-
-  def list(pageSize: Int, offset: Int): F[List[UserListView]] =
-    paginate(pageSize, offset)(selectAll).to[List].map(lu => lu.map(automap(_).to[UserListView])).transact(xa)
 }
 
 object DoobieUserRepositoryInterpreter {

@@ -1,5 +1,9 @@
 package org.codecannery.lunchplanner.domain.users.model
 
+import java.util.UUID
+
+import org.codecannery.lunchplanner.domain.Entity
+
 case class User(
     userName: String,
     firstName: String,
@@ -7,5 +11,5 @@ case class User(
     email: String,
     hash: String,
     phone: String,
-    id: Option[Long] = None
-)
+    override val key: UUID = UUID.randomUUID()
+) extends Entity[UUID]
