@@ -5,17 +5,18 @@ import cats.effect.Effect
 import cats.implicits._
 import io.circe.generic.auto._
 import io.circe.syntax._
+import org.http4s.circe._
+import org.http4s.dsl.Http4sDsl
+import org.http4s.{EntityDecoder, HttpRoutes}
+import tsec.common.Verified
+import tsec.passwordhashers.{PasswordHash, PasswordHasher}
+
 import org.codecannery.lunchplanner.domain.authentication.command.{LoginRequest, SignupRequest}
 import org.codecannery.lunchplanner.domain.users.UserService
 import org.codecannery.lunchplanner.domain.users.command.{CreateUser, UpdateUser}
 import org.codecannery.lunchplanner.domain.users.model.User
 import org.codecannery.lunchplanner.domain.{UserAlreadyExistsError, UserAuthenticationFailedError, UserNotFoundError}
 import org.codecannery.lunchplanner.infrastructure.endpoint.Pagination.{OptionalOffsetMatcher, OptionalPageSizeMatcher}
-import org.http4s.circe._
-import org.http4s.dsl.Http4sDsl
-import org.http4s.{EntityDecoder, HttpRoutes}
-import tsec.common.Verified
-import tsec.passwordhashers.{PasswordHash, PasswordHasher}
 
 import scala.language.higherKinds
 

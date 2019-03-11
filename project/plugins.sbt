@@ -13,6 +13,8 @@ addSbtPlugin("io.github.davidmweber" % "flyway-sbt" % "5.2.0")
 // Twirl templates
 addSbtPlugin("com.typesafe.sbt" % "sbt-twirl" % "1.4.0")
 
+addSbtPlugin("com.timushev.sbt" % "sbt-updates" % "0.4.0")
+
 resolvers += "Flyway".at("https://davidmweber.github.io/flyway-sbt.repo")
 
 resolvers += "jgit-repo" at "http://download.eclipse.org/jgit/maven"

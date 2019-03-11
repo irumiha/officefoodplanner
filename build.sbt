@@ -5,19 +5,19 @@ scalaVersion    := "2.12.8"
 
 resolvers += Resolver.sonatypeRepo("snapshots")
 
-val CatsVersion            = "1.5.0"
+val CatsVersion            = "1.6.0"
 val CirceVersion           = "0.11.1"
 val CirceConfigVersion     = "0.6.1"
 val DoobieVersion          = "0.6.0"
 val EnumeratumVersion      = "1.5.13"
-val EnumeratumCirceVersion = "1.5.19"
-val H2Version              = "1.4.197"
-val Http4sVersion          = "0.20.0-M5"
+val EnumeratumCirceVersion = "1.5.20"
+val H2Version              = "1.4.198"
+val Http4sVersion          = "0.20.0-M6"
 val LogbackVersion         = "1.2.3"
 val ScalaCheckVersion      = "1.14.0"
-val ScalaTestVersion       = "3.0.5"
+val ScalaTestVersion       = "3.0.6"
 val FlywayVersion          = "5.2.4"
-val TsecVersion            = "0.0.1-RC1"
+val TsecVersion            = "0.1.0-M3"
 val AutomapperVersion      = "0.6.1"
 
 libraryDependencies ++= Seq(
