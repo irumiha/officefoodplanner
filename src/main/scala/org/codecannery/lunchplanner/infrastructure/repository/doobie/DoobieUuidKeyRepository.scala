@@ -6,7 +6,7 @@ import java.util.UUID
 import cats._
 import doobie._
 import doobie.implicits._
-import io.circe._, io.circe.generic.auto._, io.circe.parser._, io.circe.syntax._
+import io.circe._
 import org.codecannery.lunchplanner.domain.Repository
 import org.codecannery.lunchplanner.infrastructure.repository.{Table, TableEntity, UuidKeyEntity}
 
