@@ -1,27 +1,25 @@
 package org.codecannery.lunchplanner.domain
 
-import java.util.UUID
-
 trait Repository[F[_], K, E] {
-  def create(entity: E): F[E]
+  def create(entity: E): F[Int]
 
-  def create(entities: Seq[E]): F[Seq[E]]
+  def create(entities: Seq[E]): F[Int]
 
-  def update(entity: E): F[Option[E]]
+  def update(entity: E): F[Int]
 
-  def update(entities: Seq[E]): F[Seq[E]]
+  def update(entities: Seq[E]): F[Int]
 
   def get(entityId: K): F[Option[E]]
 
   def get(entityIds: Seq[K]): F[Seq[E]]
 
-  def delete(entityId: K): F[Option[E]]
+  def delete(entityId: K): F[Int]
 
-  def delete(entityIds: Seq[K]): F[Seq[E]]
+  def delete(entityIds: Seq[K]): F[Int]
 
-  def deleteEntity(entity: E): F[Option[E]]
+  def deleteEntity(entity: E): F[Int]
 
-  def deleteEntities(entities: Seq[E]): F[Seq[E]]
+  def deleteEntities(entities: Seq[E]): F[Int]
 
   def list(pageSize: Int, offset: Int): F[Seq[E]] =
     find(specification = "", orderBy = None, pageSize = Some(pageSize), offset = Some(offset))

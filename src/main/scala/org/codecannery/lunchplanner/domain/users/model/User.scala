@@ -1,7 +1,7 @@
 package org.codecannery.lunchplanner.domain.users.model
 import java.util.UUID
 
-import io.circe._, io.circe.generic.auto._, io.circe.parser._, io.circe.syntax._
+import io.circe._, io.circe.generic.semiauto._
 import org.codecannery.lunchplanner.infrastructure.repository._
 
 case class User(userName: String,
@@ -15,8 +15,8 @@ case class User(userName: String,
 }
 
 object User {
-  def toJson(u: User): String = u.asJson.noSpaces
-  def fromJson(s: String): Either[Error, User] = decode[User](s)
+  implicit val userDecoder: Decoder[User] = deriveDecoder
+  implicit val userEncoder: Encoder[User] = deriveEncoder
 
   implicit object UuidKeyedUser extends UuidKeyEntity[User] {
     override def key(u: User): UUID = u.key
