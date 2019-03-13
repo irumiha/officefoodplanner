@@ -4,7 +4,7 @@ import java.util.UUID
 
 case class SchemaName(v: String) extends AnyVal
 case class TableName(v: String)  extends AnyVal
-case class Table(schemaName: SchemaName, tableName: TableName)
+case class Table(schemaName: SchemaName = SchemaName("public"), tableName: TableName)
 
 trait KeyedEntity[E, K] {
   def key(e: E): K

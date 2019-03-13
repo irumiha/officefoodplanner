@@ -12,7 +12,7 @@ import org.codecannery.lunchplanner.infrastructure.repository.{Table, TableEntit
 
 private case class RowWrapper(data: String, createdOn: ZonedDateTime, id: UUID)
 
-private object UuidKeyJsonRepositorySQL {
+private object DoobieUuidKeyJsonRepositorySQL {
   def insert(table: Table, row: RowWrapper): Update0 = sql"""
     INSERT INTO "${table.schemaName.v}"."${table.tableName.v}" (ID, DATA, CREATED_ON)
     VALUES (${row.id}, ${row.data}, ${row.createdOn})
@@ -22,7 +22,7 @@ private object UuidKeyJsonRepositorySQL {
 class DoobieUuidKeyJsonRepository[F[_]: Monad, E: Encoder: Decoder: UuidKeyEntity: TableEntity](
     val xa: Transactor[F])
     extends Repository[F, UUID, E] {
-  import UuidKeyJsonRepositorySQL._
+  import DoobieUuidKeyJsonRepositorySQL._
 
   override def create(entity: E): F[Int] = {
     val row = RowWrapper(
