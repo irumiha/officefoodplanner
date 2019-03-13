@@ -1,9 +1,9 @@
 package org.codecannery.lunchplanner.domain
 
 trait Repository[F[_], K, E] {
-  def create(entity: E): F[Int]
+  def create(entity: E): F[E]
 
-  def create(entities: Seq[E]): F[Int]
+  def create(entities: Seq[E]): F[Seq[E]]
 
   def update(entity: E): F[Int]
 

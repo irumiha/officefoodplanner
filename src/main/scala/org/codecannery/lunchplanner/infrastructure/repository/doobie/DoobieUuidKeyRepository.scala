@@ -7,58 +7,79 @@ import cats._
 import doobie._
 import doobie.implicits._
 import io.circe._
-import org.codecannery.lunchplanner.domain.Repository
-import org.codecannery.lunchplanner.infrastructure.repository.{Table, TableEntity, UuidKeyEntity}
+import io.circe.parser.decode
+import org.codecannery.lunchplanner.domain.{DatabaseRepository, Repository, Table, TableName}
+import org.codecannery.lunchplanner.infrastructure.repository.UuidKeyEntity
 
-private case class RowWrapper(data: String, createdOn: ZonedDateTime, id: UUID)
+private case class RowWrapper(data: String, createdOn: ZonedDateTime, updatedOn: ZonedDateTime, id: UUID)
 
 private object DoobieUuidKeyJsonRepositorySQL {
-  def insert(table: Table, row: RowWrapper): Update0 = sql"""
+  def insert(table: Table, row: RowWrapper): Query0[RowWrapper] = sql"""
     INSERT INTO "${table.schemaName.v}"."${table.tableName.v}" (ID, DATA, CREATED_ON)
     VALUES (${row.id}, ${row.data}, ${row.createdOn})
-  """.update
-}
+    RETURNING *
+  """.query[RowWrapper]
 
-class DoobieUuidKeyJsonRepository[F[_]: Monad, E: Encoder: Decoder: UuidKeyEntity: TableEntity](
-    val xa: Transactor[F])
-    extends Repository[F, UUID, E] {
-  import DoobieUuidKeyJsonRepositorySQL._
+  def insertMany(table: Table, rows: List[RowWrapper]): Query0[RowWrapper] = {
+    import cats.implicits._
 
-  override def create(entity: E): F[Int] = {
-    val row = RowWrapper(
-      data      = Encoder[E].apply(entity).noSpaces,
-      createdOn = ZonedDateTime.now(),
-      id        = UuidKeyEntity[E].key(entity),
-    )
-    insert(TableEntity[E].table(entity), row).run.transact(xa)
+    val init = fr"""INSERT INTO "${table.schemaName.v}"."${table.tableName.v}" (ID, DATA, CREATED_ON) VALUES"""
+
+    val values = rows.map(row => fr"""(${row.id}, ${row.data}, ${row.createdOn}, NULL)""").intercalate(fr",")
+
+    val returning = fr"""RETURNING *"""
+
+    (init ++ values ++ returning).query[RowWrapper]
   }
 
-  override def create(entities: Seq[E]): F[Int] = ???
-
-  override def update(entity: E): F[Int] = ???
-
-  override def update(entities: Seq[E]): F[Int] = ???
-
-  override def get(entityId: UUID): F[Option[E]] = ???
-
-  override def get(entityIds: Seq[UUID]): F[Seq[E]] = ???
-
-  override def delete(entityId: UUID): F[Int] = ???
-
-  override def delete(entityIds: Seq[UUID]): F[Int] = ???
-
-  override def deleteEntity(entity: E): F[Int] = ???
-
-  override def deleteEntities(entities: Seq[E]): F[Int] = ???
-
-  override protected def find(specification: String,
-                              orderBy: Option[String],
-                              pageSize: Option[Int],
-                              offset: Option[Int]): F[Seq[E]] = ???
 }
 
-object DoobieUuidKeyRepositoryInterpreter {
-  def apply[F[_]: Monad, E: Encoder: Decoder: UuidKeyEntity: TableEntity](
-      xa: Transactor[F]): DoobieUuidKeyJsonRepository[F, E] =
-    new DoobieUuidKeyJsonRepository(xa)
+class DoobieUuidKeyJsonRepository[F[_]: Monad, E: Encoder: Decoder: UuidKeyEntity]
+    extends Repository[ConnectionIO, UUID, E]
+    with DatabaseRepository {
+  import DoobieUuidKeyJsonRepositorySQL._
+
+  override def table: Table = Table(tableName = TableName("users"))
+
+  override def create(entity: E): doobie.ConnectionIO[E] = {
+    val row = entityToRowWrapper(entity)
+    insert(table, row).map(toEntity).unique
+  }
+
+  override def create(entities: Seq[E]): doobie.ConnectionIO[Seq[E]] = {
+    val rows = entities.map(entityToRowWrapper).toList
+    insertMany(table, rows).map(toEntity).to[Seq]
+  }
+
+  override def update(entity: E): doobie.ConnectionIO[Int] = ???
+
+  override def update(entities: Seq[E]): doobie.ConnectionIO[Int] = ???
+
+  override def get(entityId: UUID): doobie.ConnectionIO[Option[E]] = ???
+
+  override def get(entityIds: Seq[UUID]): doobie.ConnectionIO[Seq[E]] = ???
+
+  override def delete(entityId: UUID): doobie.ConnectionIO[Int] = ???
+
+  override def delete(entityIds: Seq[UUID]): doobie.ConnectionIO[Int] = ???
+
+  override def deleteEntity(entity: E): doobie.ConnectionIO[Int] = ???
+
+  override def deleteEntities(entities: Seq[E]): doobie.ConnectionIO[Int] = ???
+
+  override protected def find(specification: String, orderBy: Option[String], pageSize: Option[Int], offset: Option[Int]): doobie.ConnectionIO[Seq[E]] = ???
+
+  private def entityToRowWrapper(entity: E): RowWrapper = {
+    RowWrapper(
+      data = Encoder[E].apply(entity).noSpaces,
+      createdOn = ZonedDateTime.now(),
+      updatedOn = ZonedDateTime.now(),
+      id = UuidKeyEntity[E].key(entity),
+    )
+  }
+
+  private def toEntity(rw: RowWrapper): E = {
+    decode[E](rw.data).right.get
+  }
+
 }
