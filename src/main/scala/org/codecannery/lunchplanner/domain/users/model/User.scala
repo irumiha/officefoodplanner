@@ -16,9 +16,6 @@ object User {
   implicit object UuidKeyedUser extends UuidKeyEntity[User] {
     override def key(u: User): UUID = u.key
   }
-  implicit object UserTable extends TableEntity[User] {
-    override def table(e: User): Table = Table(tableName = TableName("users"))
-  }
 
   implicit val userDecoder: Decoder[User] = deriveDecoder
   implicit val userEncoder: Encoder[User] = deriveEncoder

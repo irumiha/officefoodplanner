@@ -14,36 +14,33 @@ import org.codecannery.lunchplanner.infrastructure.repository.UuidKeyEntity
 private case class RowWrapper(data: String, createdOn: ZonedDateTime, updatedOn: ZonedDateTime, id: UUID)
 
 private object DoobieUuidKeyJsonRepositorySQL {
-  def insert(table: Table, row: RowWrapper): Query0[RowWrapper] = sql"""
-    INSERT INTO "${table.schemaName.v}"."${table.tableName.v}" (ID, DATA, CREATED_ON)
-    VALUES (${row.id}, ${row.data}, ${row.createdOn})
-    RETURNING *
-  """.query[RowWrapper]
-
   def insertMany(table: Table, rows: List[RowWrapper]): Query0[RowWrapper] = {
-    import cats.implicits._
-
-    val init = fr"""INSERT INTO "${table.schemaName.v}"."${table.tableName.v}" (ID, DATA, CREATED_ON) VALUES"""
-
-    val values = rows.map(row => fr"""(${row.id}, ${row.data}, ${row.createdOn}, NULL)""").intercalate(fr",")
-
-    val returning = fr"""RETURNING *"""
-
-    (init ++ values ++ returning).query[RowWrapper]
+      sql"""INSERT INTO "${table.schemaName.v}"."${table.tableName.v}" (ID, DATA, CREATED_ON)
+            VALUES (unnest(${rows.map(_.id)}), unnest(${rows.map(_.data)}), unnest(${rows.map(_.createdOn)}))
+            RETURNING *""".query[RowWrapper]
   }
 
+  def updateMany(table: Table, rows: List[RowWrapper]): Update0 = {
+    sql"""UPDATE "${table.schemaName.v}"."${table.tableName.v}"
+            SET DATA = data_table.data,
+                UPDATED_ON = data_table.updated_on
+           FROM (
+             select unnest(${rows.map(_.id)}) as key, unnest(${rows.map(_.data)}) as data, unnest(${rows.map(_.updatedOn)}) as updated_on
+           ) as data_table
+           where "${table.schemaName.v}"."${table.tableName.v}".ID = data_table.key""".update
+  }
 }
 
-class DoobieUuidKeyJsonRepository[F[_]: Monad, E: Encoder: Decoder: UuidKeyEntity]
+abstract class DoobieUuidKeyJsonRepository[F[_]: Monad, E: Encoder: Decoder: UuidKeyEntity]
     extends Repository[ConnectionIO, UUID, E]
     with DatabaseRepository {
   import DoobieUuidKeyJsonRepositorySQL._
 
-  override def table: Table = Table(tableName = TableName("users"))
+  override def table: Table
 
   override def create(entity: E): doobie.ConnectionIO[E] = {
     val row = entityToRowWrapper(entity)
-    insert(table, row).map(toEntity).unique
+    insertMany(table, List(row)).map(toEntity).unique
   }
 
   override def create(entities: Seq[E]): doobie.ConnectionIO[Seq[E]] = {
@@ -51,9 +48,14 @@ class DoobieUuidKeyJsonRepository[F[_]: Monad, E: Encoder: Decoder: UuidKeyEntit
     insertMany(table, rows).map(toEntity).to[Seq]
   }
 
-  override def update(entity: E): doobie.ConnectionIO[Int] = ???
+  override def update(entity: E): doobie.ConnectionIO[Int] = {
+    val row = entityToRowWrapper(entity)
+    updateMany(table, List(row)).run
+  }
 
-  override def update(entities: Seq[E]): doobie.ConnectionIO[Int] = ???
+  override def update(entities: Seq[E]): doobie.ConnectionIO[Int] = {
+    updateMany(table, entities.map(entityToRowWrapper).toList).run
+  }
 
   override def get(entityId: UUID): doobie.ConnectionIO[Option[E]] = ???
 
@@ -69,7 +71,7 @@ class DoobieUuidKeyJsonRepository[F[_]: Monad, E: Encoder: Decoder: UuidKeyEntit
 
   override protected def find(specification: String, orderBy: Option[String], pageSize: Option[Int], offset: Option[Int]): doobie.ConnectionIO[Seq[E]] = ???
 
-  private def entityToRowWrapper(entity: E): RowWrapper = {
+  def entityToRowWrapper(entity: E): RowWrapper = {
     RowWrapper(
       data = Encoder[E].apply(entity).noSpaces,
       createdOn = ZonedDateTime.now(),
@@ -78,7 +80,7 @@ class DoobieUuidKeyJsonRepository[F[_]: Monad, E: Encoder: Decoder: UuidKeyEntit
     )
   }
 
-  private def toEntity(rw: RowWrapper): E = {
+  def toEntity(rw: RowWrapper): E = {
     decode[E](rw.data).right.get
   }
 
