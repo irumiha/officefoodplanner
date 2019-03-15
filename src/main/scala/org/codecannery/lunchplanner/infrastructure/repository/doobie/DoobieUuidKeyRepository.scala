@@ -6,9 +6,10 @@ import java.util.UUID
 import cats._
 import doobie._
 import doobie.implicits._
+import doobie.postgres.implicits._
 import io.circe._
 import io.circe.parser.decode
-import org.codecannery.lunchplanner.domain.{DatabaseRepository, Repository, Table, TableName}
+import org.codecannery.lunchplanner.domain.{DatabaseRepository, Repository, Table}
 import org.codecannery.lunchplanner.infrastructure.repository.UuidKeyEntity
 
 private case class RowWrapper(data: String, createdOn: ZonedDateTime, updatedOn: ZonedDateTime, id: UUID)
@@ -28,6 +29,21 @@ private object DoobieUuidKeyJsonRepositorySQL {
              select unnest(${rows.map(_.id)}) as key, unnest(${rows.map(_.data)}) as data, unnest(${rows.map(_.updatedOn)}) as updated_on
            ) as data_table
            where "${table.schemaName.v}"."${table.tableName.v}".ID = data_table.key""".update
+  }
+
+  def deleteManyIDs(table: Table, rows: List[UUID]): Update0 = {
+    import cats.syntax.list._
+    import Fragments.{in, whereAndOpt}
+
+    val q =
+      fr"""DELETE FROM "${table.schemaName.v}"."${table.tableName.v}" WHERE""" ++
+      whereAndOpt(rows.toNel.map(r => in(fr"ID", r)))
+
+    q.update
+  }
+
+  def getMany(table: Table, ids: List[UUID]): Query0[RowWrapper] = {
+
   }
 }
 
@@ -61,13 +77,21 @@ abstract class DoobieUuidKeyJsonRepository[F[_]: Monad, E: Encoder: Decoder: Uui
 
   override def get(entityIds: Seq[UUID]): doobie.ConnectionIO[Seq[E]] = ???
 
-  override def delete(entityId: UUID): doobie.ConnectionIO[Int] = ???
+  override def delete(entityId: UUID): doobie.ConnectionIO[Int] = {
+    deleteManyIDs(table, List(entityId)).run
+  }
 
-  override def delete(entityIds: Seq[UUID]): doobie.ConnectionIO[Int] = ???
+  override def delete(entityIds: Seq[UUID]): doobie.ConnectionIO[Int] = {
+    deleteManyIDs(table, entityIds.toList).run
+  }
 
-  override def deleteEntity(entity: E): doobie.ConnectionIO[Int] = ???
+  override def deleteEntity(entity: E): doobie.ConnectionIO[Int] = {
+    deleteManyIDs(table, List(UuidKeyEntity[E].key(entity))).run
+  }
 
-  override def deleteEntities(entities: Seq[E]): doobie.ConnectionIO[Int] = ???
+  override def deleteEntities(entities: Seq[E]): doobie.ConnectionIO[Int] = {
+    deleteManyIDs(table, entities.map(entity => UuidKeyEntity[E].key(entity)).toList).run
+  }
 
   override protected def find(specification: String, orderBy: Option[String], pageSize: Option[Int], offset: Option[Int]): doobie.ConnectionIO[Seq[E]] = ???
 

@@ -1,7 +1,8 @@
 package org.codecannery.lunchplanner.domain.users.model
 import java.util.UUID
 
-import io.circe._, io.circe.generic.semiauto._
+import io.circe._
+import io.circe.generic.semiauto._
 import org.codecannery.lunchplanner.infrastructure.repository._
 
 case class User(userName: String,
