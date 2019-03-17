@@ -8,7 +8,7 @@ import org.codecannery.lunchplanner.domain.users.command.UpdateUser
 import org.codecannery.lunchplanner.domain.users.model.User
 import org.codecannery.lunchplanner.domain.{UserAlreadyExistsError, UserNotFoundError, UserValidationError}
 
-class UserValidationInterpreter[F[_]: Monad](userRepo: UserRepository[F]) extends UserValidationAlgebra[F] {
+class UserValidationInterpreter[F[_]: Monad](userRepo: UserRepositoryAlgebra[F]) extends UserValidationAlgebra[F] {
   def doesNotExist(userName: String) = EitherT {
     userRepo.findByUserName(userName).map {
       case None => Right(())
@@ -20,7 +20,7 @@ class UserValidationInterpreter[F[_]: Monad](userRepo: UserRepository[F]) extend
     EitherT {
       userId.map { id =>
         userRepo.get(id).map {
-          case Some(u) => Right((u))
+          case Some(u) => Right(u)
           case _ => Left(UserNotFoundError)
         }
       }.getOrElse(
@@ -36,6 +36,6 @@ class UserValidationInterpreter[F[_]: Monad](userRepo: UserRepository[F]) extend
 }
 
 object UserValidationInterpreter {
-  def apply[F[_]: Monad](repo: UserRepository[F]): UserValidationAlgebra[F] =
+  def apply[F[_]: Monad](repo: UserRepositoryAlgebra[F]): UserValidationAlgebra[F] =
     new UserValidationInterpreter[F](repo)
 }

@@ -3,17 +3,20 @@ package org.codecannery.lunchplanner.domain.users
 import cats._
 import cats.data._
 import cats.syntax.functor._
+import io.bfil.automapper._
+
 import org.codecannery.lunchplanner.domain.users.command.{CreateUser, UpdateUser}
 import org.codecannery.lunchplanner.domain.users.model.User
 import org.codecannery.lunchplanner.domain.users.view.UserListView
 import org.codecannery.lunchplanner.domain.{UserAlreadyExistsError, UserNotFoundError, UserValidationError}
 
-class UserService[F[_]: Monad](userRepo: UserRepository[F], validation: UserValidationAlgebra[F]) {
+class UserService[F[_]: Monad](userRepo: UserRepositoryAlgebra[F], validation: UserValidationAlgebra[F]) {
 
   def createUser(user: CreateUser): EitherT[F, UserAlreadyExistsError, User] =
     for {
       _ <- validation.doesNotExist(user.userName)
-      saved <- EitherT.liftF(userRepo.create(user))
+      userToCreate = automap(user).to[User]
+      saved <- EitherT.liftF(userRepo.create(userToCreate))
     } yield saved
 
   def getUser(userId: Long): EitherT[F, UserNotFoundError.type, User] =
@@ -30,15 +33,20 @@ class UserService[F[_]: Monad](userRepo: UserRepository[F], validation: UserVali
   def update(user: UpdateUser): EitherT[F, UserValidationError, User] =
     for {
       storedUser   <- validation.exists(user.id)
-      _            <- validation.validChanges(storedUser, user)
-      saved        <- EitherT.fromOptionF(userRepo.update(user), UserNotFoundError: UserValidationError)
+      updatedUser  <- validation.validChanges(storedUser, user)
+      saved        <- EitherT.fromOptionF(userRepo.update(updatedUser), UserNotFoundError: UserValidationError)
     } yield saved
 
   def list(pageSize: Int, offset: Int): F[List[UserListView]] =
-    userRepo.list(pageSize, offset)
+    for {
+      dbList <- userRepo.list(pageSize, offset)
+    } yield {
+      dbList.map(u => automap(u).to[UserListView])
+    }
+
 }
 
 object UserService {
-  def apply[F[_]: Monad](repository: UserRepository[F], validation: UserValidationAlgebra[F]): UserService[F] =
+  def apply[F[_]: Monad](repository: UserRepositoryAlgebra[F], validation: UserValidationAlgebra[F]): UserService[F] =
     new UserService[F](repository, validation)
 }

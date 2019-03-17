@@ -6,6 +6,5 @@ case class CreateUser(
     lastName: String,
     email: String,
     hash: String,
-    phone: String,
-    id: Option[Long] = None
+    phone: String
 )

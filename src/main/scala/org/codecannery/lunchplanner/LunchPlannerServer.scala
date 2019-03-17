@@ -9,7 +9,7 @@ import config._
 import domain.users._
 import doobie.util.ExecutionContexts
 import infrastructure.endpoint.UserEndpoints
-import infrastructure.repository.doobie.DoobieUserRepositoryInterpreter
+import infrastructure.repository.postgres.JsonRepository
 import tsec.passwordhashers.jca.BCrypt
 
 object LunchPlannerServer extends IOApp {
@@ -20,7 +20,7 @@ object LunchPlannerServer extends IOApp {
       connEc         <- ExecutionContexts.fixedThreadPool[F](conf.db.connections.poolSize)
       txnEc          <- ExecutionContexts.cachedThreadPool[F]
       xa             <- DatabaseConfig.dbTransactor(conf.db, connEc, txnEc)
-      userRepo       =  DoobieUserRepositoryInterpreter[F](xa)
+      userRepo       =  JsonRepository
       userValidation =  UserValidationInterpreter[F](userRepo)
       userService    =  UserService[F](userRepo, userValidation)
       services       =  UserEndpoints.endpoints[F, BCrypt](userService, BCrypt.syncPasswordHasher[F])

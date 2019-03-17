@@ -1,5 +1,7 @@
 package org.codecannery.lunchplanner.domain.users.view
 
+import java.util.UUID
+
 case class UserListView(
     userName: String,
     firstName: String,
@@ -7,5 +9,5 @@ case class UserListView(
     email: String,
     hash: String,
     phone: String,
-    id: Option[Long] = None
+    key: UUID
 )

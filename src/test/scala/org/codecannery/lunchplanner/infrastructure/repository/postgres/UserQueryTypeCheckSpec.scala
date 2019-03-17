@@ -1,4 +1,4 @@
-package org.codecannery.lunchplanner.infrastructure.repository.doobie
+package org.codecannery.lunchplanner.infrastructure.repository.postgres
 
 import org.scalatest._
 import cats.effect.IO

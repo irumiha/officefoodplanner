@@ -14,6 +14,7 @@ case class User(userName: String,
                 key: UUID = UUID.randomUUID())
 
 object User {
+
   implicit object UuidKeyedUser extends UuidKeyEntity[User] {
     override def key(u: User): UUID = u.key
   }

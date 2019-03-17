@@ -8,7 +8,7 @@ import org.codecannery.lunchplanner.config.{DatabaseConfig, LunchPlannerConfig}
 
 import scala.concurrent.ExecutionContext
 
-package object doobie {
+package object postgres {
   def getTransactor[F[_] : Async : ContextShift](cfg : DatabaseConfig) : Transactor[F] =
     Transactor.fromDriverManager[F](
       cfg.driver,            // driver classname

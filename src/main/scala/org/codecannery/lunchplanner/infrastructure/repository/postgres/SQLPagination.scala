@@ -1,4 +1,4 @@
-package org.codecannery.lunchplanner.infrastructure.repository.doobie
+package org.codecannery.lunchplanner.infrastructure.repository.postgres
 
 import doobie._
 import doobie.implicits._
