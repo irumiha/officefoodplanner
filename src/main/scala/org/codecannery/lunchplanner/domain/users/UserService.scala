@@ -1,10 +1,11 @@
 package org.codecannery.lunchplanner.domain.users
 
+import java.util.UUID
+
 import cats._
 import cats.data._
 import cats.syntax.functor._
 import io.bfil.automapper._
-
 import org.codecannery.lunchplanner.domain.users.command.{CreateUser, UpdateUser}
 import org.codecannery.lunchplanner.domain.users.model.User
 import org.codecannery.lunchplanner.domain.users.view.UserListView
@@ -19,20 +20,20 @@ class UserService[F[_]: Monad](userRepo: UserRepositoryAlgebra[F], validation: U
       saved <- EitherT.liftF(userRepo.create(userToCreate))
     } yield saved
 
-  def getUser(userId: Long): EitherT[F, UserNotFoundError.type, User] =
+  def getUser(userId: UUID): EitherT[F, UserNotFoundError.type, User] =
     EitherT.fromOptionF(userRepo.get(userId), UserNotFoundError)
 
   def getUserByName(userName: String): EitherT[F, UserNotFoundError.type, User] =
     EitherT.fromOptionF(userRepo.findByUserName(userName), UserNotFoundError)
 
-  def deleteUser(userId: Long): F[Unit] = userRepo.delete(userId).as(())
+  def deleteUser(userId: UUID): F[Unit] = userRepo.delete(userId).as(())
 
   def deleteByUserName(userName: String): F[Unit] =
     userRepo.deleteByUserName(userName).as(())
 
   def update(user: UpdateUser): EitherT[F, UserValidationError, User] =
     for {
-      storedUser   <- validation.exists(user.id)
+      storedUser   <- validation.exists(user.key)
       updatedUser  <- validation.validChanges(storedUser, user)
       saved        <- EitherT.fromOptionF(userRepo.update(updatedUser), UserNotFoundError: UserValidationError)
     } yield saved

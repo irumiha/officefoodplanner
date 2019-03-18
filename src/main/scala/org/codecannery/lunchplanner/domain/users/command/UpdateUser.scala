@@ -1,5 +1,7 @@
 package org.codecannery.lunchplanner.domain.users.command
 
+import java.util.UUID
+
 case class UpdateUser(
     userName: String,
     firstName: String,
@@ -7,5 +9,5 @@ case class UpdateUser(
     email: String,
     hash: String,
     phone: String,
-    id: Option[Long] = None
+    key: UUID
 )

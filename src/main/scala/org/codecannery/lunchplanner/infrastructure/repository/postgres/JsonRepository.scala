@@ -4,9 +4,7 @@ import java.time.{Instant, ZonedDateTime}
 import java.util.UUID
 
 import cats._
-import cats.data._
-import cats.implicits._
-import cats.syntax.list._
+
 import doobie._
 import doobie.implicits._
 import doobie.postgres.implicits._
@@ -53,6 +51,7 @@ private object JsonRepositorySQL {
 
   def deleteManyIDs(table: Table, rows: List[UUID]): Update0 = {
     import Fragments.{in, whereAndOpt}
+    import cats.syntax.list._
 
     val q =
       fr"""DELETE FROM """ ++ tableFragment(table) ++ fr""" WHERE""" ++
@@ -63,6 +62,7 @@ private object JsonRepositorySQL {
 
   def getMany(table: Table, ids: List[UUID]): Query0[RowWrapper] = {
     import Fragments.{in, whereAndOpt}
+    import cats.syntax.list._
 
     val q =
       fr"""SELECT ID, DATA, CREATED_ON, UPDATED_ON from """ ++ tableFragment(table) ++
@@ -141,7 +141,7 @@ abstract class JsonRepository[F[_]: Monad, E: Encoder: Decoder: UuidKeyEntity]
 
   override protected def find(specification: Specification, orderByFragment: OrderBy, limit: Limit, offset: Offset): doobie.ConnectionIO[List[E]] = ???
 
-  def entityToRowWrapper(entity: E): RowWrapper =
+  private def entityToRowWrapper(entity: E): RowWrapper =
     RowWrapper(
       data = Encoder[E].apply(entity).noSpaces,
       createdOn = Instant.now(),
@@ -149,7 +149,7 @@ abstract class JsonRepository[F[_]: Monad, E: Encoder: Decoder: UuidKeyEntity]
       id = UuidKeyEntity[E].key(entity),
     )
 
-  def toEntity(rw: RowWrapper): E =
+  private def toEntity(rw: RowWrapper): E =
     decode[E](rw.data).right.get
 
 }

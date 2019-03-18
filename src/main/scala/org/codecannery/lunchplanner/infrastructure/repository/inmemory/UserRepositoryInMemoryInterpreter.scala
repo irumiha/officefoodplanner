@@ -19,18 +19,14 @@ class UserRepositoryInMemoryInterpreter[F[_]: Applicative] extends UserRepositor
 
   private val random = new Random
 
-  def create(user: CreateUser): F[User] = {
-    val mapped: User = automap(user).dynamicallyTo[User]{
-      key = UUID.randomUUID()
-    }
-    cache += (user. -> mapped)
-    mapped.pure[F]
+  def create(user: User): F[User] = {
+    cache += (user.key -> user)
+    user.pure[F]
   }
 
-  def update(user: UpdateUser): F[Option[User]] = user.id.traverse{ id =>
-    val mapped = automap(user).to[User]
-    cache.update(id, mapped)
-    mapped.pure[F]
+  def update(user: User): F[Option[User]] = cache.get(user.key).traverse { u =>
+    cache.update(user.key, user)
+    user.pure[F]
   }
 
   def get(id: UUID): F[Option[User]] = cache.get(id).pure[F]
@@ -40,8 +36,8 @@ class UserRepositoryInMemoryInterpreter[F[_]: Applicative] extends UserRepositor
   def findByUserName(userName: String): F[Option[User]] =
     cache.values.find(u => u.userName == userName).pure[F]
 
-  def list(pageSize: Int, offset: Int): F[List[UserListView]] = {
-    cache.values.toList.map(automap(_).to[UserListView]).sortBy(_.lastName).slice(offset, offset + pageSize).pure[F]
+  def list(pageSize: Int, offset: Int): F[List[User]] = {
+    cache.values.toList.sortBy(_.lastName).slice(offset, offset + pageSize).pure[F]
   }
 
   def deleteByUserName(userName: String): F[Option[User]] = {

@@ -1,5 +1,7 @@
 package org.codecannery.lunchplanner.domain.users
 
+import java.util.UUID
+
 import cats._
 import cats.data.EitherT
 import cats.implicits._
@@ -16,16 +18,12 @@ class UserValidationInterpreter[F[_]: Monad](userRepo: UserRepositoryAlgebra[F])
     }
   }
 
-  def exists(userId: Option[Long]): EitherT[F, UserNotFoundError.type, User] =
+  def exists(userId: UUID): EitherT[F, UserNotFoundError.type, User] =
     EitherT {
-      userId.map { id =>
-        userRepo.get(id).map {
-          case Some(u) => Right(u)
-          case _ => Left(UserNotFoundError)
-        }
-      }.getOrElse(
-        Either.left[UserNotFoundError.type, User](UserNotFoundError).pure[F]
-      )
+      userRepo.get(userId).map {
+        case Some(u) => Right(u)
+        case _ => Left(UserNotFoundError)
+      }
     }
 
   def validChanges(storedUser: User, newUser: UpdateUser): EitherT[F, UserValidationError, User] =
