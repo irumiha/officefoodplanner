@@ -34,9 +34,17 @@ class UserService[F[_]: Monad](userRepo: UserRepositoryAlgebra[F], validation: U
   def update(user: UpdateUser): EitherT[F, UserValidationError, User] =
     for {
       storedUser   <- validation.exists(user.key)
-      updatedUser  <- validation.validChanges(storedUser, user)
-      saved        <- EitherT.fromOptionF(userRepo.update(updatedUser), UserNotFoundError: UserValidationError)
-    } yield saved
+      userToUpdate <- validation.validChanges(storedUser, user)
+      updatedUser  <- persistUpdatedUser(userToUpdate)
+    } yield updatedUser
+
+  private def persistUpdatedUser(user: User): EitherT[F, UserValidationError, User] = {
+    val updated = userRepo.update(user)
+    val of = Monad[F].map(updated){ u =>
+      if (u == 1) Some(user) else None
+    }
+    EitherT.fromOptionF(of, UserNotFoundError)
+  }
 
   def list(pageSize: Int, offset: Int): F[List[UserListView]] =
     for {

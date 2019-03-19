@@ -1,17 +1,16 @@
 package org.codecannery.lunchplanner.infrastructure.repository.postgres
 
-import java.time.{Instant, ZonedDateTime}
+import java.time.Instant
 import java.util.UUID
 
 import cats._
-
 import doobie._
 import doobie.implicits._
 import doobie.postgres.implicits._
 import doobie.util.fragment
 import io.circe._
 import io.circe.parser.decode
-import org.codecannery.lunchplanner.infrastructure.repository.{DatabaseRepository, Limit, Offset, OrderBy, Repository, Specification, Table, UuidKeyEntity}
+import org.codecannery.lunchplanner.infrastructure.repository._
 
 private case class RowWrapper(data: String, createdOn: Instant, updatedOn: Instant, id: UUID)
 
@@ -71,7 +70,12 @@ private object JsonRepositorySQL {
     q.query[RowWrapper]
   }
 
-  def filter(table: Table, where: Fragment, orderBy: Fragment, offset: Fragment, limit: Fragment): Query0[RowWrapper] = {
+  def filter(
+      table: Table,
+      where: Fragment,
+      orderBy: Fragment,
+      offset: Fragment,
+      limit: Fragment): Query0[RowWrapper] = {
 
     val q =
       fr"""SELECT ID, DATA, CREATED_ON, UPDATED_ON from """ ++
@@ -85,12 +89,11 @@ private object JsonRepositorySQL {
   }
 }
 
-abstract class JsonRepository[F[_]: Monad, E: Encoder: Decoder: UuidKeyEntity]
-    extends Repository[ConnectionIO, UUID, E]
+final class JsonRepository[F[_]: Monad, E: Encoder: Decoder: UuidKeyEntity](
+    override val table: Table
+) extends Repository[ConnectionIO, UUID, E]
     with DatabaseRepository {
   import JsonRepositorySQL._
-
-  override def table: Table
 
   override def create(entity: E): doobie.ConnectionIO[E] = {
     val row = entityToRowWrapper(entity)
@@ -98,7 +101,7 @@ abstract class JsonRepository[F[_]: Monad, E: Encoder: Decoder: UuidKeyEntity]
   }
 
   override def create(entities: List[E]): doobie.ConnectionIO[List[E]] = {
-    val rows = entities.map(entityToRowWrapper).toList
+    val rows = entities.map(entityToRowWrapper)
     insertMany(table, rows).map(toEntity).to[List]
   }
 
@@ -108,38 +111,81 @@ abstract class JsonRepository[F[_]: Monad, E: Encoder: Decoder: UuidKeyEntity]
   }
 
   override def update(entities: List[E]): doobie.ConnectionIO[Int] =
-    updateMany(table, entities.map(entityToRowWrapper).toList).run
+    updateMany(table, entities.map(entityToRowWrapper)).run
 
-  override def get(entityId: UUID): doobie.ConnectionIO[Option[E]] = {
+  override def get(entityId: UUID): doobie.ConnectionIO[Option[E]] =
     getMany(table, List(entityId)).map(toEntity).option
-  }
 
-  override def get(entityIds: List[UUID]): doobie.ConnectionIO[List[E]] = {
+  override def get(entityIds: List[UUID]): doobie.ConnectionIO[List[E]] =
     getMany(table, entityIds).map(toEntity).to[List]
-  }
 
   override def delete(entityId: UUID): doobie.ConnectionIO[Int] =
     deleteManyIDs(table, List(entityId)).run
 
   override def delete(entityIds: List[UUID]): doobie.ConnectionIO[Int] =
-    deleteManyIDs(table, entityIds.toList).run
+    deleteManyIDs(table, entityIds).run
 
   override def deleteEntity(entity: E): doobie.ConnectionIO[Int] =
     deleteManyIDs(table, List(UuidKeyEntity[E].key(entity))).run
 
   override def deleteEntities(entities: List[E]): doobie.ConnectionIO[Int] =
-    deleteManyIDs(table, entities.map(entity => UuidKeyEntity[E].key(entity)).toList).run
+    deleteManyIDs(table, entities.map(entity => UuidKeyEntity[E].key(entity))).run
 
+  override protected def find(specification: Specification): doobie.ConnectionIO[List[E]] =
+    filter(
+      table = table,
+      where = specification.v,
+      orderBy = Fragment.empty,
+      offset = Fragment.empty,
+      limit = Fragment.empty
+    ).map(toEntity).to[List]
 
-  override protected def find(specification: Specification): doobie.ConnectionIO[List[E]] = ???
+  override protected def find(
+      specification: Specification,
+      orderBy: OrderBy): doobie.ConnectionIO[List[E]] =
+    filter(
+      table = table,
+      where = specification.v,
+      orderBy = orderBy.v,
+      offset = Fragment.empty,
+      limit = Fragment.empty
+    ).map(toEntity).to[List]
 
-  override protected def find(specification: Specification, orderBy: OrderBy): doobie.ConnectionIO[List[E]] = ???
+  override protected def find(
+      specification: Specification,
+      limit: Limit): doobie.ConnectionIO[List[E]] =
+    filter(
+      table = table,
+      where = specification.v,
+      orderBy = Fragment.empty,
+      offset = Fragment.empty,
+      limit = limit.v
+    ).map(toEntity).to[List]
 
-  override protected def find(specification: Specification, limit: Limit): doobie.ConnectionIO[List[E]] = ???
+  override protected def find(
+      specification: Specification,
+      limit: Limit,
+      offset: Offset): doobie.ConnectionIO[List[E]] =
+    filter(
+      table = table,
+      where = specification.v,
+      orderBy = Fragment.empty,
+      offset = offset.v,
+      limit = limit.v
+    ).map(toEntity).to[List]
 
-  override protected def find(specification: Specification, limit: Limit, offset: Offset): doobie.ConnectionIO[List[E]] = ???
-
-  override protected def find(specification: Specification, orderByFragment: OrderBy, limit: Limit, offset: Offset): doobie.ConnectionIO[List[E]] = ???
+  override protected def find(
+      specification: Specification,
+      orderBy: OrderBy,
+      limit: Limit,
+      offset: Offset): doobie.ConnectionIO[List[E]] =
+    filter(
+      table = table,
+      where = specification.v,
+      orderBy = orderBy.v,
+      offset = offset.v,
+      limit = limit.v
+    ).map(toEntity).to[List]
 
   private def entityToRowWrapper(entity: E): RowWrapper =
     RowWrapper(

@@ -25,9 +25,9 @@ package object postgres {
     _         <- DatabaseConfig.initializeDb(petConfig.db)
   } yield getTransactor(petConfig.db)
 
-  lazy val testEc = ExecutionContext.Implicits.global
+  lazy val testEc: ExecutionContext = ExecutionContext.Implicits.global
 
-  implicit lazy val testCs = IO.contextShift(testEc)
+  implicit lazy val testCs: ContextShift[IO] = IO.contextShift(testEc)
 
-  lazy val testTransactor = initializedTransactor[IO].unsafeRunSync()
+  lazy val testTransactor: Transactor[IO] = initializedTransactor[IO].unsafeRunSync()
 }

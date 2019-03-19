@@ -5,6 +5,9 @@ import java.util.UUID
 trait KeyedEntity[E, K] {
   def key(e: E): K
 }
+object KeyedEntity {
+  def apply[E, K](implicit instance: KeyedEntity[E, K]): KeyedEntity[E, K] = instance
+}
 
 trait UuidKeyEntity[E] extends KeyedEntity[E, UUID] {
   override def key(e: E): UUID
