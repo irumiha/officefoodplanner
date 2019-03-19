@@ -2,25 +2,26 @@ package org.codecannery.lunchplanner.infrastructure.repository.postgres
 
 import java.util.UUID
 
-import doobie.free.connection.ConnectionIO
+import cats.Monad
+import doobie.ConnectionIO
 import org.codecannery.lunchplanner.domain.users.UserRepositoryAlgebra
 import org.codecannery.lunchplanner.domain.users.model.User
 import org.codecannery.lunchplanner.infrastructure.repository.{SchemaName, Table, TableName}
 
-class UserJsonRepository extends UserRepositoryAlgebra[F] {
-  val jsonRepo = new JsonRepository[ConnectionIO, User](table = Table(SchemaName("public"), TableName("user")))
+class UserJsonRepository[F[_]: Monad] extends UserRepositoryAlgebra[F] {
+  val jsonRepo = new JsonRepository[F, User](table = Table(SchemaName("public"), TableName("user")))
 
-  override def create(user: User): ConnectionIO[User] = jsonRepo.create(user)
+  def create(user: User): F[ConnectionIO[User]] = jsonRepo.create(user)
 
-  override def update(user: User): ConnectionIO[Int] = jsonRepo.update(user)
+  def update(user: User): F[ConnectionIO[Int]] = jsonRepo.update(user)
 
-  override def get(userId: UUID): ConnectionIO[Option[User]] = jsonRepo.get(userId)
+  def get(userId: UUID): F[ConnectionIO[Option[User]]] = jsonRepo.get(userId)
 
-  override def delete(userId: UUID): ConnectionIO[Int] = jsonRepo.delete(userId)
+  def delete(userId: UUID): F[ConnectionIO[Int]] = jsonRepo.delete(userId)
 
-  override def findByUserName(userName: String): ConnectionIO[Option[User]] = ???
+  def findByUserName(userName: String): F[ConnectionIO[Option[User]]] = ???
 
-  override def deleteByUserName(userName: String): ConnectionIO[Int] = ???
+  def deleteByUserName(userName: String): F[ConnectionIO[Int]] = ???
 
-  override def list(pageSize: Int, offset: Int): ConnectionIO[List[User]] = ???
+  def list(pageSize: Int, offset: Int): F[ConnectionIO[List[User]]] = ???
 }

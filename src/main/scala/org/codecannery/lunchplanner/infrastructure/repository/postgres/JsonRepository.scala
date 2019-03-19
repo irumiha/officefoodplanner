@@ -4,6 +4,7 @@ import java.time.Instant
 import java.util.UUID
 
 import cats._
+import cats.implicits._
 import doobie._
 import doobie.implicits._
 import doobie.postgres.implicits._
@@ -91,101 +92,101 @@ private object JsonRepositorySQL {
 
 final class JsonRepository[F[_]: Monad, E: Encoder: Decoder: UuidKeyEntity](
     override val table: Table
-) extends Repository[ConnectionIO, UUID, E]
+) extends Repository[F, UUID, E]
     with DatabaseRepository {
   import JsonRepositorySQL._
 
-  override def create(entity: E): doobie.ConnectionIO[E] = {
+  override def create(entity: E): F[ConnectionIO[E]] = {
     val row = entityToRowWrapper(entity)
-    insertMany(table, List(row)).map(toEntity).unique
+    insertMany(table, List(row)).map(toEntity).unique.pure[F]
   }
 
-  override def create(entities: List[E]): doobie.ConnectionIO[List[E]] = {
+  override def create(entities: List[E]): F[ConnectionIO[List[E]]] = {
     val rows = entities.map(entityToRowWrapper)
-    insertMany(table, rows).map(toEntity).to[List]
+    insertMany(table, rows).map(toEntity).to[List].pure[F]
   }
 
-  override def update(entity: E): doobie.ConnectionIO[Int] = {
+  override def update(entity: E): F[ConnectionIO[Int]] = {
     val row = entityToRowWrapper(entity)
-    updateMany(table, List(row)).run
+    updateMany(table, List(row)).run.pure[F]
   }
 
-  override def update(entities: List[E]): doobie.ConnectionIO[Int] =
-    updateMany(table, entities.map(entityToRowWrapper)).run
+  override def update(entities: List[E]): F[ConnectionIO[Int]] =
+    updateMany(table, entities.map(entityToRowWrapper)).run.pure[F]
 
-  override def get(entityId: UUID): doobie.ConnectionIO[Option[E]] =
-    getMany(table, List(entityId)).map(toEntity).option
+  override def get(entityId: UUID): F[ConnectionIO[Option[E]]] =
+    getMany(table, List(entityId)).map(toEntity).option.pure[F]
 
-  override def get(entityIds: List[UUID]): doobie.ConnectionIO[List[E]] =
-    getMany(table, entityIds).map(toEntity).to[List]
+  override def get(entityIds: List[UUID]): F[ConnectionIO[List[E]]] =
+    getMany(table, entityIds).map(toEntity).to[List].pure[F]
 
-  override def delete(entityId: UUID): doobie.ConnectionIO[Int] =
-    deleteManyIDs(table, List(entityId)).run
+  override def delete(entityId: UUID): F[ConnectionIO[Int]] =
+    deleteManyIDs(table, List(entityId)).run.pure[F]
 
-  override def delete(entityIds: List[UUID]): doobie.ConnectionIO[Int] =
-    deleteManyIDs(table, entityIds).run
+  override def delete(entityIds: List[UUID]): F[ConnectionIO[Int]] =
+    deleteManyIDs(table, entityIds).run.pure[F]
 
-  override def deleteEntity(entity: E): doobie.ConnectionIO[Int] =
-    deleteManyIDs(table, List(UuidKeyEntity[E].key(entity))).run
+  override def deleteEntity(entity: E): F[ConnectionIO[Int]] =
+    deleteManyIDs(table, List(UuidKeyEntity[E].key(entity))).run.pure[F]
 
-  override def deleteEntities(entities: List[E]): doobie.ConnectionIO[Int] =
-    deleteManyIDs(table, entities.map(entity => UuidKeyEntity[E].key(entity))).run
+  override def deleteEntities(entities: List[E]): F[ConnectionIO[Int]] =
+    deleteManyIDs(table, entities.map(entity => UuidKeyEntity[E].key(entity))).run.pure[F]
 
-  override protected def find(specification: Specification): doobie.ConnectionIO[List[E]] =
+  override protected def find(specification: Specification): F[ConnectionIO[List[E]]] =
     filter(
       table = table,
       where = specification.v,
       orderBy = Fragment.empty,
       offset = Fragment.empty,
       limit = Fragment.empty
-    ).map(toEntity).to[List]
+    ).map(toEntity).to[List].pure[F]
 
   override protected def find(
       specification: Specification,
-      orderBy: OrderBy): doobie.ConnectionIO[List[E]] =
+      orderBy: OrderBy): F[ConnectionIO[List[E]]] =
     filter(
       table = table,
       where = specification.v,
       orderBy = orderBy.v,
       offset = Fragment.empty,
       limit = Fragment.empty
-    ).map(toEntity).to[List]
+    ).map(toEntity).to[List].pure[F]
 
   override protected def find(
       specification: Specification,
-      limit: Limit): doobie.ConnectionIO[List[E]] =
+      limit: Limit): F[ConnectionIO[List[E]]] =
     filter(
       table = table,
       where = specification.v,
       orderBy = Fragment.empty,
       offset = Fragment.empty,
       limit = limit.v
-    ).map(toEntity).to[List]
+    ).map(toEntity).to[List].pure[F]
 
   override protected def find(
       specification: Specification,
       limit: Limit,
-      offset: Offset): doobie.ConnectionIO[List[E]] =
+      offset: Offset): F[ConnectionIO[List[E]]] =
     filter(
       table = table,
       where = specification.v,
       orderBy = Fragment.empty,
       offset = offset.v,
       limit = limit.v
-    ).map(toEntity).to[List]
+    ).map(toEntity).to[List].pure[F]
 
   override protected def find(
       specification: Specification,
       orderBy: OrderBy,
       limit: Limit,
-      offset: Offset): doobie.ConnectionIO[List[E]] =
+      offset: Offset): F[ConnectionIO[List[E]]] =
     filter(
       table = table,
       where = specification.v,
       orderBy = orderBy.v,
       offset = offset.v,
       limit = limit.v
-    ).map(toEntity).to[List]
+    ).map(toEntity).to[List].pure[F]
 
   private def entityToRowWrapper(entity: E): RowWrapper =
     RowWrapper(
