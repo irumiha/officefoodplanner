@@ -3,8 +3,6 @@ package org.codecannery.lunchplanner.infrastructure.repository.postgres
 import java.time.Instant
 import java.util.UUID
 
-import cats._
-import cats.implicits._
 import doobie._
 import doobie.implicits._
 import doobie.postgres.implicits._
@@ -90,103 +88,103 @@ private object JsonRepositorySQL {
   }
 }
 
-final class JsonRepository[F[_]: Monad, E: Encoder: Decoder: UuidKeyEntity](
+final class JsonRepository[E: Encoder: Decoder: UuidKeyEntity](
     override val table: Table
-) extends Repository[F, UUID, E]
+) extends Repository[UUID, E]
     with DatabaseRepository {
   import JsonRepositorySQL._
 
-  override def create(entity: E): F[ConnectionIO[E]] = {
+  override def create(entity: E): ConnectionIO[E] = {
     val row = entityToRowWrapper(entity)
-    insertMany(table, List(row)).map(toEntity).unique.pure[F]
+    insertMany(table, List(row)).map(toEntity).unique
   }
 
-  override def create(entities: List[E]): F[ConnectionIO[List[E]]] = {
+  override def create(entities: List[E]): ConnectionIO[List[E]] = {
     val rows = entities.map(entityToRowWrapper)
-    insertMany(table, rows).map(toEntity).to[List].pure[F]
+    insertMany(table, rows).map(toEntity).to[List]
   }
 
-  override def update(entity: E): F[ConnectionIO[Int]] = {
+  override def update(entity: E): ConnectionIO[Int] = {
     val row = entityToRowWrapper(entity)
-    updateMany(table, List(row)).run.pure[F]
+    updateMany(table, List(row)).run
   }
 
-  override def update(entities: List[E]): F[ConnectionIO[Int]] =
-    updateMany(table, entities.map(entityToRowWrapper)).run.pure[F]
+  override def update(entities: List[E]): ConnectionIO[Int] =
+    updateMany(table, entities.map(entityToRowWrapper)).run
 
-  override def get(entityId: UUID): F[ConnectionIO[Option[E]]] =
-    getMany(table, List(entityId)).map(toEntity).option.pure[F]
+  override def get(entityId: UUID): ConnectionIO[Option[E]] =
+    getMany(table, List(entityId)).map(toEntity).option
 
-  override def get(entityIds: List[UUID]): F[ConnectionIO[List[E]]] =
-    getMany(table, entityIds).map(toEntity).to[List].pure[F]
+  override def get(entityIds: List[UUID]): ConnectionIO[List[E]] =
+    getMany(table, entityIds).map(toEntity).to[List]
 
-  override def delete(entityId: UUID): F[ConnectionIO[Int]] =
-    deleteManyIDs(table, List(entityId)).run.pure[F]
+  override def delete(entityId: UUID): ConnectionIO[Int] =
+    deleteManyIDs(table, List(entityId)).run
 
-  override def delete(entityIds: List[UUID]): F[ConnectionIO[Int]] =
-    deleteManyIDs(table, entityIds).run.pure[F]
+  override def delete(entityIds: List[UUID]): ConnectionIO[Int] =
+    deleteManyIDs(table, entityIds).run
 
-  override def deleteEntity(entity: E): F[ConnectionIO[Int]] =
-    deleteManyIDs(table, List(UuidKeyEntity[E].key(entity))).run.pure[F]
+  override def deleteEntity(entity: E): ConnectionIO[Int] =
+    deleteManyIDs(table, List(UuidKeyEntity[E].key(entity))).run
 
-  override def deleteEntities(entities: List[E]): F[ConnectionIO[Int]] =
-    deleteManyIDs(table, entities.map(entity => UuidKeyEntity[E].key(entity))).run.pure[F]
+  override def deleteEntities(entities: List[E]): ConnectionIO[Int] =
+    deleteManyIDs(table, entities.map(entity => UuidKeyEntity[E].key(entity))).run
 
-  override protected def find(specification: Specification): F[ConnectionIO[List[E]]] =
+  override protected def find(specification: Specification): ConnectionIO[List[E]] =
     filter(
       table = table,
       where = specification.v,
       orderBy = Fragment.empty,
       offset = Fragment.empty,
       limit = Fragment.empty
-    ).map(toEntity).to[List].pure[F]
+    ).map(toEntity).to[List]
 
   override protected def find(
       specification: Specification,
-      orderBy: OrderBy): F[ConnectionIO[List[E]]] =
+      orderBy: OrderBy): ConnectionIO[List[E]] =
     filter(
       table = table,
       where = specification.v,
       orderBy = orderBy.v,
       offset = Fragment.empty,
       limit = Fragment.empty
-    ).map(toEntity).to[List].pure[F]
+    ).map(toEntity).to[List]
 
   override protected def find(
       specification: Specification,
-      limit: Limit): F[ConnectionIO[List[E]]] =
+      limit: Limit): ConnectionIO[List[E]] =
     filter(
       table = table,
       where = specification.v,
       orderBy = Fragment.empty,
       offset = Fragment.empty,
       limit = limit.v
-    ).map(toEntity).to[List].pure[F]
+    ).map(toEntity).to[List]
 
   override protected def find(
       specification: Specification,
       limit: Limit,
-      offset: Offset): F[ConnectionIO[List[E]]] =
+      offset: Offset): ConnectionIO[List[E]] =
     filter(
       table = table,
       where = specification.v,
       orderBy = Fragment.empty,
       offset = offset.v,
       limit = limit.v
-    ).map(toEntity).to[List].pure[F]
+    ).map(toEntity).to[List]
 
   override protected def find(
       specification: Specification,
       orderBy: OrderBy,
       limit: Limit,
-      offset: Offset): F[ConnectionIO[List[E]]] =
+      offset: Offset): ConnectionIO[List[E]] =
     filter(
       table = table,
       where = specification.v,
       orderBy = orderBy.v,
       offset = offset.v,
       limit = limit.v
-    ).map(toEntity).to[List].pure[F]
+    ).map(toEntity).to[List]
 
   private def entityToRowWrapper(entity: E): RowWrapper =
     RowWrapper(
