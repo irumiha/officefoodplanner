@@ -1,6 +1,6 @@
 package org.codecannery.lunchplanner.infrastructure.repository
 
-import doobie.free.connection.ConnectionIO
+import doobie.ConnectionIO
 import doobie.util.fragment.Fragment
 
 case class Specification(v: Fragment) extends AnyVal
