@@ -15,9 +15,7 @@ case class User(userName: String,
 
 object User {
 
-  implicit object UuidKeyedUser extends UuidKeyEntity[User] {
-    override def key(u: User): UUID = u.key
-  }
+  implicit val uuidKeyedUser: UuidKeyEntity[User] = (u: User) => u.key
 
   implicit val userDecoder: Decoder[User] = deriveDecoder
   implicit val userEncoder: Encoder[User] = deriveEncoder

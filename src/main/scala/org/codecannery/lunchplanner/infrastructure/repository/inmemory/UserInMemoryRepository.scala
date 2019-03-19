@@ -23,6 +23,9 @@ class UserInMemoryRepository[F[_]: Applicative]
     existing.size.toInt
   }.pure[F]
 
+
+  override def list: F[List[User]] = cache.values.toList.pure[F]
+
   override def list(pageSize: Int, offset: Int): F[List[User]] =
     cache.values.toList.slice(offset, offset + pageSize).pure[F]
 }

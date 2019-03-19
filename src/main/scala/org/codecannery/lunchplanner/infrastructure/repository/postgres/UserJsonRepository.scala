@@ -22,5 +22,7 @@ class UserJsonRepository extends UserRepositoryAlgebra[ConnectionIO] {
 
   def deleteByUserName(userName: String): ConnectionIO[Int] = ???
 
+  def list: ConnectionIO[List[User]] = ???
+
   def list(pageSize: Int, offset: Int): ConnectionIO[List[User]] = ???
 }
