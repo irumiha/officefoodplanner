@@ -7,9 +7,10 @@ import cats.effect._
 import cats.implicits._
 import config._
 import domain.users._
+import doobie.ConnectionIO
 import doobie.util.ExecutionContexts
 import infrastructure.endpoint.UserEndpoints
-import infrastructure.repository.postgres.{JsonRepository, UserJsonRepository}
+import infrastructure.repository.postgres.UserJsonRepository
 import tsec.passwordhashers.jca.BCrypt
 
 object LunchPlannerServer extends IOApp {
@@ -21,8 +22,8 @@ object LunchPlannerServer extends IOApp {
       txnEc          <- ExecutionContexts.cachedThreadPool[F]
       xa             <- DatabaseConfig.dbTransactor(conf.db, connEc, txnEc)
       userRepo       =  new UserJsonRepository
-      userValidation =  UserValidationInterpreter[F](userRepo)
-      userService    =  UserService[F](userRepo, userValidation)
+      userValidation =  UserValidationInterpreter[ConnectionIO](userRepo)
+      userService    =  UserService.withDoobie(userRepo, userValidation)
       services       =  UserEndpoints.endpoints[F, BCrypt](userService, BCrypt.syncPasswordHasher[F])
       httpApp        =  Router("/" -> services).orNotFound
       _              <- Resource.liftF(DatabaseConfig.initializeDb(conf.db))

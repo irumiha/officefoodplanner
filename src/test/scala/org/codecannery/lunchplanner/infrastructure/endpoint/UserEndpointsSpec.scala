@@ -6,7 +6,7 @@ import org.codecannery.lunchplanner.domain.authentication.command.SignupRequest
 import org.codecannery.lunchplanner.domain.users.model.User
 import org.codecannery.lunchplanner.domain.users.{UserService, UserValidationInterpreter}
 import org.codecannery.lunchplanner.infrastructure.LunchPlannerArbitraries
-import org.codecannery.lunchplanner.infrastructure.repository.inmemory.InMemoryRepository
+import org.codecannery.lunchplanner.infrastructure.repository.inmemory.UserInMemoryRepository
 import org.http4s._
 import org.http4s.circe._
 import org.http4s.client.dsl.Http4sClientDsl
@@ -30,7 +30,7 @@ class UserEndpointsSpec
   implicit val signupRequestDec : EntityDecoder[IO, SignupRequest] = jsonOf
 
   test("create user") {
-    val userRepo = UuidKeyInMemoryRepository[IO]()
+    val userRepo = new UserInMemoryRepository[IO]()
     val userValidation = UserValidationInterpreter[IO](userRepo)
     val userService = UserService[IO](userRepo, userValidation)
     val userHttpService = UserEndpoints.endpoints(userService, BCrypt.syncPasswordHasher[IO]).orNotFound
@@ -46,7 +46,7 @@ class UserEndpointsSpec
   }
 
   test("update user") {
-    val userRepo = UuidKeyInMemoryRepository[IO]()
+    val userRepo = new UserInMemoryRepository[IO]()
     val userValidation = UserValidationInterpreter[IO](userRepo)
     val userService = UserService[IO](userRepo, userValidation)
     val userHttpService = UserEndpoints.endpoints(userService, BCrypt.syncPasswordHasher[IO]).orNotFound
@@ -69,7 +69,7 @@ class UserEndpointsSpec
   }
 
   test("get user by userName") {
-    val userRepo = UuidKeyInMemoryRepository[IO]()
+    val userRepo = new UserInMemoryRepository[IO]()
     val userValidation = UserValidationInterpreter[IO](userRepo)
     val userService = UserService[IO](userRepo, userValidation)
     val userHttpService = UserEndpoints.endpoints(userService, BCrypt.syncPasswordHasher[IO]).orNotFound
@@ -91,7 +91,7 @@ class UserEndpointsSpec
 
 
   test("delete user by userName") {
-    val userRepo = UuidKeyInMemoryRepository[IO]()
+    val userRepo = new UserInMemoryRepository[IO]()
     val userValidation = UserValidationInterpreter[IO](userRepo)
     val userService = UserService[IO](userRepo, userValidation)
     val userHttpService = UserEndpoints.endpoints(userService, BCrypt.syncPasswordHasher[IO]).orNotFound
