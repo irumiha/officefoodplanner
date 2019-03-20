@@ -4,13 +4,13 @@ import doobie.ConnectionIO
 import doobie.util.fragment.Fragment
 import doobie.syntax.string._
 
-case class Specification(v: Fragment) extends AnyVal
+case class Specification(v: Fragment)
 object Specification {
   def empty = Specification(Fragment.empty)
 }
-case class OrderBy(v: Fragment) extends AnyVal
-case class Limit(v: Fragment) extends AnyVal
-case class Offset(v: Fragment) extends AnyVal
+case class OrderBy(v: Fragment)
+case class Limit(v: Fragment)
+case class Offset(v: Fragment)
 
 trait Repository[K, E] {
   def create(entity: E): ConnectionIO[E]

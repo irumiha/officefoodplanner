@@ -1,6 +1,5 @@
 package org.codecannery.lunchplanner.infrastructure.repository.postgres
 
-import cats.Reducible
 import cats.implicits._
 import doobie.implicits._
 import doobie.util.fragment.Fragment

@@ -11,6 +11,6 @@ trait UserValidationAlgebra[F[_]] {
 
   def exists(userId: UUID): F[Either[UserNotFoundError.type, User]]
 
-  def validChanges(storedUser: User, newUser: UpdateUser): F[Either[UserValidationError, User]]
+  def validChanges(storedUser: User, newUser: UpdateUser): Either[UserValidationError, User]
 
 }

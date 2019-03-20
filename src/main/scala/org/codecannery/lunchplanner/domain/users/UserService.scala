@@ -24,14 +24,11 @@ class UserService[F[_]: Monad](
   def transact[A](t: ConnectionIO[A]): F[A]  = t.transact(xa)
 
   def createUser(user: CreateUser): EitherT[F, UserAlreadyExistsError, User] = {
-    val transaction = for {
+    (for {
       _            <- EitherT(validation.doesNotExist(user.userName))
       userToCreate = automap(user).to[User]
-      saved        <- EitherT.liftF(userRepo.create(userToCreate))
-    } yield saved
-
-
-    transaction.mapK(FunctionK.lift(transact))
+      saved        <- EitherT.liftF[ConnectionIO, UserAlreadyExistsError, User](userRepo.create(userToCreate))
+    } yield saved).mapK(FunctionK.lift(transact))
   }
 
   def getUser(userId: UUID): EitherT[F, UserNotFoundError.type, User] =
@@ -48,9 +45,9 @@ class UserService[F[_]: Monad](
   def update(user: UpdateUser): EitherT[F, UserValidationError, User] =
     (for {
       storedUser <- EitherT(validation.exists(user.key))
-      userToUpdate <- EitherT(validation.validChanges(storedUser, user))
+      userToUpdate <- EitherT.fromEither[ConnectionIO](validation.validChanges(storedUser, user))
       updatedUser <- persistUpdatedUser(userToUpdate)
-    } yield updatedUser)
+    } yield updatedUser).mapK(FunctionK.lift(transact))
 
   private def persistUpdatedUser(user: User): EitherT[ConnectionIO, UserValidationError, User] = {
     val updated = userRepo.update(user)
@@ -68,8 +65,6 @@ class UserService[F[_]: Monad](
     }
 
 }
-
-
 
 object UserService {
   def apply[F[_]: Monad](
