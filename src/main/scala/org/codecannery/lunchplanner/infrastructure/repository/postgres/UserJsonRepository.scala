@@ -8,7 +8,7 @@ import org.codecannery.lunchplanner.domain.users.model.User
 import org.codecannery.lunchplanner.infrastructure.repository.{SchemaName, Table, TableName}
 
 class UserJsonRepository extends UserRepositoryAlgebra[ConnectionIO] {
-  val jsonRepo = new JsonRepository[User](table = Table(SchemaName("public"), TableName("user"))) {
+  val jsonRepo = new JsonRepository[User](table = Table(SchemaName("public"), TableName("users"))) {
 
 
   }
