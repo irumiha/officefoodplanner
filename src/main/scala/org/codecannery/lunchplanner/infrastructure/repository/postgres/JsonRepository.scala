@@ -1,18 +1,19 @@
 package org.codecannery.lunchplanner.infrastructure.repository.postgres
 
+import java.sql.{Timestamp => JTimestamp}
 import java.time.Instant
 import java.util.UUID
 
 import doobie._
 import doobie.implicits._
+import doobie.postgres.circe.jsonb.implicits._
 import doobie.postgres.implicits._
 import doobie.util.fragment
 import doobie.util.query.Query0
 import io.circe._
-import io.circe.parser.decode
 import org.codecannery.lunchplanner.infrastructure.repository._
 
-private case class RowWrapper(data: String, createdOn: Instant, updatedOn: Instant, id: UUID)
+private case class RowWrapper(data: Json, createdOn: JTimestamp, updatedOn: JTimestamp, id: UUID)
 
 private object JsonRepositorySQL {
   import FragmentsExtra._
@@ -112,6 +113,7 @@ abstract class JsonRepository[E: Encoder: Decoder: UuidKeyEntity]
 
   override def create(entity: E): ConnectionIO[E] = {
     val row = entityToRowWrapper(entity)
+    System.out.println(insertMany(table, List(row)).sql)
     insertMany(table, List(row)).map(toEntity).unique
   }
 
@@ -210,13 +212,13 @@ abstract class JsonRepository[E: Encoder: Decoder: UuidKeyEntity]
 
   private def entityToRowWrapper(entity: E): RowWrapper =
     RowWrapper(
-      data = Encoder[E].apply(entity).noSpaces,
-      createdOn = Instant.now(),
-      updatedOn = Instant.now(),
+      data = Encoder[E].apply(entity),
+      createdOn = JTimestamp.from(Instant.now()),
+      updatedOn = JTimestamp.from(Instant.now()),
       id = UuidKeyEntity[E].key(entity),
     )
 
   private def toEntity(rw: RowWrapper): E =
-    decode[E](rw.data).right.get
+    rw.data.as[E].right.get
 
 }

@@ -31,6 +31,7 @@ libraryDependencies ++= Seq(
   "org.tpolecat"          %% "doobie-core"            % DoobieVersion,
   "org.tpolecat"          %% "doobie-h2"              % DoobieVersion,
   "org.tpolecat"          %% "doobie-postgres"        % DoobieVersion,
+  "org.tpolecat"          %% "doobie-postgres-circe"  % DoobieVersion,
   "org.tpolecat"          %% "doobie-scalatest"       % DoobieVersion,
   "org.tpolecat"          %% "doobie-hikari"          % DoobieVersion,
   "com.beachape"          %% "enumeratum"             % EnumeratumVersion,
