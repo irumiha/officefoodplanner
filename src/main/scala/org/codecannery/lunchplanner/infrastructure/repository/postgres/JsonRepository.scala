@@ -52,7 +52,7 @@ private object JsonRepositorySQL {
     import cats.syntax.list._
 
     val q =
-      fr"""DELETE FROM """ ++ tableFragment(table) ++ fr""" WHERE""" ++
+      fr"""DELETE FROM """ ++ tableFragment(table) ++
         whereAndOpt(rows.toNel.map(r => in(fr"ID", r)))
 
     q.update
@@ -88,7 +88,7 @@ private object JsonRepositorySQL {
   }
 }
 
-final class JsonRepository[E: Encoder: Decoder: UuidKeyEntity](
+class JsonRepository[E: Encoder: Decoder: UuidKeyEntity](
     override val table: Table
 ) extends Repository[UUID, E]
     with DatabaseRepository {

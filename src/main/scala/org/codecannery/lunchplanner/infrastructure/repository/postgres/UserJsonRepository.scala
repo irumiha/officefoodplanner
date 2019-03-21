@@ -8,7 +8,10 @@ import org.codecannery.lunchplanner.domain.users.model.User
 import org.codecannery.lunchplanner.infrastructure.repository.{SchemaName, Table, TableName}
 
 class UserJsonRepository extends UserRepositoryAlgebra[ConnectionIO] {
-  val jsonRepo = new JsonRepository[User](table = Table(SchemaName("public"), TableName("user")))
+  val jsonRepo = new JsonRepository[User](table = Table(SchemaName("public"), TableName("user"))) {
+
+
+  }
 
   def create(user: User): ConnectionIO[User] = jsonRepo.create(user)
 
@@ -22,7 +25,8 @@ class UserJsonRepository extends UserRepositoryAlgebra[ConnectionIO] {
 
   def deleteByUserName(userName: String): ConnectionIO[Int] = ???
 
-  def list: ConnectionIO[List[User]] = ???
+  def list: ConnectionIO[List[User]] = jsonRepo.list
 
-  def list(pageSize: Int, offset: Int): ConnectionIO[List[User]] = ???
+  def list(pageSize: Int, offset: Int): ConnectionIO[List[User]] = jsonRepo.list(pageSize, offset)
+
 }
