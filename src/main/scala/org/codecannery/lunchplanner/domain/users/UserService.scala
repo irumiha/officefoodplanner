@@ -37,7 +37,7 @@ class UserService[F[_]: Monad](
   def getUserByName(userName: String): EitherT[F, UserNotFoundError.type, User] =
     EitherT.fromOptionF(userRepo.findByUserName(userName).transact(xa), UserNotFoundError)
 
-  def deleteUser(userId: UUID): F[Unit] = userRepo.delete(userId).as(()).transact(xa)
+  def deleteUser(userId: UUID): F[Unit] = userRepo.deleteById(userId).as(()).transact(xa)
 
   def deleteByUserName(userName: String): F[Unit] =
     userRepo.deleteByUserName(userName).as(()).transact(xa)

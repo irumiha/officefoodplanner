@@ -11,7 +11,7 @@ trait UserRepositoryAlgebra[F[_]] {
 
   def get(userId: UUID): F[Option[User]]
 
-  def delete(userId: UUID): F[Int]
+  def deleteById(userId: UUID): F[Int]
 
   def findByUserName(userName: String): F[Option[User]]
 

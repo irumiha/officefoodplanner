@@ -7,6 +7,7 @@ import doobie._
 import doobie.implicits._
 import doobie.postgres.implicits._
 import doobie.util.fragment
+import doobie.util.query.Query0
 import io.circe._
 import io.circe.parser.decode
 import org.codecannery.lunchplanner.infrastructure.repository._
@@ -15,6 +16,9 @@ private case class RowWrapper(data: String, createdOn: Instant, updatedOn: Insta
 
 private object JsonRepositorySQL {
   import FragmentsExtra._
+
+  def tableFragment(table: Table): fragment.Fragment =
+    Fragment.const(s""""${table.schemaName.v}"."${table.tableName.v}"""")
 
   def insertMany(table: Table, rows: List[RowWrapper]): Query0[RowWrapper] = {
 
@@ -25,9 +29,6 @@ private object JsonRepositorySQL {
 
     (insert ++ values ++ returning).query[RowWrapper]
   }
-
-  private def tableFragment(table: Table): fragment.Fragment =
-    Fragment.const(s""""${table.schemaName.v}"."${table.tableName.v}"""")
 
   def updateMany(table: Table, rows: List[RowWrapper]): Update0 = {
     val update = fr"""UPDATE """ ++ tableFragment(table) ++
@@ -69,7 +70,7 @@ private object JsonRepositorySQL {
     q.query[RowWrapper]
   }
 
-  def filter(
+  def select(
       table: Table,
       where: Fragment,
       orderBy: Fragment,
@@ -77,8 +78,9 @@ private object JsonRepositorySQL {
       limit: Fragment): Query0[RowWrapper] = {
 
     val q =
-      fr"""SELECT ID, DATA, CREATED_ON, UPDATED_ON from """ ++
+      fr"""SELECT ID, DATA, CREATED_ON, UPDATED_ON from""" ++
         tableFragment(table) ++
+        fr"""WHERE""" ++
         where ++
         orderBy ++
         offset ++
@@ -86,11 +88,25 @@ private object JsonRepositorySQL {
 
     q.query[RowWrapper]
   }
+
+  def deleteBySpecification(
+    table: Table,
+    where: Fragment
+  ): Query0[RowWrapper] = {
+
+    val q =
+      fr"""DELETE FROM""" ++
+        tableFragment(table) ++
+        fr"""WHERE""" ++
+        where ++
+      fr"""RETURNING *"""
+
+    q.query[RowWrapper]
+  }
 }
 
-class JsonRepository[E: Encoder: Decoder: UuidKeyEntity](
-    override val table: Table
-) extends Repository[UUID, E]
+abstract class JsonRepository[E: Encoder: Decoder: UuidKeyEntity]
+  extends Repository[UUID, E]
     with DatabaseRepository {
   import JsonRepositorySQL._
 
@@ -118,10 +134,10 @@ class JsonRepository[E: Encoder: Decoder: UuidKeyEntity](
   override def get(entityIds: List[UUID]): ConnectionIO[List[E]] =
     getMany(table, entityIds).map(toEntity).to[List]
 
-  override def delete(entityId: UUID): ConnectionIO[Int] =
+  override def deleteById(entityId: UUID): ConnectionIO[Int] =
     deleteManyIDs(table, List(entityId)).run
 
-  override def delete(entityIds: List[UUID]): ConnectionIO[Int] =
+  override def deleteByIds(entityIds: List[UUID]): ConnectionIO[Int] =
     deleteManyIDs(table, entityIds).run
 
   override def deleteEntity(entity: E): ConnectionIO[Int] =
@@ -130,61 +146,67 @@ class JsonRepository[E: Encoder: Decoder: UuidKeyEntity](
   override def deleteEntities(entities: List[E]): ConnectionIO[Int] =
     deleteManyIDs(table, entities.map(entity => UuidKeyEntity[E].key(entity))).run
 
-  override protected def find(specification: Specification): ConnectionIO[List[E]] =
-    filter(
+  override protected def delete(specification: Specification): Query0[E] =
+    deleteBySpecification(
+      table = table,
+      where = specification.v
+    ).map(toEntity)
+
+  override protected def find(specification: Specification): Query0[E] =
+    select(
       table = table,
       where = specification.v,
       orderBy = Fragment.empty,
       offset = Fragment.empty,
       limit = Fragment.empty
-    ).map(toEntity).to[List]
+    ).map(toEntity)
 
   override protected def find(
       specification: Specification,
-      orderBy: OrderBy): ConnectionIO[List[E]] =
-    filter(
+      orderBy: OrderBy): Query0[E] =
+    select(
       table = table,
       where = specification.v,
       orderBy = orderBy.v,
       offset = Fragment.empty,
       limit = Fragment.empty
-    ).map(toEntity).to[List]
+    ).map(toEntity)
 
   override protected def find(
       specification: Specification,
-      limit: Limit): ConnectionIO[List[E]] =
-    filter(
+      limit: Limit): Query0[E] =
+    select(
       table = table,
       where = specification.v,
       orderBy = Fragment.empty,
       offset = Fragment.empty,
       limit = limit.v
-    ).map(toEntity).to[List]
+    ).map(toEntity)
 
   override protected def find(
       specification: Specification,
       limit: Limit,
-      offset: Offset): ConnectionIO[List[E]] =
-    filter(
+      offset: Offset): Query0[E] =
+    select(
       table = table,
       where = specification.v,
       orderBy = Fragment.empty,
       offset = offset.v,
       limit = limit.v
-    ).map(toEntity).to[List]
+    ).map(toEntity)
 
   override protected def find(
       specification: Specification,
       orderBy: OrderBy,
       limit: Limit,
-      offset: Offset): ConnectionIO[List[E]] =
-    filter(
+      offset: Offset): Query0[E] =
+    select(
       table = table,
       where = specification.v,
       orderBy = orderBy.v,
       offset = offset.v,
       limit = limit.v
-    ).map(toEntity).to[List]
+    ).map(toEntity)
 
   private def entityToRowWrapper(entity: E): RowWrapper =
     RowWrapper(
