@@ -18,7 +18,6 @@ import org.codecannery.lunchplanner.infrastructure.repository._
 private case class RowWrapper(id: UUID, data: Json, createdOn: JTimestamp, updatedOn: JTimestamp)
 
 private object JsonRepositorySQL {
-  import FragmentsExtra._
 
   def tableFragment(table: Table): fragment.Fragment =
     Fragment.const(s""""${table.schemaName.v}"."${table.tableName.v}"""")
@@ -42,22 +41,19 @@ private object JsonRepositorySQL {
     Update[RowWrapper](insertSQL)
   }
 
-  def updateMany(table: Table, rows: List[RowWrapper]): Update0 = {
-    val update = fr"""UPDATE """ ++ tableFragment(table) ++
-      fr"""SET DATA = data_table.data,
-                 UPDATED_ON = data_table.updated_on"""
+  def updateOne(table: Table, row: RowWrapper): Update0 = {
+    val sql = fr"""UPDATE""" ++
+      tableFragment(table) ++
+      fr"""SET DATA = ${row.data}, UPDATED_ON=${row.updatedOn}) WHERE ID = ${row.id}"""
+    sql.update
+  }
 
-    val values = fromUnnest(
-      rows.map(_.id),
-      "key",
-      rows.map(_.data),
-      "data",
-      rows.map(_.updatedOn),
-      "updated_on"
-    ) ++ fr" as data_table"
-    val closing = fr"""where """ ++ columnFragment(table, "ID") ++ fr""" = data_table.key"""
+  def updateMany(table: Table): Update[RowWrapper] = {
 
-    (update ++ values ++ closing).update
+    val updateSQL =
+      s"""UPDATE "${table.schemaName.v}"."${table.tableName.v}" SET DATA = ?, UPDATED_ON = ? WHERE ID = ?"""
+
+    Update[RowWrapper](updateSQL)
   }
 
   def deleteManyIDs(table: Table, rows: List[UUID]): Update0 = {
@@ -138,11 +134,11 @@ abstract class JsonRepository[E: Encoder: Decoder: UuidKeyEntity]
 
   override def update(entity: E): ConnectionIO[Int] = {
     val row = entityToRowWrapper(entity)
-    updateMany(table, List(row)).run
+    updateOne(table, row).run
   }
 
   override def update(entities: List[E]): ConnectionIO[Int] =
-    updateMany(table, entities.map(entityToRowWrapper)).run
+    updateMany(table).updateMany(entities.map(entityToRowWrapper))
 
   override def get(entityId: UUID): ConnectionIO[Option[E]] =
     getMany(table, List(entityId)).map(toEntity).option
