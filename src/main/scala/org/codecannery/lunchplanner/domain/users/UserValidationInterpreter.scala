@@ -3,7 +3,7 @@ package org.codecannery.lunchplanner.domain.users
 import java.util.UUID
 
 import doobie.ConnectionIO
-import io.bfil.automapper.automap
+import io.scalaland.chimney.dsl._
 import org.codecannery.lunchplanner.domain.users.command.UpdateUser
 import org.codecannery.lunchplanner.domain.users.model.User
 import org.codecannery.lunchplanner.domain.{UserAlreadyExistsError, UserNotFoundError, UserValidationError}
@@ -26,7 +26,7 @@ class UserValidationInterpreter(userRepo: UserRepositoryAlgebra[ConnectionIO])
   def validChanges(
       storedUser: User,
       newUser: UpdateUser): Either[UserValidationError, User] = {
-    val changed = automap(newUser).to[User]
+    val changed = newUser.into[User].transform
     Right[UserValidationError, User](changed)
   }
 }

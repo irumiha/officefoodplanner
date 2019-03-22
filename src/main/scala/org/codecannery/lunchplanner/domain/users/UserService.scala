@@ -6,7 +6,7 @@ import cats._
 import cats.arrow.FunctionK
 import cats.data._
 import cats.syntax.functor._
-import io.bfil.automapper._
+import io.scalaland.chimney.dsl._
 import doobie.ConnectionIO
 import doobie.util.transactor.Transactor
 import doobie.implicits._
@@ -26,7 +26,7 @@ class UserService[F[_]: Monad](
   def createUser(user: CreateUser): EitherT[F, UserAlreadyExistsError, User] = {
     (for {
       _            <- EitherT(validation.doesNotExist(user.userName))
-      userToCreate = automap(user).to[User]
+      userToCreate =  user.into[User].transform
       saved        <- EitherT.liftF[ConnectionIO, UserAlreadyExistsError, User](userRepo.create(userToCreate))
     } yield saved).mapK(FunctionK.lift(transact))
   }
@@ -61,7 +61,7 @@ class UserService[F[_]: Monad](
     for {
       dbList <- userRepo.list(pageSize, offset).transact(xa)
     } yield {
-      dbList.map(u => automap(u).to[UserListView])
+      dbList.map(u => u.into[UserListView].transform)
     }
 
 }
