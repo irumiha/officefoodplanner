@@ -10,10 +10,10 @@ class UserJsonRepository extends JsonRepository[User] with UserRepositoryAlgebra
   override val table = Table(SchemaName("public"), TableName("users"))
 
   def findByUserName(userName: String): ConnectionIO[Option[User]] =
-    find(Specification(fr"data->>'userName' = $userName")).option
+    find(Specification(fr"where data->>'userName' = $userName")).option
 
   def deleteByUserName(userName: String): ConnectionIO[Int] = {
-    delete(Specification(fr""" WHERE data->>'userName' = $userName""")).to[List].map(_.size)
+    delete(Specification(fr"""where data->>'userName' = $userName""")).to[List].map(_.size)
   }
 
 }

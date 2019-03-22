@@ -4,6 +4,7 @@ import java.sql.{Timestamp => JTimestamp}
 import java.time.Instant
 import java.util.UUID
 
+import cats.implicits._
 import doobie._
 import doobie.implicits._
 import doobie.postgres.circe.jsonb.implicits._
@@ -11,9 +12,10 @@ import doobie.postgres.implicits._
 import doobie.util.fragment
 import doobie.util.query.Query0
 import io.circe._
+
 import org.codecannery.lunchplanner.infrastructure.repository._
 
-private case class RowWrapper(data: Json, createdOn: JTimestamp, updatedOn: JTimestamp, id: UUID)
+private case class RowWrapper(id: UUID, data: Json, createdOn: JTimestamp, updatedOn: JTimestamp)
 
 private object JsonRepositorySQL {
   import FragmentsExtra._
@@ -21,14 +23,23 @@ private object JsonRepositorySQL {
   def tableFragment(table: Table): fragment.Fragment =
     Fragment.const(s""""${table.schemaName.v}"."${table.tableName.v}"""")
 
-  def insertMany(table: Table, rows: List[RowWrapper]): Query0[RowWrapper] = {
+  def columnFragment(table: Table, columnName: String): fragment.Fragment =
+    Fragment.const(s""""${table.schemaName.v}"."${table.tableName.v}"."$columnName"""")
 
-    val insert =
-      fr"""INSERT INTO """ ++ tableFragment(table) ++ fr""" (ID, DATA, CREATED_ON)"""
-    val values = valuesUnnest(rows.map(_.id), rows.map(_.data), rows.map(_.createdOn))
-    val returning = fr"""RETURNING *"""
+  def insertOne(table: Table, row: RowWrapper): Update0 = {
+    val sql = fr"""INSERT INTO """ ++
+      tableFragment(table) ++
+      fr""" (ID, DATA, CREATED_ON, UPDATED_ON) VALUES (${row.id}, ${row.data}, ${row.createdOn}, ${row.updatedOn})"""
 
-    (insert ++ values ++ returning).query[RowWrapper]
+    sql.update
+  }
+
+  def insertMany(table: Table): Update[RowWrapper] = {
+
+    val insertSQL =
+      s"""INSERT INTO "${table.schemaName.v}"."${table.tableName.v}" (ID, DATA, CREATED_ON, UPDATED_ON) VALUES (?, ?, ?, ?)"""
+
+    Update[RowWrapper](insertSQL)
   }
 
   def updateMany(table: Table, rows: List[RowWrapper]): Update0 = {
@@ -44,7 +55,7 @@ private object JsonRepositorySQL {
       rows.map(_.updatedOn),
       "updated_on"
     ) ++ fr" as data_table"
-    val closing = fr"""where "${table.schemaName.v}"."${table.tableName.v}".ID = data_table.key"""
+    val closing = fr"""where """ ++ columnFragment(table, "ID") ++ fr""" = data_table.key"""
 
     (update ++ values ++ closing).update
   }
@@ -65,7 +76,8 @@ private object JsonRepositorySQL {
     import cats.syntax.list._
 
     val q =
-      fr"""SELECT ID, DATA, CREATED_ON, UPDATED_ON from """ ++ tableFragment(table) ++
+      fr"""SELECT ID, DATA, CREATED_ON, UPDATED_ON from """ ++
+        tableFragment(table) ++
         whereAndOpt(ids.toNel.map(r => in(fr"ID", r)))
 
     q.query[RowWrapper]
@@ -81,7 +93,6 @@ private object JsonRepositorySQL {
     val q =
       fr"""SELECT ID, DATA, CREATED_ON, UPDATED_ON from""" ++
         tableFragment(table) ++
-        fr"""WHERE""" ++
         where ++
         orderBy ++
         offset ++
@@ -98,7 +109,6 @@ private object JsonRepositorySQL {
     val q =
       fr"""DELETE FROM""" ++
         tableFragment(table) ++
-        fr"""WHERE""" ++
         where ++
       fr"""RETURNING *"""
 
@@ -113,13 +123,17 @@ abstract class JsonRepository[E: Encoder: Decoder: UuidKeyEntity]
 
   override def create(entity: E): ConnectionIO[E] = {
     val row = entityToRowWrapper(entity)
-    System.out.println(insertMany(table, List(row)).sql)
-    insertMany(table, List(row)).map(toEntity).unique
+
+    insertOne(table, row)
+      .withUniqueGeneratedKeys[RowWrapper]("id", "data", "created_on", "updated_on")
+      .map(toEntity)
   }
 
-  override def create(entities: List[E]): ConnectionIO[List[E]] = {
+  override def create(entities: List[E]): fs2.Stream[doobie.ConnectionIO, E] = {
     val rows = entities.map(entityToRowWrapper)
-    insertMany(table, rows).map(toEntity).to[List]
+    insertMany(table)
+      .updateManyWithGeneratedKeys[RowWrapper]("id", "data", "created_on", "updated_on")(rows)
+      .map(toEntity)
   }
 
   override def update(entity: E): ConnectionIO[Int] = {
@@ -210,13 +224,15 @@ abstract class JsonRepository[E: Encoder: Decoder: UuidKeyEntity]
       limit = limit.v
     ).map(toEntity)
 
-  private def entityToRowWrapper(entity: E): RowWrapper =
+  private def entityToRowWrapper(entity: E): RowWrapper = {
+    val now = Instant.now()
     RowWrapper(
       data = Encoder[E].apply(entity),
-      createdOn = JTimestamp.from(Instant.now()),
-      updatedOn = JTimestamp.from(Instant.now()),
+      createdOn = JTimestamp.from(now),
+      updatedOn = JTimestamp.from(now),
       id = UuidKeyEntity[E].key(entity),
     )
+  }
 
   private def toEntity(rw: RowWrapper): E =
     rw.data.as[E].right.get
