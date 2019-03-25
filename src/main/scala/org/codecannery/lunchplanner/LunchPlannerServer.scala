@@ -6,7 +6,7 @@ import org.http4s.implicits._
 import cats.effect._
 import cats.implicits._
 import config._
-import domain.users._
+import domain.user._
 import doobie.util.ExecutionContexts
 import infrastructure.endpoint.UserEndpoints
 import infrastructure.repository.postgres.UserJsonRepository

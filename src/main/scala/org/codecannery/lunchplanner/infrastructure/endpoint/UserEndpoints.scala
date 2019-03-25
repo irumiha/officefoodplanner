@@ -7,127 +7,116 @@ import io.circe.generic.auto._
 import io.circe.syntax._
 import org.http4s.circe._
 import org.http4s.dsl.Http4sDsl
-import org.http4s.{EntityDecoder, HttpRoutes}
+import org.http4s.{EntityDecoder, HttpRoutes, Request, Response}
 import tsec.common.Verified
 import tsec.passwordhashers.{PasswordHash, PasswordHasher}
-
 import org.codecannery.lunchplanner.domain.authentication.command.{LoginRequest, SignupRequest}
-import org.codecannery.lunchplanner.domain.users.UserService
-import org.codecannery.lunchplanner.domain.users.command.{CreateUser, UpdateUser}
-import org.codecannery.lunchplanner.domain.users.model.User
+import org.codecannery.lunchplanner.domain.user.UserService
+import org.codecannery.lunchplanner.domain.user.command.{CreateUser, UpdateUser}
+import org.codecannery.lunchplanner.domain.user.model.User
 import org.codecannery.lunchplanner.domain.{
   UserAlreadyExistsError,
   UserAuthenticationFailedError,
   UserNotFoundError
 }
-import org.codecannery.lunchplanner.infrastructure.endpoint.Pagination.{
-  OptionalOffsetMatcher,
-  OptionalPageSizeMatcher
-}
+import org.codecannery.lunchplanner.infrastructure.endpoint.Pagination.{OffsetQ, PageSizeQ}
 
 import scala.language.higherKinds
 
-class UserEndpoints[F[_]: Effect, A] extends Http4sDsl[F] {
+class UserEndpoints[F[_]: Effect, A](
+    userService: UserService[F],
+    cryptService: PasswordHasher[F, A])
+    extends Http4sDsl[F] {
   /* Jsonization of our User type */
 
-  implicit val userUpdateDecoder: EntityDecoder[F, UpdateUser]   = jsonOf
-  implicit val userCreateDecoder: EntityDecoder[F, CreateUser]   = jsonOf
-  implicit val loginReqDecoder: EntityDecoder[F, LoginRequest]   = jsonOf
+  implicit val userUpdateDecoder: EntityDecoder[F, UpdateUser] = jsonOf
+  implicit val userCreateDecoder: EntityDecoder[F, CreateUser] = jsonOf
+  implicit val loginReqDecoder: EntityDecoder[F, LoginRequest] = jsonOf
   implicit val signupReqDecoder: EntityDecoder[F, SignupRequest] = jsonOf
 
-  private def loginEndpoint(userService: UserService[F],
-                            cryptService: PasswordHasher[F, A]): HttpRoutes[F] =
+  def endpoints: HttpRoutes[F] =
     HttpRoutes.of[F] {
-      case req @ POST -> Root / "login" =>
-        val action: EitherT[F, UserAuthenticationFailedError, User] = for {
-          login <- EitherT.liftF(req.as[LoginRequest])
-          name  = login.userName
-          user  <- userService.getUserByName(name).leftMap(_ => UserAuthenticationFailedError(name))
-          checkResult <- EitherT.liftF(
-                          cryptService.checkpw(login.password, PasswordHash[A](user.hash)))
-          resp <- if (checkResult == Verified)
-                   EitherT.rightT[F, UserAuthenticationFailedError](user)
-                 else EitherT.leftT[F, User](UserAuthenticationFailedError(name))
-        } yield resp
-
-        action.value.flatMap {
-          case Right(user) => Ok(user.asJson)
-          case Left(UserAuthenticationFailedError(name)) =>
-            BadRequest(s"Authentication failed for user $name")
-        }
+      case req @ POST -> Root / "login"       => login(req)
+      case req @ POST -> Root / "users"       => signup(req)
+      case req @ PUT -> Root / "users" / name => update(req, name)
+      case GET -> Root / "users" :? PageSizeQ(pageSize) :? OffsetQ(offset) =>
+        list(pageSize, offset)
+      case GET -> Root / "users" / username    => searchByUsername(username)
+      case DELETE -> Root / "users" / username => deleteByUsername(username)
     }
 
-  private def signupEndpoint(userService: UserService[F],
-                             crypt: PasswordHasher[F, A]): HttpRoutes[F] =
-    HttpRoutes.of[F] {
-      case req @ POST -> Root / "users" =>
-        val action = for {
-          signup <- req.as[SignupRequest]
-          hash   <- crypt.hashpw(signup.password)
-          user   <- signup.asCreateUser(hash).pure[F]
-          result <- userService.createUser(user).value
-        } yield result
+  private def login(req: Request[F]): F[Response[F]] = {
+    val action: EitherT[F, UserAuthenticationFailedError, User] = for {
+      login <- EitherT.liftF(req.as[LoginRequest])
+      user <- userService
+        .getUserByUsername(login.userName)
+        .leftMap(_ => UserAuthenticationFailedError(login.userName))
+      checkResult <- EitherT.liftF(cryptService.checkpw(login.password, PasswordHash[A](user.hash)))
+      resp <- if (checkResult == Verified)
+        EitherT.rightT[F, UserAuthenticationFailedError](user)
+      else
+        EitherT.leftT[F, User](UserAuthenticationFailedError(login.userName))
+    } yield resp
 
-        action.flatMap {
-          case Right(saved) => Ok(saved.asJson)
-          case Left(UserAlreadyExistsError(existing)) =>
-            Conflict(s"The user with user name $existing already exists")
-        }
+    action.value.flatMap {
+      case Right(user) => Ok(user.asJson)
+      case Left(UserAuthenticationFailedError(name)) =>
+        BadRequest(s"Authentication failed for user $name")
+    }
+  }
+
+  private def signup(req: Request[F]): F[Response[F]] = {
+    val action = for {
+      signup <- req.as[SignupRequest]
+      hash <- cryptService.hashpw(signup.password)
+      user <- signup.asCreateUser(hash).pure[F]
+      result <- userService.createUser(user).value
+    } yield result
+
+    action.flatMap {
+      case Right(saved) => Ok(saved.asJson)
+      case Left(UserAlreadyExistsError(existing)) =>
+        Conflict(s"The user with user name $existing already exists")
+    }
+  }
+
+  private def update(req: Request[F], name: String): F[Response[F]] = {
+    val action = for {
+      user <- req.as[UpdateUser]
+      updated = user.copy(userName = name)
+      result <- userService.update(updated).value
+    } yield result
+
+    action.flatMap {
+      case Right(saved)            => Ok(saved.asJson)
+      case Left(UserNotFoundError) => NotFound("User not found.")
+      case Left(UserAlreadyExistsError(username)) =>
+        NotFound(s"Username $username not available.")
+      case _ => InternalServerError("Unexpected error")
+    }
+  }
+
+  private def list(
+      pageSize: Option[Int],
+      offset: Option[Int]
+  ): F[Response[F]] =
+    for {
+      retrieved <- userService.list(pageSize.getOrElse(10), offset.getOrElse(0))
+      resp <- Ok(retrieved.asJson)
+    } yield resp
+
+  private def searchByUsername(username: String): F[Response[F]] =
+    userService.getUserByUsername(username).value.flatMap {
+      case Right(found)            => Ok(found.asJson)
+      case Left(UserNotFoundError) => NotFound("The user was not found")
     }
 
-  private def updateEndpoint(userService: UserService[F]): HttpRoutes[F] =
-    HttpRoutes.of[F] {
-      case req @ PUT -> Root / "users" / name =>
-        val action = for {
-          user    <- req.as[UpdateUser]
-          updated = user.copy(userName = name)
-          result  <- userService.update(updated).value
-        } yield result
+  private def deleteByUsername(username: String): F[Response[F]] =
+    for {
+      _ <- userService.deleteByUsername(username)
+      resp <- Ok()
+    } yield resp
 
-        action.flatMap {
-          case Right(saved)            => Ok(saved.asJson)
-          case Left(UserNotFoundError) => NotFound("User not found.")
-          case Left(UserAlreadyExistsError(username)) =>
-            NotFound(s"Username $username not available.")
-          case _ => InternalServerError("Unexpected error")
-        }
-    }
-
-  private def listEndpoint(userService: UserService[F]): HttpRoutes[F] =
-    HttpRoutes.of[F] {
-      case GET -> Root / "users" :? OptionalPageSizeMatcher(pageSize) :? OptionalOffsetMatcher(
-            offset) =>
-        for {
-          retrieved <- userService.list(pageSize.getOrElse(10), offset.getOrElse(0))
-          resp      <- Ok(retrieved.asJson)
-        } yield resp
-    }
-
-  private def searchByNameEndpoint(userService: UserService[F]): HttpRoutes[F] =
-    HttpRoutes.of[F] {
-      case GET -> Root / "users" / userName =>
-        userService.getUserByName(userName).value.flatMap {
-          case Right(found)            => Ok(found.asJson)
-          case Left(UserNotFoundError) => NotFound("The user was not found")
-        }
-    }
-
-  private def deleteUserEndpoint(userService: UserService[F]): HttpRoutes[F] =
-    HttpRoutes.of[F] {
-      case DELETE -> Root / "users" / userName =>
-        for {
-          _    <- userService.deleteByUserName(userName)
-          resp <- Ok()
-        } yield resp
-    }
-
-  def endpoints(userService: UserService[F], cryptService: PasswordHasher[F, A]): HttpRoutes[F] =
-    loginEndpoint(userService, cryptService) <+>
-      signupEndpoint(userService, cryptService) <+>
-      updateEndpoint(userService) <+>
-      listEndpoint(userService) <+>
-      searchByNameEndpoint(userService) <+>
-      deleteUserEndpoint(userService)
 }
 
 object UserEndpoints {
@@ -135,5 +124,5 @@ object UserEndpoints {
       userService: UserService[F],
       cryptService: PasswordHasher[F, A]
   ): HttpRoutes[F] =
-    new UserEndpoints[F, A].endpoints(userService, cryptService)
+    new UserEndpoints[F, A](userService, cryptService).endpoints
 }

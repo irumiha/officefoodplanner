@@ -1,18 +1,18 @@
-package org.codecannery.lunchplanner.domain.users
+package org.codecannery.lunchplanner.domain.user
 
 import java.util.UUID
 
 import doobie.ConnectionIO
 import io.scalaland.chimney.dsl._
-import org.codecannery.lunchplanner.domain.users.command.UpdateUser
-import org.codecannery.lunchplanner.domain.users.model.User
+import org.codecannery.lunchplanner.domain.user.command.UpdateUser
+import org.codecannery.lunchplanner.domain.user.model.User
 import org.codecannery.lunchplanner.domain.{UserAlreadyExistsError, UserNotFoundError, UserValidationError}
 
 class UserValidationInterpreter(userRepo: UserRepositoryAlgebra[ConnectionIO])
     extends UserValidationAlgebra[ConnectionIO] {
 
   def doesNotExist(userName: String): ConnectionIO[Either[UserAlreadyExistsError, Unit]] =
-    userRepo.findByUserName(userName).map {
+    userRepo.findByUsername(userName).map {
       case None    => Right(())
       case Some(_) => Left(UserAlreadyExistsError(userName))
     }

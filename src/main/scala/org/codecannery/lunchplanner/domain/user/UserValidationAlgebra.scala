@@ -1,8 +1,8 @@
-package org.codecannery.lunchplanner.domain.users
+package org.codecannery.lunchplanner.domain.user
 import java.util.UUID
 
-import org.codecannery.lunchplanner.domain.users.command.UpdateUser
-import org.codecannery.lunchplanner.domain.users.model.User
+import org.codecannery.lunchplanner.domain.user.command.UpdateUser
+import org.codecannery.lunchplanner.domain.user.model.User
 import org.codecannery.lunchplanner.domain.{UserAlreadyExistsError, UserNotFoundError, UserValidationError}
 
 trait UserValidationAlgebra[F[_]] {

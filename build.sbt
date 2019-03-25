@@ -19,6 +19,7 @@ val ScalaTestVersion       = "3.0.6"
 val FlywayVersion          = "5.2.4"
 val TsecVersion            = "0.1.0-M3"
 val ChimneyVersion         = "0.3.1"
+val OctopusVersion          = "0.3.3"
 
 libraryDependencies ++= Seq(
   "org.typelevel"         %% "cats-core"              % CatsVersion,
@@ -44,10 +45,10 @@ libraryDependencies ++= Seq(
   "ch.qos.logback"        %  "logback-classic"        % LogbackVersion,
   "org.flywaydb"          %  "flyway-core"            % FlywayVersion,
   "io.scalaland"          %% "chimney"                % ChimneyVersion,
+  "com.github.krzemin"    %% "octopus"                % OctopusVersion,
   "org.http4s"            %% "http4s-blaze-client"    % Http4sVersion     % Test,
   "org.scalacheck"        %% "scalacheck"             % ScalaCheckVersion % Test,
   "org.scalatest"         %% "scalatest"              % ScalaTestVersion  % Test,
-
   // Authentication dependencies
   "io.github.jmcardon"    %% "tsec-common"            % TsecVersion,
   "io.github.jmcardon"    %% "tsec-password"          % TsecVersion,

@@ -1,4 +1,4 @@
-package org.codecannery.lunchplanner.domain.users
+package org.codecannery.lunchplanner.domain.user
 
 import java.util.UUID
 
@@ -10,9 +10,9 @@ import io.scalaland.chimney.dsl._
 import doobie.ConnectionIO
 import doobie.util.transactor.Transactor
 import doobie.implicits._
-import org.codecannery.lunchplanner.domain.users.command.{CreateUser, UpdateUser}
-import org.codecannery.lunchplanner.domain.users.model.User
-import org.codecannery.lunchplanner.domain.users.view.UserListView
+import org.codecannery.lunchplanner.domain.user.command.{CreateUser, UpdateUser}
+import org.codecannery.lunchplanner.domain.user.model.User
+import org.codecannery.lunchplanner.domain.user.view.UserListView
 import org.codecannery.lunchplanner.domain.{UserAlreadyExistsError, UserNotFoundError, UserValidationError}
 
 class UserService[F[_]: Monad](
@@ -34,13 +34,14 @@ class UserService[F[_]: Monad](
   def getUser(userId: UUID): EitherT[F, UserNotFoundError.type, User] =
     EitherT.fromOptionF(userRepo.get(userId).transact(xa), UserNotFoundError)
 
-  def getUserByName(userName: String): EitherT[F, UserNotFoundError.type, User] =
-    EitherT.fromOptionF(userRepo.findByUserName(userName).transact(xa), UserNotFoundError)
+  def getUserByUsername(username: String): EitherT[F, UserNotFoundError.type, User] =
+    EitherT.fromOptionF(userRepo.findByUsername(username).transact(xa), UserNotFoundError)
 
-  def deleteUser(userId: UUID): F[Unit] = userRepo.deleteById(userId).as(()).transact(xa)
+  def deleteUser(userId: UUID): F[Unit] =
+    userRepo.deleteById(userId).as(()).transact(xa)
 
-  def deleteByUserName(userName: String): F[Unit] =
-    userRepo.deleteByUserName(userName).as(()).transact(xa)
+  def deleteByUsername(username: String): F[Unit] =
+    userRepo.deleteByUserName(username).as(()).transact(xa)
 
   def update(user: UpdateUser): EitherT[F, UserValidationError, User] =
     (for {

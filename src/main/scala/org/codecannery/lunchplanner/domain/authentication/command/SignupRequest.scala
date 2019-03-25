@@ -1,5 +1,5 @@
 package org.codecannery.lunchplanner.domain.authentication.command
-import org.codecannery.lunchplanner.domain.users.command.CreateUser
+import org.codecannery.lunchplanner.domain.user.command.CreateUser
 import tsec.passwordhashers.PasswordHash
 
 final case class SignupRequest(

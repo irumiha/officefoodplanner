@@ -1,4 +1,4 @@
-package org.codecannery.lunchplanner.domain.users.command
+package org.codecannery.lunchplanner.domain.user.command
 
 import java.util.UUID
 

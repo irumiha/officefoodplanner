@@ -1,8 +1,8 @@
-package org.codecannery.lunchplanner.domain.users
+package org.codecannery.lunchplanner.domain.user
 
 import java.util.UUID
 
-import org.codecannery.lunchplanner.domain.users.model.User
+import org.codecannery.lunchplanner.domain.user.model.User
 
 trait UserRepositoryAlgebra[F[_]] {
   def create(user: User): F[User]
@@ -13,7 +13,7 @@ trait UserRepositoryAlgebra[F[_]] {
 
   def deleteById(userId: UUID): F[Int]
 
-  def findByUserName(userName: String): F[Option[User]]
+  def findByUsername(userName: String): F[Option[User]]
 
   def deleteByUserName(userName: String): F[Int]
 

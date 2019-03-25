@@ -3,7 +3,7 @@ package org.codecannery.lunchplanner.infrastructure
 import java.time.Instant
 
 import org.codecannery.lunchplanner.domain.authentication.command.SignupRequest
-import org.codecannery.lunchplanner.domain.users.model.User
+import org.codecannery.lunchplanner.domain.user.model.User
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck._
 

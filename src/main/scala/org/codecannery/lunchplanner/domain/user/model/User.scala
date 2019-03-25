@@ -1,4 +1,4 @@
-package org.codecannery.lunchplanner.domain.users.model
+package org.codecannery.lunchplanner.domain.user.model
 import java.util.UUID
 
 import io.circe._
