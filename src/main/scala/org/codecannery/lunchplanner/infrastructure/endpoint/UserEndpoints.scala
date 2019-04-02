@@ -1,14 +1,17 @@
 package org.codecannery.lunchplanner.infrastructure.endpoint
 
-import cats.data.EitherT
-import cats.effect.Effect
-import cats.implicits._
-import io.circe.generic.auto._
-import io.circe.syntax._
+import cats._, cats.effect._, cats.implicits._, cats.data._
+import io.circe.generic.auto._, io.circe.syntax._
+import org.http4s._
 import org.http4s.circe._
 import org.http4s.dsl.Http4sDsl
-import org.http4s.{EntityDecoder, HttpRoutes, Request, Response}
+import org.http4s.dsl.io._
+import org.http4s.implicits._
+import org.http4s.server._
+
 import tsec.common.Verified
+import tsec.authentication._
+
 import tsec.passwordhashers.{PasswordHash, PasswordHasher}
 import org.codecannery.lunchplanner.domain.authentication.command.{LoginRequest, SignupRequest}
 import org.codecannery.lunchplanner.domain.user.UserService
@@ -27,7 +30,6 @@ class UserEndpoints[F[_]: Effect, A](
     userService: UserService[F],
     cryptService: PasswordHasher[F, A])
     extends Http4sDsl[F] {
-  /* Jsonization of our User type */
 
   implicit val userUpdateDecoder: EntityDecoder[F, UpdateUser] = jsonOf
   implicit val userCreateDecoder: EntityDecoder[F, CreateUser] = jsonOf
@@ -36,13 +38,12 @@ class UserEndpoints[F[_]: Effect, A](
 
   def endpoints: HttpRoutes[F] =
     HttpRoutes.of[F] {
-      case req @ POST -> Root / "login"       => login(req)
-      case req @ POST -> Root / "users"       => signup(req)
-      case req @ PUT -> Root / "users" / name => update(req, name)
-      case GET -> Root / "users" :? PageSizeQ(pageSize) :? OffsetQ(offset) =>
-        list(pageSize, offset)
-      case GET -> Root / "users" / username    => searchByUsername(username)
-      case DELETE -> Root / "users" / username => deleteByUsername(username)
+      case req @ POST -> Root / "login"                         => login(req)
+      case req @ POST -> Root / "users"                         => signup(req)
+      case req @ PUT -> Root / "users" / name                   => update(req, name)
+      case GET -> Root / "users" :? PageSizeQ(ps) :? OffsetQ(o) => list(ps, o)
+      case GET -> Root / "users" / username                     => searchByUsername(username)
+      case DELETE -> Root / "users" / username                  => deleteByUsername(username)
     }
 
   private def login(req: Request[F]): F[Response[F]] = {
