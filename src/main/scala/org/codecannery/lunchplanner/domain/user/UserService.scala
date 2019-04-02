@@ -13,23 +13,27 @@ import doobie.implicits._
 import org.codecannery.lunchplanner.domain.user.command.{CreateUser, UpdateUser}
 import org.codecannery.lunchplanner.domain.user.model.User
 import org.codecannery.lunchplanner.domain.user.view.UserListView
-import org.codecannery.lunchplanner.domain.{UserAlreadyExistsError, UserNotFoundError, UserValidationError}
+import org.codecannery.lunchplanner.domain.{
+  UserAlreadyExistsError,
+  UserNotFoundError,
+  UserValidationError
+}
 
 class UserService[F[_]: Monad](
-    userRepo: UserRepositoryAlgebra[ConnectionIO],
-    validation: UserValidationAlgebra[ConnectionIO],
+    userRepo: UserRepository[ConnectionIO],
+    validation: UserValidation[ConnectionIO],
     xa: Transactor[F]
 ) {
 
-  def transact[A](t: ConnectionIO[A]): F[A]  = t.transact(xa)
+  def transact[A](t: ConnectionIO[A]): F[A] = t.transact(xa)
 
-  def createUser(user: CreateUser): EitherT[F, UserAlreadyExistsError, User] = {
+  def createUser(user: CreateUser): EitherT[F, UserAlreadyExistsError, User] =
     (for {
-      _            <- EitherT(validation.doesNotExist(user.userName))
-      userToCreate =  user.into[User].transform
-      saved        <- EitherT.liftF[ConnectionIO, UserAlreadyExistsError, User](userRepo.create(userToCreate))
+      _ <- EitherT(validation.doesNotExist(user.userName))
+      userToCreate = user.into[User].transform
+      saved <- EitherT.liftF[ConnectionIO, UserAlreadyExistsError, User](
+        userRepo.create(userToCreate))
     } yield saved).mapK(FunctionK.lift(transact))
-  }
 
   def getUser(userId: UUID): EitherT[F, UserNotFoundError.type, User] =
     EitherT.fromOptionF(userRepo.get(userId).transact(xa), UserNotFoundError)
@@ -69,8 +73,8 @@ class UserService[F[_]: Monad](
 
 object UserService {
   def apply[F[_]: Monad](
-      repository: UserRepositoryAlgebra[ConnectionIO],
-      validation: UserValidationAlgebra[ConnectionIO],
+      repository: UserRepository[ConnectionIO],
+      validation: UserValidation[ConnectionIO],
       xa: Transactor[F]
   ): UserService[F] =
     new UserService[F](repository, validation, xa)

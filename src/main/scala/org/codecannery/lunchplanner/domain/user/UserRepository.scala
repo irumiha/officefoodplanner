@@ -4,7 +4,7 @@ import java.util.UUID
 
 import org.codecannery.lunchplanner.domain.user.model.User
 
-trait UserRepositoryAlgebra[F[_]] {
+trait UserRepository[F[_]] {
   def create(user: User): F[User]
 
   def update(user: User): F[Int]

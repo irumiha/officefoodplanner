@@ -5,7 +5,7 @@ import org.codecannery.lunchplanner.domain.user.command.UpdateUser
 import org.codecannery.lunchplanner.domain.user.model.User
 import org.codecannery.lunchplanner.domain.{UserAlreadyExistsError, UserNotFoundError, UserValidationError}
 
-trait UserValidationAlgebra[F[_]] {
+trait UserValidation[F[_]] {
 
   def doesNotExist(userName: String): F[Either[UserAlreadyExistsError, Unit]]
 

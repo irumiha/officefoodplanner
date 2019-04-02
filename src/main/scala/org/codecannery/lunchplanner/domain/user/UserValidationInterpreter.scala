@@ -8,8 +8,7 @@ import org.codecannery.lunchplanner.domain.user.command.UpdateUser
 import org.codecannery.lunchplanner.domain.user.model.User
 import org.codecannery.lunchplanner.domain.{UserAlreadyExistsError, UserNotFoundError, UserValidationError}
 
-class UserValidationInterpreter(userRepo: UserRepositoryAlgebra[ConnectionIO])
-    extends UserValidationAlgebra[ConnectionIO] {
+class UserValidationInterpreter(userRepo: UserRepository[ConnectionIO]) extends UserValidation[ConnectionIO] {
 
   def doesNotExist(userName: String): ConnectionIO[Either[UserAlreadyExistsError, Unit]] =
     userRepo.findByUsername(userName).map {
@@ -23,16 +22,13 @@ class UserValidationInterpreter(userRepo: UserRepositoryAlgebra[ConnectionIO])
       case _       => Left(UserNotFoundError)
     }
 
-  def validChanges(
-      storedUser: User,
-      newUser: UpdateUser): Either[UserValidationError, User] = {
+  def validChanges(storedUser: User, newUser: UpdateUser): Either[UserValidationError, User] = {
     val changed = newUser.into[User].transform
     Right[UserValidationError, User](changed)
   }
 }
 
 object UserValidationInterpreter {
-  def apply(
-      repo: UserRepositoryAlgebra[ConnectionIO]): UserValidationAlgebra[ConnectionIO] =
+  def apply(repo: UserRepository[ConnectionIO]): UserValidation[ConnectionIO] =
     new UserValidationInterpreter(repo)
 }

@@ -1,34 +1,25 @@
 package org.codecannery.lunchplanner.infrastructure.endpoint
 
-import cats._, cats.effect._, cats.implicits._, cats.data._
-import io.circe.generic.auto._, io.circe.syntax._
-import org.http4s._
-import org.http4s.circe._
-import org.http4s.dsl.Http4sDsl
-import org.http4s.dsl.io._
-import org.http4s.implicits._
-import org.http4s.server._
-
-import tsec.common.Verified
-import tsec.authentication._
-
-import tsec.passwordhashers.{PasswordHash, PasswordHasher}
+import cats.data._
+import cats.effect._
+import cats.implicits._
+import io.circe.generic.auto._
+import io.circe.syntax._
 import org.codecannery.lunchplanner.domain.authentication.command.{LoginRequest, SignupRequest}
 import org.codecannery.lunchplanner.domain.user.UserService
 import org.codecannery.lunchplanner.domain.user.command.{CreateUser, UpdateUser}
 import org.codecannery.lunchplanner.domain.user.model.User
-import org.codecannery.lunchplanner.domain.{
-  UserAlreadyExistsError,
-  UserAuthenticationFailedError,
-  UserNotFoundError
-}
+import org.codecannery.lunchplanner.domain.{UserAlreadyExistsError, UserAuthenticationFailedError, UserNotFoundError}
 import org.codecannery.lunchplanner.infrastructure.endpoint.Pagination.{OffsetQ, PageSizeQ}
+import org.http4s._
+import org.http4s.circe._
+import org.http4s.dsl.Http4sDsl
+import tsec.common.Verified
+import tsec.passwordhashers.{PasswordHash, PasswordHasher}
 
 import scala.language.higherKinds
 
-class UserEndpoints[F[_]: Effect, A](
-    userService: UserService[F],
-    cryptService: PasswordHasher[F, A])
+class UserEndpoints[F[_]: Effect, A](userService: UserService[F], cryptService: PasswordHasher[F, A])
     extends Http4sDsl[F] {
 
   implicit val userUpdateDecoder: EntityDecoder[F, UpdateUser] = jsonOf
@@ -47,16 +38,28 @@ class UserEndpoints[F[_]: Effect, A](
     }
 
   private def login(req: Request[F]): F[Response[F]] = {
-    val action: EitherT[F, UserAuthenticationFailedError, User] = for {
-      login <- EitherT.liftF(req.as[LoginRequest])
-      user <- userService
+
+    def getLoginRequest = EitherT.liftF(req.as[LoginRequest])
+
+    def getUserOrFailLogin(login: LoginRequest) =
+      userService
         .getUserByUsername(login.userName)
         .leftMap(_ => UserAuthenticationFailedError(login.userName))
-      checkResult <- EitherT.liftF(cryptService.checkpw(login.password, PasswordHash[A](user.hash)))
-      resp <- if (checkResult == Verified)
-        EitherT.rightT[F, UserAuthenticationFailedError](user)
-      else
-        EitherT.leftT[F, User](UserAuthenticationFailedError(login.userName))
+
+    def checkUserPassword(login: LoginRequest, user: User) =
+      EitherT.liftF(cryptService.checkpw(login.password, PasswordHash[A](user.hash)))
+
+    def loggedInUser(user: User) =
+      EitherT.rightT[F, UserAuthenticationFailedError](user)
+
+    def failedLoginForUsername(login: LoginRequest) =
+      EitherT.leftT[F, User](UserAuthenticationFailedError(login.userName))
+
+    val action = for {
+      login <- getLoginRequest
+      user <- getUserOrFailLogin(login)
+      checkResult <- checkUserPassword(login, user)
+      resp <- if (checkResult == Verified) loggedInUser(user) else failedLoginForUsername(login)
     } yield resp
 
     action.value.flatMap {

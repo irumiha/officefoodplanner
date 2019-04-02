@@ -12,12 +12,24 @@ import doobie.postgres.implicits._
 import doobie.util.fragment
 import doobie.util.query.Query0
 import io.circe._
-
 import org.codecannery.lunchplanner.infrastructure.repository._
 
 private case class RowWrapper(id: UUID, data: Json, createdOn: JTimestamp, updatedOn: JTimestamp)
 
 private object JsonRepositorySQL {
+
+  def fromEntity[E: Encoder: Decoder: UuidKeyEntity](entity: E): RowWrapper = {
+    val now = Instant.now()
+    RowWrapper(
+      data = Encoder[E].apply(entity),
+      createdOn = JTimestamp.from(now),
+      updatedOn = JTimestamp.from(now),
+      id = UuidKeyEntity[E].key(entity),
+    )
+  }
+
+  def toEntity[E: Encoder: Decoder: UuidKeyEntity](rw: RowWrapper): E =
+    rw.data.as[E].right.get
 
   def tableFragment(table: Table): fragment.Fragment =
     Fragment.const(s""""${table.schemaName.v}"."${table.tableName.v}"""")
@@ -44,7 +56,7 @@ private object JsonRepositorySQL {
   def updateOne(table: Table, row: RowWrapper): Update0 = {
     val sql = fr"""UPDATE""" ++
       tableFragment(table) ++
-      fr"""SET DATA = ${row.data}, UPDATED_ON=${row.updatedOn}) WHERE ID = ${row.id}"""
+      fr"""SET DATA = ${row.data}, UPDATED_ON=${row.updatedOn} WHERE ID = ${row.id}"""
     sql.update
   }
 
@@ -118,33 +130,33 @@ abstract class JsonRepository[E: Encoder: Decoder: UuidKeyEntity]
   import JsonRepositorySQL._
 
   override def create(entity: E): ConnectionIO[E] = {
-    val row = entityToRowWrapper(entity)
+    val row = fromEntity(entity)
 
     insertOne(table, row)
       .withUniqueGeneratedKeys[RowWrapper]("id", "data", "created_on", "updated_on")
-      .map(toEntity)
+      .map(toEntity[E])
   }
 
   override def create(entities: List[E]): fs2.Stream[doobie.ConnectionIO, E] = {
-    val rows = entities.map(entityToRowWrapper)
+    val rows = entities.map(fromEntity[E])
     insertMany(table)
       .updateManyWithGeneratedKeys[RowWrapper]("id", "data", "created_on", "updated_on")(rows)
-      .map(toEntity)
+      .map(toEntity[E])
   }
 
   override def update(entity: E): ConnectionIO[Int] = {
-    val row = entityToRowWrapper(entity)
+    val row = fromEntity(entity)
     updateOne(table, row).run
   }
 
   override def update(entities: List[E]): ConnectionIO[Int] =
-    updateMany(table).updateMany(entities.map(entityToRowWrapper))
+    updateMany(table).updateMany(entities.map(fromEntity[E]))
 
   override def get(entityId: UUID): ConnectionIO[Option[E]] =
-    getMany(table, List(entityId)).map(toEntity).option
+    getMany(table, List(entityId)).map(toEntity[E]).option
 
   override def get(entityIds: List[UUID]): ConnectionIO[List[E]] =
-    getMany(table, entityIds).map(toEntity).to[List]
+    getMany(table, entityIds).map(toEntity[E]).to[List]
 
   override def deleteById(entityId: UUID): ConnectionIO[Int] =
     deleteManyIDs(table, List(entityId)).run
@@ -162,7 +174,7 @@ abstract class JsonRepository[E: Encoder: Decoder: UuidKeyEntity]
     deleteBySpecification(
       table = table,
       where = specification.v
-    ).map(toEntity)
+    ).map(toEntity[E])
 
   override protected def find(specification: Specification): Query0[E] =
     select(
@@ -171,7 +183,7 @@ abstract class JsonRepository[E: Encoder: Decoder: UuidKeyEntity]
       orderBy = Fragment.empty,
       offset = Fragment.empty,
       limit = Fragment.empty
-    ).map(toEntity)
+    ).map(toEntity[E])
 
   override protected def find(
       specification: Specification,
@@ -182,7 +194,7 @@ abstract class JsonRepository[E: Encoder: Decoder: UuidKeyEntity]
       orderBy = orderBy.v,
       offset = Fragment.empty,
       limit = Fragment.empty
-    ).map(toEntity)
+    ).map(toEntity[E])
 
   override protected def find(
       specification: Specification,
@@ -193,7 +205,7 @@ abstract class JsonRepository[E: Encoder: Decoder: UuidKeyEntity]
       orderBy = Fragment.empty,
       offset = Fragment.empty,
       limit = limit.v
-    ).map(toEntity)
+    ).map(toEntity[E])
 
   override protected def find(
       specification: Specification,
@@ -205,7 +217,7 @@ abstract class JsonRepository[E: Encoder: Decoder: UuidKeyEntity]
       orderBy = Fragment.empty,
       offset = offset.v,
       limit = limit.v
-    ).map(toEntity)
+    ).map(toEntity[E])
 
   override protected def find(
       specification: Specification,
@@ -218,19 +230,5 @@ abstract class JsonRepository[E: Encoder: Decoder: UuidKeyEntity]
       orderBy = orderBy.v,
       offset = offset.v,
       limit = limit.v
-    ).map(toEntity)
-
-  private def entityToRowWrapper(entity: E): RowWrapper = {
-    val now = Instant.now()
-    RowWrapper(
-      data = Encoder[E].apply(entity),
-      createdOn = JTimestamp.from(now),
-      updatedOn = JTimestamp.from(now),
-      id = UuidKeyEntity[E].key(entity),
-    )
-  }
-
-  private def toEntity(rw: RowWrapper): E =
-    rw.data.as[E].right.get
-
+    ).map(toEntity[E])
 }

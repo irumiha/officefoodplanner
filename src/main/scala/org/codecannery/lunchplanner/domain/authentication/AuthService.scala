@@ -1,17 +1,13 @@
 package org.codecannery.lunchplanner.domain.authentication
 
 import cats.Monad
-import cats.data.{Kleisli, OptionT}
-import cats.effect.IO
 import doobie.ConnectionIO
 import doobie.util.transactor.Transactor
-import org.codecannery.lunchplanner.domain.user.model.User
-import org.codecannery.lunchplanner.domain.user.{UserRepositoryAlgebra, UserValidationAlgebra}
-
+import org.codecannery.lunchplanner.domain.user.{UserRepository, UserValidation}
 
 class AuthService[F[_]: Monad](
-    userRepo: UserRepositoryAlgebra[ConnectionIO],
-    validation: UserValidationAlgebra[ConnectionIO],
+    userRepo: UserRepository[ConnectionIO],
+    validation: UserValidation[ConnectionIO],
     xa: Transactor[F]
 ) {
 

@@ -6,7 +6,9 @@ import org.codecannery.lunchplanner.domain.authentication.command.SignupRequest
 import org.codecannery.lunchplanner.domain.user.model.User
 import org.codecannery.lunchplanner.domain.user.{UserService, UserValidationInterpreter}
 import org.codecannery.lunchplanner.infrastructure.LunchPlannerArbitraries
-import org.codecannery.lunchplanner.infrastructure.repository.inmemory.UserInMemoryRepository
+import org.codecannery.lunchplanner.infrastructure.repository.postgres.UserJsonRepository
+import org.codecannery.lunchplanner.infrastructure.repository.postgres.testTransactor
+
 import org.http4s._
 import org.http4s.circe._
 import org.http4s.client.dsl.Http4sClientDsl
@@ -30,9 +32,9 @@ class UserEndpointsSpec
   implicit val signupRequestDec : EntityDecoder[IO, SignupRequest] = jsonOf
 
   test("create user") {
-    val userRepo = new UserInMemoryRepository[IO]()
-    val userValidation = UserValidationInterpreter[IO](userRepo)
-    val userService = UserService[IO](userRepo, userValidation)
+    val userRepo = new UserJsonRepository()
+    val userValidation = UserValidationInterpreter(userRepo)
+    val userService = UserService[IO](userRepo, userValidation, testTransactor)
     val userHttpService = UserEndpoints.endpoints(userService, BCrypt.syncPasswordHasher[IO]).orNotFound
 
     forAll { userSignup: SignupRequest =>
@@ -46,9 +48,9 @@ class UserEndpointsSpec
   }
 
   test("update user") {
-    val userRepo = new UserInMemoryRepository[IO]()
-    val userValidation = UserValidationInterpreter[IO](userRepo)
-    val userService = UserService[IO](userRepo, userValidation)
+    val userRepo = new UserJsonRepository()
+    val userValidation = UserValidationInterpreter(userRepo)
+    val userService = UserService[IO](userRepo, userValidation, testTransactor)
     val userHttpService = UserEndpoints.endpoints(userService, BCrypt.syncPasswordHasher[IO]).orNotFound
 
     forAll { userSignup: SignupRequest =>
@@ -69,9 +71,9 @@ class UserEndpointsSpec
   }
 
   test("get user by userName") {
-    val userRepo = new UserInMemoryRepository[IO]()
-    val userValidation = UserValidationInterpreter[IO](userRepo)
-    val userService = UserService[IO](userRepo, userValidation)
+    val userRepo = new UserJsonRepository()
+    val userValidation = UserValidationInterpreter(userRepo)
+    val userService = UserService[IO](userRepo, userValidation, testTransactor)
     val userHttpService = UserEndpoints.endpoints(userService, BCrypt.syncPasswordHasher[IO]).orNotFound
 
     forAll { userSignup: SignupRequest =>
@@ -91,9 +93,9 @@ class UserEndpointsSpec
 
 
   test("delete user by userName") {
-    val userRepo = new UserInMemoryRepository[IO]()
-    val userValidation = UserValidationInterpreter[IO](userRepo)
-    val userService = UserService[IO](userRepo, userValidation)
+    val userRepo = new UserJsonRepository()
+    val userValidation = UserValidationInterpreter(userRepo)
+    val userService = UserService[IO](userRepo, userValidation, testTransactor)
     val userHttpService = UserEndpoints.endpoints(userService, BCrypt.syncPasswordHasher[IO]).orNotFound
 
     forAll { userSignup: SignupRequest =>
