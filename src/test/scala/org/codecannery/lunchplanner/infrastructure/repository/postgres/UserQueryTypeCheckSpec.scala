@@ -8,9 +8,9 @@ import doobie.syntax.string._
 import doobie.scalatest.IOChecker
 import doobie.util.fragment.Fragment
 import doobie.util.transactor.Transactor
+
 import org.codecannery.lunchplanner.infrastructure.LunchPlannerArbitraries.user
 import org.codecannery.lunchplanner.infrastructure.repository
-import org.codecannery.lunchplanner.infrastructure.repository.{SchemaName, Table, TableName}
 
 class UserQueryTypeCheckSpec extends FunSuite with Matchers with IOChecker {
   override val transactor : Transactor[IO] = testTransactor
