@@ -3,7 +3,6 @@ import java.util.UUID
 
 import org.codecannery.lunchplanner.domain.user.command.UpdateUser
 import org.codecannery.lunchplanner.domain.user.model.User
-import org.codecannery.lunchplanner.domain.{UserAlreadyExistsError, UserNotFoundError, UserValidationError}
 
 trait UserValidation[F[_]] {
 

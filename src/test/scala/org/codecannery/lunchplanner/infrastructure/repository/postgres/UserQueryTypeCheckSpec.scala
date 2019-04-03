@@ -9,8 +9,8 @@ import doobie.scalatest.IOChecker
 import doobie.util.fragment.Fragment
 import doobie.util.transactor.Transactor
 
-import org.codecannery.lunchplanner.infrastructure.LunchPlannerArbitraries.user
 import org.codecannery.lunchplanner.infrastructure.repository._
+import org.codecannery.lunchplanner.infrastructure.LunchPlannerArbitraries.{user => userA}
 
 class UserQueryTypeCheckSpec extends FunSuite with Matchers with IOChecker {
   import JsonRepositorySQL._
@@ -20,7 +20,7 @@ class UserQueryTypeCheckSpec extends FunSuite with Matchers with IOChecker {
   val table = Table(SchemaName("public"), TableName("users"))
 
   test("Typecheck user queries") {
-    user.arbitrary.sample.foreach { u =>
+    userA.arbitrary.sample.foreach { u =>
       check(insertOne(table, fromEntity(u)))
       check(select(table, fr"where data->>'userName' = ${u.userName}", Fragment.empty, Fragment.empty, Fragment.empty))
 

@@ -4,7 +4,7 @@ import cats.implicits._
 import cats.effect.{Async, ContextShift, Effect, IO}
 import _root_.doobie.Transactor
 import io.circe.config.parser
-import org.codecannery.lunchplanner.config.{DatabaseConfig, LunchPlannerConfig}
+import org.codecannery.lunchplanner.config.{DatabaseConfig, ApplicationConfig}
 
 import scala.concurrent.ExecutionContext
 
@@ -21,9 +21,9 @@ package object postgres {
    * Provide a transactor for testing once schema has been migrated.
    */
   def initializedTransactor[F[_] : Effect : Async : ContextShift] : F[Transactor[F]] = for {
-    petConfig <- parser.decodePathF[F, LunchPlannerConfig]("lunchplanner")
-    _         <- DatabaseConfig.initializeDb(petConfig.db)
-  } yield getTransactor(petConfig.db)
+    appConfig <- parser.decodePathF[F, ApplicationConfig]("application")
+    _         <- DatabaseConfig.initializeDb(appConfig.db)
+  } yield getTransactor(appConfig.db)
 
   lazy val testEc: ExecutionContext = ExecutionContext.Implicits.global
 

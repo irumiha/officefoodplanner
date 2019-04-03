@@ -1,7 +1,6 @@
 package org.codecannery.lunchplanner.infrastructure.repository.postgres
 
 import doobie.ConnectionIO
-
 import doobie.syntax.string._
 import org.codecannery.lunchplanner.domain.user.UserRepository
 import org.codecannery.lunchplanner.domain.user.model.User

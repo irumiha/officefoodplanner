@@ -1,16 +1,20 @@
 package org.codecannery.lunchplanner.infrastructure.endpoint
 
+import java.time.Instant
+
 import cats.data._
 import cats.effect._
 import cats.implicits._
 import io.circe.generic.auto._
 import io.circe.syntax._
+import org.codecannery.lunchplanner.config.ApplicationConfig
 import org.codecannery.lunchplanner.domain.authentication.command.{LoginRequest, SignupRequest}
-import org.codecannery.lunchplanner.domain.user.UserService
+import org.codecannery.lunchplanner.domain.user.{UserAlreadyExistsError, UserAuthenticationFailedError, UserNotFoundError}
 import org.codecannery.lunchplanner.domain.user.command.{CreateUser, UpdateUser}
 import org.codecannery.lunchplanner.domain.user.model.User
-import org.codecannery.lunchplanner.domain.{UserAlreadyExistsError, UserAuthenticationFailedError, UserNotFoundError}
+import org.codecannery.lunchplanner.domain.user.{UserAlreadyExistsError, UserAuthenticationFailedError}
 import org.codecannery.lunchplanner.infrastructure.endpoint.Pagination.{OffsetQ, PageSizeQ}
+import org.codecannery.lunchplanner.infrastructure.service.user.UserService
 import org.http4s._
 import org.http4s.circe._
 import org.http4s.dsl.Http4sDsl
@@ -20,6 +24,7 @@ import tsec.passwordhashers.{PasswordHash, PasswordHasher}
 import scala.language.higherKinds
 
 class UserEndpoints[F[_]: Effect, A](
+    config: ApplicationConfig,
     userService: UserService[F],
     cryptService: PasswordHasher[F, A]
 ) extends Http4sDsl[F] {
@@ -66,10 +71,22 @@ class UserEndpoints[F[_]: Effect, A](
 
   private def login(req: Request[F]): F[Response[F]] = {
     verifyLogin(req).flatMap {
-      case Right(user) => Ok(user.asJson).map(_.addCookie(ResponseCookie(???)))
+      case Right(user) => Ok(user.asJson).map(_.addCookie(
+        newSessionCookie(user)
+      ))
       case Left(UserAuthenticationFailedError(name)) =>
         BadRequest(s"Authentication failed for user $name")
     }
+  }
+
+  private def newSessionCookie(userData: User) = {
+    val cookieExpiresAt = Instant.now().plusSeconds(config.auth.sessionLength)
+
+    ResponseCookie(
+      name    = "session",
+      content = userData.key.toString,
+      expires = HttpDate.fromInstant(cookieExpiresAt).toOption,
+    )
   }
 
   private def signup(req: Request[F]): F[Response[F]] = {
@@ -128,8 +145,9 @@ class UserEndpoints[F[_]: Effect, A](
 
 object UserEndpoints {
   def endpoints[F[_]: Effect, A](
+      config: ApplicationConfig,
       userService: UserService[F],
       cryptService: PasswordHasher[F, A]
   ): HttpRoutes[F] =
-    new UserEndpoints[F, A](userService, cryptService).endpoints
+    new UserEndpoints[F, A](config, userService, cryptService).endpoints
 }

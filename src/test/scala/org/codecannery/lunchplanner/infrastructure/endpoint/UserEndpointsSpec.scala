@@ -2,13 +2,7 @@ package org.codecannery.lunchplanner.infrastructure.endpoint
 
 import cats.effect._
 import io.circe.generic.auto._
-import org.codecannery.lunchplanner.domain.authentication.command.SignupRequest
-import org.codecannery.lunchplanner.domain.user.model.User
-import org.codecannery.lunchplanner.domain.user.{UserService, UserValidationInterpreter}
-import org.codecannery.lunchplanner.infrastructure.LunchPlannerArbitraries
-import org.codecannery.lunchplanner.infrastructure.repository.postgres.UserJsonRepository
-import org.codecannery.lunchplanner.infrastructure.repository.postgres.testTransactor
-
+import io.circe.config.parser
 import org.http4s._
 import org.http4s.circe._
 import org.http4s.client.dsl.Http4sClientDsl
@@ -17,26 +11,33 @@ import org.http4s.implicits._
 import org.scalatest._
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import tsec.passwordhashers.jca.BCrypt
+import org.codecannery.lunchplanner.config.ApplicationConfig
+import org.codecannery.lunchplanner.domain.authentication.command.SignupRequest
+import org.codecannery.lunchplanner.domain.user.model.User
+import org.codecannery.lunchplanner.infrastructure.LunchPlannerArbitraries
+import org.codecannery.lunchplanner.infrastructure.repository.postgres.{UserJsonRepository, testTransactor}
+import org.codecannery.lunchplanner.infrastructure.service.user.{UserService, UserValidationInterpreter}
 
 class UserEndpointsSpec
-  extends FunSuite
-  with Matchers
-  with ScalaCheckPropertyChecks
-  with LunchPlannerArbitraries
-  with Http4sDsl[IO]
-  with Http4sClientDsl[IO] {
+    extends FunSuite
+    with Matchers
+    with ScalaCheckPropertyChecks
+    with LunchPlannerArbitraries
+    with Http4sDsl[IO]
+    with Http4sClientDsl[IO] {
 
-  implicit val userEnc          : EntityEncoder[IO, User]          = jsonEncoderOf
-  implicit val userDec          : EntityDecoder[IO, User]          = jsonOf
-  implicit val signupRequestEnc : EntityEncoder[IO, SignupRequest] = jsonEncoderOf
-  implicit val signupRequestDec : EntityDecoder[IO, SignupRequest] = jsonOf
+  implicit val userEnc: EntityEncoder[IO, User] = jsonEncoderOf
+  implicit val userDec: EntityDecoder[IO, User] = jsonOf
+  implicit val signupRequestEnc: EntityEncoder[IO, SignupRequest] = jsonEncoderOf
+  implicit val signupRequestDec: EntityDecoder[IO, SignupRequest] = jsonOf
+
+  private val appConfig = parser.decodePath[ApplicationConfig]("application").right.get
+  private val userRepo = new UserJsonRepository()
+  private val userValidation = UserValidationInterpreter(userRepo)
+  private val userService = UserService[IO](userRepo, userValidation, testTransactor)
+  private val userHttpService = UserEndpoints.endpoints(appConfig, userService, BCrypt.syncPasswordHasher[IO]).orNotFound
 
   test("create user") {
-    val userRepo = new UserJsonRepository()
-    val userValidation = UserValidationInterpreter(userRepo)
-    val userService = UserService[IO](userRepo, userValidation, testTransactor)
-    val userHttpService = UserEndpoints.endpoints(userService, BCrypt.syncPasswordHasher[IO]).orNotFound
-
     forAll { userSignup: SignupRequest =>
       (for {
         request <- POST(userSignup, Uri.uri("/users"))
@@ -48,11 +49,6 @@ class UserEndpointsSpec
   }
 
   test("update user") {
-    val userRepo = new UserJsonRepository()
-    val userValidation = UserValidationInterpreter(userRepo)
-    val userService = UserService[IO](userRepo, userValidation, testTransactor)
-    val userHttpService = UserEndpoints.endpoints(userService, BCrypt.syncPasswordHasher[IO]).orNotFound
-
     forAll { userSignup: SignupRequest =>
       (for {
         createRequest <- POST(userSignup, Uri.uri("/users"))
@@ -71,11 +67,6 @@ class UserEndpointsSpec
   }
 
   test("get user by userName") {
-    val userRepo = new UserJsonRepository()
-    val userValidation = UserValidationInterpreter(userRepo)
-    val userService = UserService[IO](userRepo, userValidation, testTransactor)
-    val userHttpService = UserEndpoints.endpoints(userService, BCrypt.syncPasswordHasher[IO]).orNotFound
-
     forAll { userSignup: SignupRequest =>
       (for {
         createRequest <- POST(userSignup, Uri.uri("/users"))
@@ -91,13 +82,7 @@ class UserEndpointsSpec
     }
   }
 
-
   test("delete user by userName") {
-    val userRepo = new UserJsonRepository()
-    val userValidation = UserValidationInterpreter(userRepo)
-    val userService = UserService[IO](userRepo, userValidation, testTransactor)
-    val userHttpService = UserEndpoints.endpoints(userService, BCrypt.syncPasswordHasher[IO]).orNotFound
-
     forAll { userSignup: SignupRequest =>
       (for {
         createRequest <- POST(userSignup, Uri.uri("/users"))

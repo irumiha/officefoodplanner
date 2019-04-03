@@ -17,6 +17,6 @@ object User {
 
   implicit val uuidKeyedUser: UuidKeyEntity[User] = (u: User) => u.key
 
-  implicit val userDecoder: Decoder[User] = deriveDecoder
-  implicit val userEncoder: Encoder[User] = deriveEncoder
+  implicit val jsonDecoder: Decoder[User] = deriveDecoder
+  implicit val jsonEncoder: Encoder[User] = deriveEncoder
 }
