@@ -19,8 +19,10 @@ import tsec.passwordhashers.{PasswordHash, PasswordHasher}
 
 import scala.language.higherKinds
 
-class UserEndpoints[F[_]: Effect, A](userService: UserService[F], cryptService: PasswordHasher[F, A])
-    extends Http4sDsl[F] {
+class UserEndpoints[F[_]: Effect, A](
+    userService: UserService[F],
+    cryptService: PasswordHasher[F, A]
+) extends Http4sDsl[F] {
 
   implicit val userUpdateDecoder: EntityDecoder[F, UpdateUser] = jsonOf
   implicit val userCreateDecoder: EntityDecoder[F, CreateUser] = jsonOf
@@ -37,8 +39,7 @@ class UserEndpoints[F[_]: Effect, A](userService: UserService[F], cryptService: 
       case DELETE -> Root / "users" / username                  => deleteByUsername(username)
     }
 
-  private def login(req: Request[F]): F[Response[F]] = {
-
+  private def verifyLogin(req: Request[F]): F[Either[UserAuthenticationFailedError, User]] = {
     def getLoginRequest = EitherT.liftF(req.as[LoginRequest])
 
     def getUserOrFailLogin(login: LoginRequest) =
@@ -55,15 +56,17 @@ class UserEndpoints[F[_]: Effect, A](userService: UserService[F], cryptService: 
     def failedLoginForUsername(login: LoginRequest) =
       EitherT.leftT[F, User](UserAuthenticationFailedError(login.userName))
 
-    val action = for {
-      login <- getLoginRequest
-      user <- getUserOrFailLogin(login)
+    (for {
+      login       <- getLoginRequest
+      user        <- getUserOrFailLogin(login)
       checkResult <- checkUserPassword(login, user)
-      resp <- if (checkResult == Verified) loggedInUser(user) else failedLoginForUsername(login)
-    } yield resp
+      resp        <- if (checkResult == Verified) loggedInUser(user) else failedLoginForUsername(login)
+    } yield resp).value
+  }
 
-    action.value.flatMap {
-      case Right(user) => Ok(user.asJson)
+  private def login(req: Request[F]): F[Response[F]] = {
+    verifyLogin(req).flatMap {
+      case Right(user) => Ok(user.asJson).map(_.addCookie(ResponseCookie(???)))
       case Left(UserAuthenticationFailedError(name)) =>
         BadRequest(s"Authentication failed for user $name")
     }

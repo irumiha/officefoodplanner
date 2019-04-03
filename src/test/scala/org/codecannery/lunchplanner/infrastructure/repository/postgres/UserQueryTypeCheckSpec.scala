@@ -10,12 +10,14 @@ import doobie.util.fragment.Fragment
 import doobie.util.transactor.Transactor
 
 import org.codecannery.lunchplanner.infrastructure.LunchPlannerArbitraries.user
-import org.codecannery.lunchplanner.infrastructure.repository
+import org.codecannery.lunchplanner.infrastructure.repository._
 
 class UserQueryTypeCheckSpec extends FunSuite with Matchers with IOChecker {
-  override val transactor : Transactor[IO] = testTransactor
-  val table = repository.Table(repository.SchemaName("public"), repository.TableName("users"))
   import JsonRepositorySQL._
+
+  override val transactor : Transactor[IO] = testTransactor
+
+  val table = Table(SchemaName("public"), TableName("users"))
 
   test("Typecheck user queries") {
     user.arbitrary.sample.foreach { u =>
