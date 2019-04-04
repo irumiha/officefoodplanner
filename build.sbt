@@ -114,6 +114,8 @@ scalacOptions ++= Seq(
 val badConsoleFlags = Seq("-Xfatal-warnings", "-Ywarn-unused:imports")
 scalacOptions in (Compile, console) ~= (_.filterNot(badConsoleFlags.contains(_)))
 
+addCompilerPlugin("com.olegpy" %% "better-monadic-for" % "0.3.0-M4")
+
 enablePlugins(ScalafmtPlugin, JavaAppPackaging, SbtTwirl)
 
 // Note: This fixes error with sbt run not loading config properly

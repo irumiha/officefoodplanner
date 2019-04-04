@@ -9,12 +9,8 @@ import io.circe.generic.auto._
 import io.circe.syntax._
 import org.codecannery.lunchplanner.config.ApplicationConfig
 import org.codecannery.lunchplanner.domain.authentication.command.{LoginRequest, SignupRequest}
-import org.codecannery.lunchplanner.domain.user.{UserAlreadyExistsError, UserAuthenticationFailedError, UserNotFoundError}
-import org.codecannery.lunchplanner.domain.user.command.{CreateUser, UpdateUser}
-import org.codecannery.lunchplanner.domain.user.model.User
-import org.codecannery.lunchplanner.domain.user.{UserAlreadyExistsError, UserAuthenticationFailedError}
+import org.codecannery.lunchplanner.domain.user.{UserService, _}
 import org.codecannery.lunchplanner.infrastructure.endpoint.Pagination.{OffsetQ, PageSizeQ}
-import org.codecannery.lunchplanner.infrastructure.service.user.UserService
 import org.http4s._
 import org.http4s.circe._
 import org.http4s.dsl.Http4sDsl
@@ -23,14 +19,14 @@ import tsec.passwordhashers.{PasswordHash, PasswordHasher}
 
 import scala.language.higherKinds
 
-class UserEndpoints[F[_]: Effect, A](
+class UserEndpoints[F[_]: Effect, A, D[_]](
     config: ApplicationConfig,
-    userService: UserService[F],
+    userService: UserService[F, D],
     cryptService: PasswordHasher[F, A]
 ) extends Http4sDsl[F] {
 
-  implicit val userUpdateDecoder: EntityDecoder[F, UpdateUser] = jsonOf
-  implicit val userCreateDecoder: EntityDecoder[F, CreateUser] = jsonOf
+  implicit val userUpdateDecoder: EntityDecoder[F, command.UpdateUser] = jsonOf
+  implicit val userCreateDecoder: EntityDecoder[F, command.CreateUser] = jsonOf
   implicit val loginReqDecoder: EntityDecoder[F, LoginRequest] = jsonOf
   implicit val signupReqDecoder: EntityDecoder[F, SignupRequest] = jsonOf
 
@@ -44,7 +40,7 @@ class UserEndpoints[F[_]: Effect, A](
       case DELETE -> Root / "users" / username                  => deleteByUsername(username)
     }
 
-  private def verifyLogin(req: Request[F]): F[Either[UserAuthenticationFailedError, User]] = {
+  private def verifyLogin(req: Request[F]) = {
     def getLoginRequest = EitherT.liftF(req.as[LoginRequest])
 
     def getUserOrFailLogin(login: LoginRequest) =
@@ -52,14 +48,14 @@ class UserEndpoints[F[_]: Effect, A](
         .getUserByUsername(login.userName)
         .leftMap(_ => UserAuthenticationFailedError(login.userName))
 
-    def checkUserPassword(login: LoginRequest, user: User) =
+    def checkUserPassword(login: LoginRequest, user: model.User) =
       EitherT.liftF(cryptService.checkpw(login.password, PasswordHash[A](user.hash)))
 
-    def loggedInUser(user: User) =
+    def loggedInUser(user: model.User) =
       EitherT.rightT[F, UserAuthenticationFailedError](user)
 
     def failedLoginForUsername(login: LoginRequest) =
-      EitherT.leftT[F, User](UserAuthenticationFailedError(login.userName))
+      EitherT.leftT[F, model.User](UserAuthenticationFailedError(login.userName))
 
     (for {
       login       <- getLoginRequest
@@ -67,6 +63,16 @@ class UserEndpoints[F[_]: Effect, A](
       checkResult <- checkUserPassword(login, user)
       resp        <- if (checkResult == Verified) loggedInUser(user) else failedLoginForUsername(login)
     } yield resp).value
+  }
+
+  private def newSessionCookie(userData: model.User) = {
+    val cookieExpiresAt = Instant.now().plusSeconds(config.auth.sessionLength)
+
+    ResponseCookie(
+      name    = "session",
+      content = userData.key.toString,
+      expires = HttpDate.fromInstant(cookieExpiresAt).toOption,
+    )
   }
 
   private def login(req: Request[F]): F[Response[F]] = {
@@ -77,16 +83,6 @@ class UserEndpoints[F[_]: Effect, A](
       case Left(UserAuthenticationFailedError(name)) =>
         BadRequest(s"Authentication failed for user $name")
     }
-  }
-
-  private def newSessionCookie(userData: User) = {
-    val cookieExpiresAt = Instant.now().plusSeconds(config.auth.sessionLength)
-
-    ResponseCookie(
-      name    = "session",
-      content = userData.key.toString,
-      expires = HttpDate.fromInstant(cookieExpiresAt).toOption,
-    )
   }
 
   private def signup(req: Request[F]): F[Response[F]] = {
@@ -106,7 +102,7 @@ class UserEndpoints[F[_]: Effect, A](
 
   private def update(req: Request[F], name: String): F[Response[F]] = {
     val action = for {
-      user <- req.as[UpdateUser]
+      user <- req.as[command.UpdateUser]
       updated = user.copy(userName = name)
       result <- userService.update(updated).value
     } yield result
@@ -144,10 +140,10 @@ class UserEndpoints[F[_]: Effect, A](
 }
 
 object UserEndpoints {
-  def endpoints[F[_]: Effect, A](
+  def endpoints[F[_]: Effect, A, D[_]](
       config: ApplicationConfig,
-      userService: UserService[F],
+      userService: UserService[F, D],
       cryptService: PasswordHasher[F, A]
   ): HttpRoutes[F] =
-    new UserEndpoints[F, A](config, userService, cryptService).endpoints
+    new UserEndpoints[F, A, D](config, userService, cryptService).endpoints
 }

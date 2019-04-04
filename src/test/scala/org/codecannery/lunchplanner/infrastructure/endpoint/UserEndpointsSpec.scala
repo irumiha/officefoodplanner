@@ -16,7 +16,7 @@ import org.codecannery.lunchplanner.domain.authentication.command.SignupRequest
 import org.codecannery.lunchplanner.domain.user.model.User
 import org.codecannery.lunchplanner.infrastructure.LunchPlannerArbitraries
 import org.codecannery.lunchplanner.infrastructure.repository.postgres.{UserJsonRepository, testTransactor}
-import org.codecannery.lunchplanner.infrastructure.service.user.{UserService, UserValidationInterpreter}
+import org.codecannery.lunchplanner.infrastructure.service.user.{DoobieUserService, UserValidationInterpreter}
 
 class UserEndpointsSpec
     extends FunSuite
@@ -34,7 +34,7 @@ class UserEndpointsSpec
   private val appConfig = parser.decodePath[ApplicationConfig]("application").right.get
   private val userRepo = new UserJsonRepository()
   private val userValidation = UserValidationInterpreter(userRepo)
-  private val userService = UserService[IO](userRepo, userValidation, testTransactor)
+  private val userService = new DoobieUserService[IO](userRepo, userValidation, testTransactor)
   private val userHttpService = UserEndpoints.endpoints(appConfig, userService, BCrypt.syncPasswordHasher[IO]).orNotFound
 
   test("create user") {
