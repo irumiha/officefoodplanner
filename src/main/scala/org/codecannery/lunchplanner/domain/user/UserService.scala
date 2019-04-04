@@ -7,13 +7,12 @@ import cats.arrow.FunctionK
 import cats.data._
 import cats.syntax.functor._
 import io.scalaland.chimney.dsl._
+import org.codecannery.lunchplanner.infrastructure.service.TransactingService
 
 abstract class UserService[F[_]: Monad, D[_]: Monad](
     userRepo: UserRepository[D],
     validation: UserValidation[D]
-) {
-
-  def transact[A](t: D[A]): F[A]
+) extends TransactingService[F, D] {
 
   def createUser(user: command.CreateUser): EitherT[F, UserAlreadyExistsError, model.User] =
     (for {
