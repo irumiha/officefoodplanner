@@ -7,7 +7,6 @@ import io.scalaland.chimney.dsl._
 import org.codecannery.lunchplanner.domain.user.command.UpdateUser
 import org.codecannery.lunchplanner.domain.user.model.User
 import org.codecannery.lunchplanner.domain.user.{UserAlreadyExistsError, UserNotFoundError, UserRepository, UserValidation, UserValidationError}
-import org.codecannery.lunchplanner.domain.user.{UserAlreadyExistsError, UserNotFoundError}
 
 class UserValidationInterpreter(userRepo: UserRepository[ConnectionIO]) extends UserValidation[ConnectionIO] {
 
