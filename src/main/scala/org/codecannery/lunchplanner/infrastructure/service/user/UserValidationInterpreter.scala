@@ -2,22 +2,22 @@ package org.codecannery.lunchplanner.infrastructure.service.user
 
 import java.util.UUID
 
-import doobie.ConnectionIO
+import cats.Functor
 import io.scalaland.chimney.dsl._
 import org.codecannery.lunchplanner.domain.user.command.UpdateUser
 import org.codecannery.lunchplanner.domain.user.model.User
 import org.codecannery.lunchplanner.domain.user.{UserAlreadyExistsError, UserNotFoundError, UserRepository, UserValidation, UserValidationError}
 
-class UserValidationInterpreter(userRepo: UserRepository[ConnectionIO]) extends UserValidation[ConnectionIO] {
+class UserValidationInterpreter[D[_]](userRepo: UserRepository[D])(implicit F: Functor[D]) extends UserValidation[D] {
 
-  def doesNotExist(userName: String): ConnectionIO[Either[UserAlreadyExistsError, Unit]] =
-    userRepo.findByUsername(userName).map {
+  def doesNotExist(userName: String): D[Either[UserAlreadyExistsError, Unit]] =
+    F.map(userRepo.findByUsername(userName)) {
       case None    => Right(())
       case Some(_) => Left(UserAlreadyExistsError(userName))
     }
 
-  def exists(userId: UUID): ConnectionIO[Either[UserNotFoundError.type, User]] =
-    userRepo.get(userId).map {
+  def exists(userId: UUID): D[Either[UserNotFoundError.type, User]] =
+    F.map(userRepo.get(userId)) {
       case Some(u) => Right(u)
       case _       => Left(UserNotFoundError)
     }
@@ -29,6 +29,6 @@ class UserValidationInterpreter(userRepo: UserRepository[ConnectionIO]) extends 
 }
 
 object UserValidationInterpreter {
-  def apply(repo: UserRepository[ConnectionIO]): UserValidation[ConnectionIO] =
+  def apply[D[_]: Functor](repo: UserRepository[D]): UserValidation[D] =
     new UserValidationInterpreter(repo)
 }

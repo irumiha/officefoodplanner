@@ -1,16 +1,21 @@
 package org.codecannery.lunchplanner.infrastructure.endpoint
 
 import cats.effect._
+import doobie.implicits._
 import io.circe.generic.auto._
 import io.circe.config.parser
+
 import org.http4s._
 import org.http4s.circe._
 import org.http4s.client.dsl.Http4sClientDsl
 import org.http4s.dsl._
 import org.http4s.implicits._
+
 import org.scalatest._
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import tsec.passwordhashers.jca.BCrypt
+
+
 import org.codecannery.lunchplanner.config.ApplicationConfig
 import org.codecannery.lunchplanner.domain.authentication.command.SignupRequest
 import org.codecannery.lunchplanner.domain.user.model.User
