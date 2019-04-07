@@ -5,16 +5,15 @@ import cats.implicits._
 import doobie._
 import doobie.implicits._
 import doobie.util.ExecutionContexts
-
 import io.circe.config.parser
 import org.http4s.implicits._
 import org.http4s.server.{Router, Server}
 import org.http4s.server.blaze.BlazeServerBuilder
 import tsec.passwordhashers.jca.BCrypt
-
 import infrastructure.endpoint.UserEndpoints
+import org.codecannery.lunchplanner.domain.user.UserValidationInterpreter
 import org.codecannery.lunchplanner.infrastructure.repository.postgres.UserJsonRepository
-import org.codecannery.lunchplanner.infrastructure.service.user.{DoobieUserService, UserValidationInterpreter}
+import org.codecannery.lunchplanner.infrastructure.service.user.DoobieUserService
 
 object ApplicationServer extends IOApp {
 

@@ -1,4 +1,4 @@
-package org.codecannery.lunchplanner.infrastructure.service.user
+package org.codecannery.lunchplanner.domain.user
 
 import java.util.UUID
 
@@ -6,7 +6,6 @@ import cats.Functor
 import io.scalaland.chimney.dsl._
 import org.codecannery.lunchplanner.domain.user.command.UpdateUser
 import org.codecannery.lunchplanner.domain.user.model.User
-import org.codecannery.lunchplanner.domain.user.{UserAlreadyExistsError, UserNotFoundError, UserRepository, UserValidation, UserValidationError}
 
 class UserValidationInterpreter[D[_]](userRepo: UserRepository[D])(implicit F: Functor[D]) extends UserValidation[D] {
 
