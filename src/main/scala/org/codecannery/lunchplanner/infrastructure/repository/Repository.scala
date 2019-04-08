@@ -16,7 +16,7 @@ case class Offset(v: Fragment)
 trait Repository[K, E] {
   def create(entity: E): ConnectionIO[E]
 
-  def create(entities: List[E]): fs2.Stream[doobie.ConnectionIO, E]
+  def create(entities: List[E]): ConnectionIO[List[E]]
 
   def update(entity: E): ConnectionIO[Int]
 

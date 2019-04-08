@@ -137,11 +137,13 @@ abstract class JsonRepository[E: Encoder: Decoder: UuidKeyEntity]
       .map(toEntity[E])
   }
 
-  override def create(entities: List[E]): fs2.Stream[doobie.ConnectionIO, E] = {
+  override def create(entities: List[E]): ConnectionIO[List[E]] = {
     val rows = entities.map(fromEntity[E])
     insertMany(table)
       .updateManyWithGeneratedKeys[RowWrapper]("id", "data", "created_on", "updated_on")(rows)
       .map(toEntity[E])
+      .compile
+      .toList
   }
 
   override def update(entity: E): ConnectionIO[Int] = {
