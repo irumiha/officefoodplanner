@@ -7,8 +7,8 @@ import doobie.implicits._
 import org.codecannery.lunchplanner.domain.user.{UserRepository, UserService, UserValidation}
 
 class DoobieUserService[F[_] : Monad](
-  override val userRepo: UserRepository[ConnectionIO],
-  override val validation: UserValidation[ConnectionIO],
+  val userRepo: UserRepository[ConnectionIO],
+  val validation: UserValidation[ConnectionIO],
   xa: Transactor[F]
 ) extends UserService[F, ConnectionIO]
 {

@@ -10,9 +10,10 @@ import org.http4s.implicits._
 import org.http4s.server.{Router, Server}
 import org.http4s.server.blaze.BlazeServerBuilder
 import tsec.passwordhashers.jca.BCrypt
-import infrastructure.endpoint.UserEndpoints
+import infrastructure.endpoint.{AuthenticationEndpoints, UserEndpoints}
 import org.codecannery.lunchplanner.domain.user.UserValidationInterpreter
-import org.codecannery.lunchplanner.infrastructure.repository.postgres.UserJsonRepository
+import org.codecannery.lunchplanner.infrastructure.repository.postgres.{SessionJsonRepository, UserJsonRepository}
+import org.codecannery.lunchplanner.infrastructure.service.authentication.DoobieAuthenticationService
 import org.codecannery.lunchplanner.infrastructure.service.user.DoobieUserService
 
 object ApplicationServer extends IOApp {
@@ -27,8 +28,18 @@ object ApplicationServer extends IOApp {
       userRepo       =  new UserJsonRepository()
       userValidation =  UserValidationInterpreter(userRepo)
       userService    =  new DoobieUserService[F](userRepo, userValidation, xa)
-      services       =  UserEndpoints.endpoints[F, BCrypt, ConnectionIO](conf, userService, BCrypt.syncPasswordHasher[F])
-      httpApp        =  Router("/" -> services).orNotFound
+      sessionRepo    =  new SessionJsonRepository
+      authService    =  new DoobieAuthenticationService[F, BCrypt](
+        conf,
+        sessionRepo,
+        userRepo,
+        xa,
+        BCrypt.syncPasswordHasher[ConnectionIO]
+      )
+      httpApp        =  Router(
+        "/users" -> UserEndpoints.endpoints[F, BCrypt, ConnectionIO](userService, BCrypt.syncPasswordHasher[F]),
+        "/auth"  -> AuthenticationEndpoints.endpoints[F, ConnectionIO, BCrypt](conf, authService)
+      ).orNotFound
       _              <- Resource.liftF[F, Unit](config.DatabaseConfig.initializeDb[F](conf.db))
       server <-
         BlazeServerBuilder[F]

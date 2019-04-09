@@ -1,26 +1,20 @@
 package org.codecannery.lunchplanner.infrastructure.endpoint
 
-import java.time.Instant
-
-import cats.data._
 import cats.effect._
 import cats.implicits._
 import io.circe.generic.auto._
 import io.circe.syntax._
-import org.codecannery.lunchplanner.config.ApplicationConfig
 import org.codecannery.lunchplanner.domain.authentication.command.{LoginRequest, SignupRequest}
 import org.codecannery.lunchplanner.domain.user.{UserService, _}
 import org.codecannery.lunchplanner.infrastructure.endpoint.Pagination.{OffsetQ, PageSizeQ}
 import org.http4s._
 import org.http4s.circe._
 import org.http4s.dsl.Http4sDsl
-import tsec.common.Verified
-import tsec.passwordhashers.{PasswordHash, PasswordHasher}
+import tsec.passwordhashers.PasswordHasher
 
 import scala.language.higherKinds
 
 class UserEndpoints[F[_]: Effect, A, D[_]](
-    config: ApplicationConfig,
     userService: UserService[F, D],
     cryptService: PasswordHasher[F, A]
 ) extends Http4sDsl[F] {
@@ -32,58 +26,12 @@ class UserEndpoints[F[_]: Effect, A, D[_]](
 
   def endpoints: HttpRoutes[F] =
     HttpRoutes.of[F] {
-      case req @ POST -> Root / "login"                         => login(req)
-      case req @ POST -> Root / "users"                         => signup(req)
-      case req @ PUT -> Root / "users" / name                   => update(req, name)
-      case GET -> Root / "users" :? PageSizeQ(ps) :? OffsetQ(o) => list(ps, o)
-      case GET -> Root / "users" / username                     => searchByUsername(username)
-      case DELETE -> Root / "users" / username                  => deleteByUsername(username)
+      case req @ POST -> Root                          => signup(req)
+      case req @ PUT -> Root / name                   => update(req, name)
+      case GET -> Root :? PageSizeQ(ps) :? OffsetQ(o) => list(ps, o)
+      case GET -> Root / username                     => searchByUsername(username)
+      case DELETE -> Root / username                  => deleteByUsername(username)
     }
-
-  private def verifyLogin(req: Request[F]) = {
-    def getLoginRequest = EitherT.liftF(req.as[LoginRequest])
-
-    def getUserOrFailLogin(login: LoginRequest) =
-      userService
-        .getUserByUsername(login.username)
-        .leftMap(_ => UserAuthenticationFailedError(login.username))
-
-    def checkUserPassword(login: LoginRequest, user: model.User) =
-      EitherT.liftF(cryptService.checkpw(login.password, PasswordHash[A](user.hash)))
-
-    def loggedInUser(user: model.User) =
-      EitherT.rightT[F, UserAuthenticationFailedError](user)
-
-    def failedLoginForUsername(login: LoginRequest) =
-      EitherT.leftT[F, model.User](UserAuthenticationFailedError(login.username))
-
-    (for {
-      login       <- getLoginRequest
-      user        <- getUserOrFailLogin(login)
-      checkResult <- checkUserPassword(login, user)
-      resp        <- if (checkResult == Verified) loggedInUser(user) else failedLoginForUsername(login)
-    } yield resp).value
-  }
-
-  private def newSessionCookie(userData: model.User) = {
-    val cookieExpiresAt = Instant.now().plusSeconds(config.auth.sessionLength)
-
-    ResponseCookie(
-      name    = "session",
-      content = userData.key.toString,
-      expires = HttpDate.fromInstant(cookieExpiresAt).toOption,
-    )
-  }
-
-  private def login(req: Request[F]): F[Response[F]] = {
-    verifyLogin(req).flatMap {
-      case Right(user) => Ok(user.asJson).map(_.addCookie(
-        newSessionCookie(user)
-      ))
-      case Left(UserAuthenticationFailedError(name)) =>
-        BadRequest(s"Authentication failed for user $name")
-    }
-  }
 
   private def signup(req: Request[F]): F[Response[F]] = {
     val action = for {
@@ -141,9 +89,8 @@ class UserEndpoints[F[_]: Effect, A, D[_]](
 
 object UserEndpoints {
   def endpoints[F[_]: Effect, A, D[_]](
-      config: ApplicationConfig,
       userService: UserService[F, D],
       cryptService: PasswordHasher[F, A]
   ): HttpRoutes[F] =
-    new UserEndpoints[F, A, D](config, userService, cryptService).endpoints
+    new UserEndpoints[F, A, D](userService, cryptService).endpoints
 }
