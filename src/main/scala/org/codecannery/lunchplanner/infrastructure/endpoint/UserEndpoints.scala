@@ -45,8 +45,8 @@ class UserEndpoints[F[_]: Effect, A, D[_]](
 
     def getUserOrFailLogin(login: LoginRequest) =
       userService
-        .getUserByUsername(login.userName)
-        .leftMap(_ => UserAuthenticationFailedError(login.userName))
+        .getUserByUsername(login.username)
+        .leftMap(_ => UserAuthenticationFailedError(login.username))
 
     def checkUserPassword(login: LoginRequest, user: model.User) =
       EitherT.liftF(cryptService.checkpw(login.password, PasswordHash[A](user.hash)))
@@ -55,7 +55,7 @@ class UserEndpoints[F[_]: Effect, A, D[_]](
       EitherT.rightT[F, UserAuthenticationFailedError](user)
 
     def failedLoginForUsername(login: LoginRequest) =
-      EitherT.leftT[F, model.User](UserAuthenticationFailedError(login.userName))
+      EitherT.leftT[F, model.User](UserAuthenticationFailedError(login.username))
 
     (for {
       login       <- getLoginRequest

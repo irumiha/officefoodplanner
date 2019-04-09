@@ -1,7 +1,7 @@
 package org.codecannery.lunchplanner.domain.authentication.command
 
 final case class LoginRequest(
-  userName: String,
+  username: String,
   password: String
 )
 
