@@ -26,7 +26,7 @@ class UserEndpoints[F[_]: Effect, A, D[_]](
 
   def endpoints: HttpRoutes[F] =
     HttpRoutes.of[F] {
-      case req @ POST -> Root                          => signup(req)
+      case req @ POST -> Root                         => signup(req)
       case req @ PUT -> Root / name                   => update(req, name)
       case GET -> Root :? PageSizeQ(ps) :? OffsetQ(o) => list(ps, o)
       case GET -> Root / username                     => searchByUsername(username)

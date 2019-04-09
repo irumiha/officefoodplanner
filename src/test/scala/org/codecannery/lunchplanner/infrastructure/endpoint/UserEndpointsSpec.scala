@@ -3,7 +3,6 @@ package org.codecannery.lunchplanner.infrastructure.endpoint
 import cats.effect._
 import doobie.implicits._
 import io.circe.generic.auto._
-import io.circe.config.parser
 import org.http4s._
 import org.http4s.circe._
 import org.http4s.client.dsl.Http4sClientDsl
@@ -12,7 +11,6 @@ import org.http4s.implicits._
 import org.scalatest._
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import tsec.passwordhashers.jca.BCrypt
-import org.codecannery.lunchplanner.config.ApplicationConfig
 import org.codecannery.lunchplanner.domain.authentication.command.SignupRequest
 import org.codecannery.lunchplanner.domain.user.UserValidationInterpreter
 import org.codecannery.lunchplanner.domain.user.model.User
@@ -33,16 +31,15 @@ class UserEndpointsSpec
   implicit val signupRequestEnc: EntityEncoder[IO, SignupRequest] = jsonEncoderOf
   implicit val signupRequestDec: EntityDecoder[IO, SignupRequest] = jsonOf
 
-  private val appConfig = parser.decodePath[ApplicationConfig]("application").right.get
   private val userRepo = new UserJsonRepository()
   private val userValidation = UserValidationInterpreter(userRepo)
   private val userService = new DoobieUserService[IO](userRepo, userValidation, testTransactor)
-  private val userHttpService = UserEndpoints.endpoints(appConfig, userService, BCrypt.syncPasswordHasher[IO]).orNotFound
+  private val userHttpService = UserEndpoints.endpoints(userService, BCrypt.syncPasswordHasher[IO]).orNotFound
 
   test("create user") {
     forAll { userSignup: SignupRequest =>
       (for {
-        request <- POST(userSignup, Uri.uri("/users"))
+        request <- POST(userSignup, Uri.uri("/"))
         response <- userHttpService.run(request)
       } yield {
         response.status shouldEqual Ok
@@ -53,11 +50,11 @@ class UserEndpointsSpec
   test("update user") {
     forAll { userSignup: SignupRequest =>
       (for {
-        createRequest <- POST(userSignup, Uri.uri("/users"))
+        createRequest <- POST(userSignup, Uri.uri("/"))
         createResponse <- userHttpService.run(createRequest)
         createdUser <- createResponse.as[User]
         userToUpdate = createdUser.copy(lastName = createdUser.lastName.reverse)
-        updateUser <- PUT(userToUpdate, Uri.unsafeFromString(s"/users/${createdUser.userName}"))
+        updateUser <- PUT(userToUpdate, Uri.unsafeFromString(s"/${createdUser.userName}"))
         updateResponse <- userHttpService.run(updateUser)
         updatedUser <- updateResponse.as[User]
       } yield {
@@ -71,10 +68,10 @@ class UserEndpointsSpec
   test("get user by userName") {
     forAll { userSignup: SignupRequest =>
       (for {
-        createRequest <- POST(userSignup, Uri.uri("/users"))
+        createRequest <- POST(userSignup, Uri.uri("/"))
         createResponse <- userHttpService.run(createRequest)
         createdUser <- createResponse.as[User]
-        getRequest <- GET(Uri.unsafeFromString(s"/users/${createdUser.userName}"))
+        getRequest <- GET(Uri.unsafeFromString(s"/${createdUser.userName}"))
         getResponse <- userHttpService.run(getRequest)
         getUser <- getResponse.as[User]
       } yield {
@@ -87,12 +84,12 @@ class UserEndpointsSpec
   test("delete user by userName") {
     forAll { userSignup: SignupRequest =>
       (for {
-        createRequest <- POST(userSignup, Uri.uri("/users"))
+        createRequest <- POST(userSignup, Uri.uri("/"))
         createResponse <- userHttpService.run(createRequest)
         createdUser <- createResponse.as[User]
-        deleteRequest <- DELETE(Uri.unsafeFromString(s"/users/${createdUser.userName}"))
+        deleteRequest <- DELETE(Uri.unsafeFromString(s"/${createdUser.userName}"))
         deleteResponse <- userHttpService.run(deleteRequest)
-        getRequest <- GET(Uri.unsafeFromString(s"/users/${createdUser.userName}"))
+        getRequest <- GET(Uri.unsafeFromString(s"/${createdUser.userName}"))
         getResponse <- userHttpService.run(getRequest)
       } yield {
         createResponse.status shouldEqual Ok
