@@ -9,10 +9,9 @@ import cats.syntax.functor._
 import io.scalaland.chimney.dsl._
 import org.codecannery.lunchplanner.infrastructure.service.TransactingService
 
-abstract class UserService[F[_]: Monad, D[_]: Monad](
-    userRepo: UserRepository[D],
-    validation: UserValidation[D]
-) extends TransactingService[F, D] {
+abstract class UserService[F[_]: Monad, D[_]: Monad] extends TransactingService[F, D] {
+  val userRepo: UserRepository[D]
+  val validation: UserValidation[D]
 
   def createUser(user: command.CreateUser): EitherT[F, UserAlreadyExistsError, model.User] =
     (for {
