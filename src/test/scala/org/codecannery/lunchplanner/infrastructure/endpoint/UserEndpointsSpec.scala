@@ -1,5 +1,6 @@
 package org.codecannery.lunchplanner.infrastructure.endpoint
 
+import doobie.implicits._
 import cats.effect._
 import io.circe.generic.auto._
 import org.http4s._

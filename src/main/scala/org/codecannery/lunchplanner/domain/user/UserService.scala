@@ -28,7 +28,7 @@ abstract class UserService[F[_]: Monad, D[_]: Monad] extends TransactingService[
   private def createUser(userToCreate: User) =
     EitherT.liftF[D, UserValidationError, User](userRepo.create(userToCreate))
 
-  private def getUser(user: CreateUser): EitherT[D, Nothing, Option[User]] =
+  private def getUser(user: CreateUser): EitherT[D, UserValidationError, Option[User]] =
     EitherT.right(userRepo.findByUsername(user.userName))
 
   def getUser(userId: UUID): EitherT[F, UserValidationError, model.User] =
@@ -48,7 +48,7 @@ abstract class UserService[F[_]: Monad, D[_]: Monad] extends TransactingService[
       maybeUser <- EitherT.right(userRepo.findByUsername(user.userName))
       storedUser <- userMustExist(maybeUser)
       userToUpdate <- validChanges(storedUser, user)
-      _ <- EitherT.right(userRepo.update(userToUpdate))
+      _ <- EitherT.liftF[D, UserValidationError, Int](userRepo.update(userToUpdate))
     } yield userToUpdate).mapK(FunctionK.lift(transact))
 
   def list(pageSize: Int, offset: Int): F[List[view.UserListView]] =
