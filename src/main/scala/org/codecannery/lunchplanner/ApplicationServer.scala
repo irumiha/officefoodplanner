@@ -11,7 +11,6 @@ import org.http4s.server.{Router, Server}
 import org.http4s.server.blaze.BlazeServerBuilder
 import tsec.passwordhashers.jca.BCrypt
 import infrastructure.endpoint.{AuthenticationEndpoints, UserEndpoints}
-import org.codecannery.lunchplanner.domain.user.UserValidationInterpreter
 import org.codecannery.lunchplanner.infrastructure.repository.postgres.{SessionJsonRepository, UserJsonRepository}
 import org.codecannery.lunchplanner.infrastructure.service.authentication.DoobieAuthenticationService
 import org.codecannery.lunchplanner.infrastructure.service.user.DoobieUserService
@@ -26,8 +25,7 @@ object ApplicationServer extends IOApp {
       txnEc          <- ExecutionContexts.cachedThreadPool[F]
       xa             <- config.DatabaseConfig.dbTransactor[F](conf.db, connEc, txnEc)
       userRepo       =  new UserJsonRepository()
-      userValidation =  UserValidationInterpreter(userRepo)
-      userService    =  new DoobieUserService[F](userRepo, userValidation, xa)
+      userService    =  new DoobieUserService[F](userRepo, xa)
       sessionRepo    =  new SessionJsonRepository
       authService    =  new DoobieAuthenticationService[F, BCrypt](
         conf,

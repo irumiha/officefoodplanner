@@ -7,8 +7,8 @@ import java.util.UUID
 import cats.implicits._
 import doobie._
 import doobie.implicits._
-import doobie.postgres.circe.jsonb.implicits._
 import doobie.postgres.implicits._
+import doobie.postgres.circe.jsonb.implicits._
 import doobie.util.fragment
 import doobie.util.query.Query0
 import io.circe._
@@ -193,7 +193,7 @@ abstract class JsonRepository[E: Encoder: Decoder: UuidKeyEntity]
     select(
       table = table,
       where = specification.v,
-      orderBy = orderBy.v,
+      orderBy = Fragment.const(orderBy.v),
       offset = Fragment.empty,
       limit = Fragment.empty
     ).map(toEntity[E])
@@ -229,7 +229,7 @@ abstract class JsonRepository[E: Encoder: Decoder: UuidKeyEntity]
     select(
       table = table,
       where = specification.v,
-      orderBy = orderBy.v,
+      orderBy = Fragment.const(orderBy.v),
       offset = offset.v,
       limit = limit.v
     ).map(toEntity[E])

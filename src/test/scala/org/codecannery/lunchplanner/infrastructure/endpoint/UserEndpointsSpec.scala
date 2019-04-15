@@ -1,7 +1,6 @@
 package org.codecannery.lunchplanner.infrastructure.endpoint
 
 import cats.effect._
-import doobie.implicits._
 import io.circe.generic.auto._
 import org.http4s._
 import org.http4s.circe._
@@ -12,7 +11,6 @@ import org.scalatest._
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import tsec.passwordhashers.jca.BCrypt
 import org.codecannery.lunchplanner.domain.authentication.command.SignupRequest
-import org.codecannery.lunchplanner.domain.user.UserValidationInterpreter
 import org.codecannery.lunchplanner.domain.user.model.User
 import org.codecannery.lunchplanner.infrastructure.LunchPlannerArbitraries
 import org.codecannery.lunchplanner.infrastructure.repository.postgres.{UserJsonRepository, testTransactor}
@@ -32,8 +30,7 @@ class UserEndpointsSpec
   implicit val signupRequestDec: EntityDecoder[IO, SignupRequest] = jsonOf
 
   private val userRepo = new UserJsonRepository()
-  private val userValidation = UserValidationInterpreter(userRepo)
-  private val userService = new DoobieUserService[IO](userRepo, userValidation, testTransactor)
+  private val userService = new DoobieUserService[IO](userRepo, testTransactor)
   private val userHttpService = UserEndpoints.endpoints(userService, BCrypt.syncPasswordHasher[IO]).orNotFound
 
   test("create user") {

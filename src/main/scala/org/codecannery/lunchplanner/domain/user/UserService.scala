@@ -4,27 +4,37 @@ import java.util.UUID
 
 import cats._
 import cats.arrow.FunctionK
-import cats.data._
-import cats.syntax.functor._
+import cats.data.EitherT
+import cats.implicits._
 import io.scalaland.chimney.dsl._
+import org.codecannery.lunchplanner.domain.user.command.CreateUser
+import org.codecannery.lunchplanner.domain.user.model.User
 import org.codecannery.lunchplanner.infrastructure.service.TransactingService
 
-abstract class UserService[F[_]: Monad, D[_]: Monad] extends TransactingService[F, D] {
+abstract class UserService[F[_]: Monad, D[_]: Monad] extends TransactingService[F, D] with UserValidation[D] {
   val userRepo: UserRepository[D]
-  val validation: UserValidation[D]
 
-  def createUser(user: command.CreateUser): EitherT[F, UserAlreadyExistsError, model.User] =
+  def createUser(user: command.CreateUser): EitherT[F, UserValidationError, model.User] =
     (for {
-      _ <- EitherT(validation.doesNotExist(user.userName))
-      userToCreate = user.into[model.User].transform
-      saved <- EitherT.liftF[D, UserAlreadyExistsError, model.User](
-        userRepo.create(userToCreate))
+      maybeUser <- getUser(user)
+      _ <- userMustNotExist(maybeUser)
+      userToCreate = prepareUserFromCommand(user)
+      saved <- createUser(userToCreate)
     } yield saved).mapK(FunctionK.lift(transact))
 
-  def getUser(userId: UUID): EitherT[F, UserNotFoundError.type, model.User] =
+  private def prepareUserFromCommand(user: CreateUser) =
+    user.into[User].transform
+
+  private def createUser(userToCreate: User) =
+    EitherT.liftF[D, UserValidationError, User](userRepo.create(userToCreate))
+
+  private def getUser(user: CreateUser): EitherT[D, Nothing, Option[User]] =
+    EitherT.right(userRepo.findByUsername(user.userName))
+
+  def getUser(userId: UUID): EitherT[F, UserValidationError, model.User] =
     EitherT.fromOptionF(transact(userRepo.get(userId)), UserNotFoundError)
 
-  def getUserByUsername(username: String): EitherT[F, UserNotFoundError.type, model.User] =
+  def getUserByUsername(username: String): EitherT[F, UserValidationError, model.User] =
     EitherT.fromOptionF(transact(userRepo.findByUsername(username)), UserNotFoundError)
 
   def deleteUser(userId: UUID): F[Unit] =
@@ -35,18 +45,11 @@ abstract class UserService[F[_]: Monad, D[_]: Monad] extends TransactingService[
 
   def update(user: command.UpdateUser): EitherT[F, UserValidationError, model.User] =
     (for {
-      storedUser <- EitherT(validation.exists(user.key))
-      userToUpdate <- EitherT.fromEither[D](validation.validChanges(storedUser, user))
-      updatedUser <- persistUpdatedUser(userToUpdate)
-    } yield updatedUser).mapK(FunctionK.lift(transact))
-
-  private def persistUpdatedUser(user: model.User): EitherT[D, UserValidationError, model.User] = {
-    val updated = userRepo.update(user)
-    val of = Monad[D].map(updated) { u =>
-      if (u == 1) Some(user) else None
-    }
-    EitherT.fromOptionF(of, UserNotFoundError)
-  }
+      maybeUser <- EitherT.right(userRepo.findByUsername(user.userName))
+      storedUser <- userMustExist(maybeUser)
+      userToUpdate <- validChanges(storedUser, user)
+      _ <- EitherT.right(userRepo.update(userToUpdate))
+    } yield userToUpdate).mapK(FunctionK.lift(transact))
 
   def list(pageSize: Int, offset: Int): F[List[view.UserListView]] =
     for {
