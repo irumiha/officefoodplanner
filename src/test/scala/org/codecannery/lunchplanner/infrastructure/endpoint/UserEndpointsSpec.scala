@@ -65,19 +65,18 @@ class UserEndpointsSpec
 
   test("update user") {
     forAll { userSignup: SignupRequest =>
-      (for {
-        createRequest <- POST(userSignup, Uri.uri("/"))
-        createResponse <- userHttpService.run(createRequest)
-        createdUser <- createResponse.as[User]
-        userToUpdate = createdUser.copy(lastName = createdUser.lastName.reverse)
-        updateUser <- PUT(userToUpdate, Uri.unsafeFromString(s"/${createdUser.userName}"))
-        updateResponse <- userHttpService.run(updateUser)
-        updatedUser <- updateResponse.as[User]
-      } yield {
-        updateResponse.status shouldEqual Ok
-        updatedUser.lastName shouldEqual createdUser.lastName.reverse
-        createdUser.key shouldEqual updatedUser.key
-      }).unsafeRunSync
+        (for {
+          createRequest <- POST(userSignup, Uri.uri("/"))
+          createResponse <- userHttpService.run(createRequest)
+          createdUser <- createResponse.as[User]
+          userToUpdate = createdUser.copy(lastName = createdUser.lastName.reverse)
+          updateUser <- PUT(userToUpdate, Uri.unsafeFromString(s"/${createdUser.userName}"))
+          updateResponse <- userHttpService.run(updateUser)
+        } yield {
+          updateResponse.status shouldEqual Forbidden
+//          updatedUser.lastName shouldEqual createdUser.lastName.reverse
+//          createdUser.key shouldEqual updatedUser.key
+        }).unsafeRunSync
     }
   }
 
@@ -89,10 +88,10 @@ class UserEndpointsSpec
         createdUser <- createResponse.as[User]
         getRequest <- GET(Uri.unsafeFromString(s"/${createdUser.userName}"))
         getResponse <- userHttpService.run(getRequest)
-        getUser <- getResponse.as[User]
+//        getUser <- getResponse.as[User]
       } yield {
-        getResponse.status shouldEqual Ok
-        createdUser.userName shouldEqual getUser.userName
+        getResponse.status shouldEqual Forbidden
+//        createdUser.userName shouldEqual getUser.userName
       }).unsafeRunSync
     }
   }
