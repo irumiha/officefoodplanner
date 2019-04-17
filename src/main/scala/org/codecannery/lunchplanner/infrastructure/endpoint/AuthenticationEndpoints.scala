@@ -28,10 +28,10 @@ class AuthenticationEndpoints[F[_]: Effect, D[_], H](
     }
 
   private def newSessionCookie(sessionData: Session) = {
-    val cookieExpiresAt = Instant.now().plusSeconds(config.auth.sessionLength)
+    val cookieExpiresAt = Instant.now().plusSeconds(config.auth.cookieDuration)
 
     ResponseCookie(
-      name = "session",
+      name = config.auth.sessionCookieName,
       content = sessionData.key.toString,
       expires = HttpDate.fromInstant(cookieExpiresAt).toOption,
     )
@@ -61,4 +61,5 @@ object AuthenticationEndpoints {
     authService: AuthenticationService[F, D, H]
   ): HttpRoutes[F] =
     new AuthenticationEndpoints[F, D, H](config, authService).endpoints
+
 }

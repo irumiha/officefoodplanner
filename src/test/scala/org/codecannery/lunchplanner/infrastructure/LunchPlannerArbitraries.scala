@@ -22,11 +22,11 @@ trait LunchPlannerArbitraries {
   implicit val user: Arbitrary[User] = Arbitrary[User] {
     for {
       userName <- userNameGen
-      firstName <- arbitrary[String]
-      lastName <- arbitrary[String]
-      email <- arbitrary[String]
-      password <- arbitrary[String]
-      phone <- arbitrary[String]
+      firstName <- userNameGen
+      lastName <- userNameGen
+      email <- userNameGen
+      password <- userNameGen
+      phone <- userNameGen
       id <- Gen.uuid
     } yield User(userName, firstName, lastName, email, password, phone, id)
   }
@@ -34,11 +34,11 @@ trait LunchPlannerArbitraries {
   implicit val userSignup: Arbitrary[SignupRequest] = Arbitrary[SignupRequest] {
     for {
       userName <- userNameGen
-      firstName <- arbitrary[String]
-      lastName <- arbitrary[String]
-      email <- arbitrary[String]
-      password <- arbitrary[String]
-      phone <- arbitrary[String]
+      firstName <- userNameGen
+      lastName <- userNameGen
+      email <- userNameGen
+      password <- userNameGen
+      phone <- userNameGen
     } yield SignupRequest(userName, firstName, lastName, email, password, phone)
   }
 }

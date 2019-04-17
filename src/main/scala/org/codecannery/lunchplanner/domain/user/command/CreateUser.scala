@@ -5,6 +5,6 @@ case class CreateUser(
     firstName: String,
     lastName: String,
     email: String,
-    hash: String,
+    password: String,
     phone: String
 )

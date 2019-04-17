@@ -1,22 +1,25 @@
 package org.codecannery.lunchplanner.infrastructure.endpoint
 
+import cats.data.{Kleisli, OptionT}
 import cats.effect._
 import cats.implicits._
 import io.circe.generic.auto._
 import io.circe.syntax._
 import org.codecannery.lunchplanner.domain.authentication.command.{LoginRequest, SignupRequest}
+import org.codecannery.lunchplanner.domain.user.model.User
 import org.codecannery.lunchplanner.domain.user.{UserService, _}
 import org.codecannery.lunchplanner.infrastructure.endpoint.Pagination.{OffsetQ, PageSizeQ}
+import org.codecannery.lunchplanner.infrastructure.middleware.Authenticate
 import org.http4s._
 import org.http4s.circe._
 import org.http4s.dsl.Http4sDsl
-import tsec.passwordhashers.PasswordHasher
+import org.http4s.server.AuthMiddleware
 
 import scala.language.higherKinds
 
-class UserEndpoints[F[_]: Effect, A, D[_]](
-    userService: UserService[F, D],
-    cryptService: PasswordHasher[F, A]
+class UserEndpoints[F[_]: Effect, D[_], H](
+    userService: UserService[F, D, H],
+    authMiddleware: Authenticate[F, D, H]
 ) extends Http4sDsl[F] {
 
   implicit val userUpdateDecoder: EntityDecoder[F, command.UpdateUser] = jsonOf
@@ -24,20 +27,27 @@ class UserEndpoints[F[_]: Effect, A, D[_]](
   implicit val loginReqDecoder: EntityDecoder[F, LoginRequest] = jsonOf
   implicit val signupReqDecoder: EntityDecoder[F, SignupRequest] = jsonOf
 
-  def endpoints: HttpRoutes[F] =
+  def freeEndpoints: HttpRoutes[F] =
     HttpRoutes.of[F] {
       case req @ POST -> Root                         => signup(req)
-      case req @ PUT -> Root / name                   => update(req, name)
-      case GET -> Root :? PageSizeQ(ps) :? OffsetQ(o) => list(ps, o)
-      case GET -> Root / username                     => searchByUsername(username)
-      case DELETE -> Root / username                  => deleteByUsername(username)
     }
+
+  val onFailure: AuthedService[String, F] = Kleisli(req => OptionT.liftF(Forbidden(req.authInfo)))
+  val authM: AuthMiddleware[F, User] =
+    AuthMiddleware(authMiddleware.authUser, onFailure)
+
+  def authEndpoints: HttpRoutes[F] =
+    authM(AuthedService[User, F] {
+      case GET -> Root :? PageSizeQ(ps) :? OffsetQ(o) as session => list(ps, o)
+      case GET -> Root / username as session                     => searchByUsername(username)
+      case req @ PUT -> Root / name as session                   => update(req, name)
+      case DELETE -> Root / username as session                  => deleteByUsername(username)
+    })
 
   private def signup(req: Request[F]): F[Response[F]] = {
     val action = for {
       signup <- req.as[SignupRequest]
-      hash <- cryptService.hashpw(signup.password)
-      user <- signup.asCreateUser(hash).pure[F]
+      user <- signup.asCreateUser.pure[F]
       result <- userService.createUser(user).value
     } yield result
 
@@ -48,9 +58,9 @@ class UserEndpoints[F[_]: Effect, A, D[_]](
     }
   }
 
-  private def update(req: Request[F], name: String): F[Response[F]] = {
+  private def update(req: AuthedRequest[F, User], name: String): F[Response[F]] = {
     val action = for {
-      user <- req.as[command.UpdateUser]
+      user <- req.req.as[command.UpdateUser]
       updated = user.copy(userName = name)
       result <- userService.update(updated).value
     } yield result
@@ -88,9 +98,12 @@ class UserEndpoints[F[_]: Effect, A, D[_]](
 }
 
 object UserEndpoints {
-  def endpoints[F[_]: Effect, A, D[_]](
-      userService: UserService[F, D],
-      cryptService: PasswordHasher[F, A]
-  ): HttpRoutes[F] =
-    new UserEndpoints[F, A, D](userService, cryptService).endpoints
+  def endpoints[F[_]: Effect, D[_], H](
+      userService: UserService[F, D, H],
+      authMiddleware: Authenticate[F, D, H]
+  ): HttpRoutes[F] = {
+    val userEndpoints = new UserEndpoints[F, D, H](userService, authMiddleware)
+
+    userEndpoints.freeEndpoints <+> userEndpoints.authEndpoints
+  }
 }

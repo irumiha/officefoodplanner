@@ -10,20 +10,25 @@ import io.scalaland.chimney.dsl._
 import org.codecannery.lunchplanner.domain.user.command.CreateUser
 import org.codecannery.lunchplanner.domain.user.model.User
 import org.codecannery.lunchplanner.infrastructure.service.TransactingService
+import tsec.passwordhashers.PasswordHasher
 
-abstract class UserService[F[_]: Monad, D[_]: Monad] extends TransactingService[F, D] with UserValidation[D] {
+abstract class UserService[F[_]: Monad, D[_]: Monad, H] extends TransactingService[F, D] with UserValidation[D] {
   val userRepo: UserRepository[D]
+  val cryptService: PasswordHasher[D, H]
 
   def createUser(user: command.CreateUser): EitherT[F, UserValidationError, model.User] =
     (for {
       maybeUser <- getUser(user)
       _ <- userMustNotExist(maybeUser)
-      userToCreate = prepareUserFromCommand(user)
+      hashedPw <- EitherT.right(cryptService.hashpw(user.password))
+      userToCreate = prepareUserFromCommand(user, hashedPw.toString)
       saved <- createUser(userToCreate)
     } yield saved).mapK(FunctionK.lift(transact))
 
-  private def prepareUserFromCommand(user: CreateUser) =
-    user.into[User].transform
+  private def prepareUserFromCommand(user: CreateUser, pwhash: String) =
+    user.into[User]
+      .withFieldComputed(_.hash, _ => pwhash)
+      .transform
 
   private def createUser(userToCreate: User) =
     EitherT.liftF[D, UserValidationError, User](userRepo.create(userToCreate))

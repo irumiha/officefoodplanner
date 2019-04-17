@@ -1,8 +1,15 @@
 package org.codecannery.lunchplanner.infrastructure.endpoint
 
-import doobie.implicits._
 import cats.effect._
+import doobie.ConnectionIO
 import io.circe.generic.auto._
+import org.codecannery.lunchplanner.domain.authentication.command.SignupRequest
+import org.codecannery.lunchplanner.domain.user.model.User
+import org.codecannery.lunchplanner.infrastructure.middleware.Authenticate
+import org.codecannery.lunchplanner.infrastructure.repository.postgres.{SessionJsonRepository, UserJsonRepository, testTransactor}
+import org.codecannery.lunchplanner.infrastructure.service.authentication.DoobieAuthenticationService
+import org.codecannery.lunchplanner.infrastructure.service.user.DoobieUserService
+import org.codecannery.lunchplanner.infrastructure.{LunchPlannerArbitraries, TestConfig}
 import org.http4s._
 import org.http4s.circe._
 import org.http4s.client.dsl.Http4sClientDsl
@@ -11,11 +18,6 @@ import org.http4s.implicits._
 import org.scalatest._
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import tsec.passwordhashers.jca.BCrypt
-import org.codecannery.lunchplanner.domain.authentication.command.SignupRequest
-import org.codecannery.lunchplanner.domain.user.model.User
-import org.codecannery.lunchplanner.infrastructure.LunchPlannerArbitraries
-import org.codecannery.lunchplanner.infrastructure.repository.postgres.{UserJsonRepository, testTransactor}
-import org.codecannery.lunchplanner.infrastructure.service.user.DoobieUserService
 
 class UserEndpointsSpec
     extends FunSuite
@@ -30,9 +32,25 @@ class UserEndpointsSpec
   implicit val signupRequestEnc: EntityEncoder[IO, SignupRequest] = jsonEncoderOf
   implicit val signupRequestDec: EntityDecoder[IO, SignupRequest] = jsonOf
 
+  private val cryptService = BCrypt.syncPasswordHasher[ConnectionIO]
+
   private val userRepo = new UserJsonRepository()
-  private val userService = new DoobieUserService[IO](userRepo, testTransactor)
-  private val userHttpService = UserEndpoints.endpoints(userService, BCrypt.syncPasswordHasher[IO]).orNotFound
+  private val userService = new DoobieUserService[IO, BCrypt](userRepo, cryptService, testTransactor)
+  private val sessionRepo = new SessionJsonRepository()
+  private val sessionService = new DoobieAuthenticationService[IO, BCrypt](
+    TestConfig.appTestConfig, sessionRepo, userRepo, testTransactor, cryptService)
+  private val authService = new DoobieAuthenticationService[IO, BCrypt](
+    TestConfig.appTestConfig,
+    sessionRepo,
+    userRepo,
+    testTransactor,
+    cryptService
+  )
+  private val authMiddleware = new Authenticate(TestConfig.appTestConfig, authService)
+  private val userHttpService = UserEndpoints.endpoints(
+    userService,
+    authMiddleware
+  ).orNotFound
 
   test("create user") {
     forAll { userSignup: SignupRequest =>
@@ -91,8 +109,8 @@ class UserEndpointsSpec
         getResponse <- userHttpService.run(getRequest)
       } yield {
         createResponse.status shouldEqual Ok
-        deleteResponse.status shouldEqual Ok
-        getResponse.status shouldEqual NotFound
+        deleteResponse.status shouldEqual Forbidden
+        getResponse.status shouldEqual Forbidden
       }).unsafeRunSync
     }
   }
