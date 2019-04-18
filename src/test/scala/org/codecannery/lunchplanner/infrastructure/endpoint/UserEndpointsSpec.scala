@@ -37,8 +37,6 @@ class UserEndpointsSpec
   private val userRepo = new UserJsonRepository()
   private val userService = new DoobieUserService[IO, BCrypt](userRepo, cryptService, testTransactor)
   private val sessionRepo = new SessionJsonRepository()
-  private val sessionService = new DoobieAuthenticationService[IO, BCrypt](
-    TestConfig.appTestConfig, sessionRepo, userRepo, testTransactor, cryptService)
   private val authService = new DoobieAuthenticationService[IO, BCrypt](
     TestConfig.appTestConfig,
     sessionRepo,

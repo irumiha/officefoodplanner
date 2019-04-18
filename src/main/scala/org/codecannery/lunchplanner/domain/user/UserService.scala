@@ -7,8 +7,6 @@ import cats.arrow.FunctionK
 import cats.data.EitherT
 import cats.implicits._
 import io.scalaland.chimney.dsl._
-import org.codecannery.lunchplanner.domain.user.command.CreateUser
-import org.codecannery.lunchplanner.domain.user.model.User
 import org.codecannery.lunchplanner.infrastructure.service.TransactingService
 import tsec.passwordhashers.PasswordHasher
 
@@ -25,15 +23,15 @@ abstract class UserService[F[_]: Monad, D[_]: Monad, H] extends TransactingServi
       saved <- createUser(userToCreate)
     } yield saved).mapK(FunctionK.lift(transact))
 
-  private def prepareUserFromCommand(user: CreateUser, pwhash: String) =
-    user.into[User]
+  private def prepareUserFromCommand(user: command.CreateUser, pwhash: String) =
+    user.into[model.User]
       .withFieldComputed(_.hash, _ => pwhash)
       .transform
 
-  private def createUser(userToCreate: User) =
-    EitherT.liftF[D, UserValidationError, User](userRepo.create(userToCreate))
+  private def createUser(userToCreate: model.User) =
+    EitherT.liftF[D, UserValidationError, model.User](userRepo.create(userToCreate))
 
-  private def getUser(user: CreateUser): EitherT[D, UserValidationError, Option[User]] =
+  private def getUser(user: command.CreateUser): EitherT[D, UserValidationError, Option[model.User]] =
     EitherT.right(userRepo.findByUsername(user.userName))
 
   def getUser(userId: UUID): EitherT[F, UserValidationError, model.User] =

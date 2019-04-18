@@ -30,7 +30,7 @@ trait WriteRepository[K, E] {
 
   def deleteEntities(entities: List[E]): ConnectionIO[Int]
 
-  protected def delete(specification: Specification): Query0[E]
+  def delete(specification: Specification): Query0[E]
 
 }
 
@@ -49,11 +49,11 @@ trait ReadRepository[K, E] {
       offset = Offset(fr"OFFSET $offset")
     ).to[List]
 
-  protected def find(specification: Specification): Query0[E]
-  protected def find(specification: Specification, orderBy: OrderBy): Query0[E]
-  protected def find(specification: Specification, limit: Limit): Query0[E]
-  protected def find(specification: Specification, limit: Limit, offset: Offset): Query0[E]
-  protected def find(specification: Specification, orderByFragment: OrderBy, limit: Limit, offset: Offset): Query0[E]
+  def find(specification: Specification): Query0[E]
+  def find(specification: Specification, orderBy: OrderBy): Query0[E]
+  def find(specification: Specification, limit: Limit): Query0[E]
+  def find(specification: Specification, limit: Limit, offset: Offset): Query0[E]
+  def find(specification: Specification, orderByFragment: OrderBy, limit: Limit, offset: Offset): Query0[E]
 }
 
 trait Repository[K, E] extends ReadRepository[K, E] with WriteRepository[K, E]

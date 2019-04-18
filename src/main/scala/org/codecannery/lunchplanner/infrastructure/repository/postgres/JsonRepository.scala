@@ -172,13 +172,13 @@ abstract class JsonRepository[E: Encoder: Decoder: UuidKeyEntity]
   override def deleteEntities(entities: List[E]): ConnectionIO[Int] =
     deleteManyIDs(table, entities.map(entity => UuidKeyEntity[E].key(entity))).run
 
-  override protected def delete(specification: Specification): Query0[E] =
+  override def delete(specification: Specification): Query0[E] =
     deleteBySpecification(
       table = table,
       where = specification.v
     ).map(toEntity[E])
 
-  override protected def find(specification: Specification): Query0[E] =
+  override def find(specification: Specification): Query0[E] =
     select(
       table = table,
       where = specification.v,
@@ -187,7 +187,7 @@ abstract class JsonRepository[E: Encoder: Decoder: UuidKeyEntity]
       limit = Fragment.empty
     ).map(toEntity[E])
 
-  override protected def find(
+  override def find(
       specification: Specification,
       orderBy: OrderBy): Query0[E] =
     select(
@@ -198,7 +198,7 @@ abstract class JsonRepository[E: Encoder: Decoder: UuidKeyEntity]
       limit = Fragment.empty
     ).map(toEntity[E])
 
-  override protected def find(
+  override def find(
       specification: Specification,
       limit: Limit): Query0[E] =
     select(
@@ -209,7 +209,7 @@ abstract class JsonRepository[E: Encoder: Decoder: UuidKeyEntity]
       limit = limit.v
     ).map(toEntity[E])
 
-  override protected def find(
+  override def find(
       specification: Specification,
       limit: Limit,
       offset: Offset): Query0[E] =
@@ -221,7 +221,7 @@ abstract class JsonRepository[E: Encoder: Decoder: UuidKeyEntity]
       limit = limit.v
     ).map(toEntity[E])
 
-  override protected def find(
+  override def find(
       specification: Specification,
       orderBy: OrderBy,
       limit: Limit,
