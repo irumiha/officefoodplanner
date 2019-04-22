@@ -56,7 +56,7 @@ abstract class UserService[F[_]: Monad, D[_]: Monad, H] extends TransactingServi
 
   def list(pageSize: Int, offset: Int): F[List[view.UserListView]] =
     for {
-      dbList <- transact(userRepo.list(pageSize, offset))
+      dbList <- transact(userRepo.list.map(_.slice(offset, offset + pageSize)))
     } yield {
       dbList.map(u => u.into[view.UserListView].transform)
     }

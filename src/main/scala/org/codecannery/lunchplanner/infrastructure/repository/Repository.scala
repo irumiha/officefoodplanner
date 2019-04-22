@@ -1,59 +1,42 @@
 package org.codecannery.lunchplanner.infrastructure.repository
 
-import doobie.ConnectionIO
-import doobie.util.fragment.Fragment
-import doobie.syntax.string._
-import doobie.util.query.Query0
+trait WriteRepository[F[_], K, E, P] {
+  def create(entity: E): F[E]
 
-case class Specification(v: Fragment)
-object Specification {
-  def empty = Specification(Fragment.empty)
-}
-case class OrderBy(v: String)
-case class Limit(v: Fragment)
-case class Offset(v: Fragment)
+  def create(entities: List[E]): F[List[E]]
 
-trait WriteRepository[K, E] {
-  def create(entity: E): ConnectionIO[E]
+  def update(entity: E): F[Int]
 
-  def create(entities: List[E]): ConnectionIO[List[E]]
+  def update(entities: List[E]): F[Int]
 
-  def update(entity: E): ConnectionIO[Int]
+  def deleteById(entityId: K): F[Int]
 
-  def update(entities: List[E]): ConnectionIO[Int]
+  def deleteByIds(entityIds: List[K]): F[Int]
 
-  def deleteById(entityId: K): ConnectionIO[Int]
+  def deleteEntity(entity: E): F[Int]
 
-  def deleteByIds(entityIds: List[K]): ConnectionIO[Int]
+  def deleteEntities(entities: List[E]): F[Int]
 
-  def deleteEntity(entity: E): ConnectionIO[Int]
-
-  def deleteEntities(entities: List[E]): ConnectionIO[Int]
-
-  def delete(specification: Specification): Query0[E]
+  def delete(specification: P): F[List[E]]
 
 }
 
-trait ReadRepository[K, E] {
-  def get(entityId: K): ConnectionIO[Option[E]]
+trait ReadRepository[F[_], K, E] {
+  def get(entityId: K): F[Option[E]]
 
-  def get(entityIds: List[K]): ConnectionIO[List[E]]
+  def get(entityIds: List[K]): F[List[E]]
 
-  def list: ConnectionIO[List[E]] =
-    find(specification = Specification.empty).to[List]
+  def listAll: F[List[E]]
 
-  def list(pageSize: Int, offset: Int): ConnectionIO[List[E]] =
-    find(
-      specification = Specification.empty,
-      limit = Limit(fr"LIMIT $pageSize"),
-      offset = Offset(fr"OFFSET $offset")
-    ).to[List]
-
-  def find(specification: Specification): Query0[E]
-  def find(specification: Specification, orderBy: OrderBy): Query0[E]
-  def find(specification: Specification, limit: Limit): Query0[E]
-  def find(specification: Specification, limit: Limit, offset: Offset): Query0[E]
-  def find(specification: Specification, orderByFragment: OrderBy, limit: Limit, offset: Offset): Query0[E]
 }
 
-trait Repository[K, E] extends ReadRepository[K, E] with WriteRepository[K, E]
+trait FindRepository[F[_], K, E, P1, P2] {
+  def find(
+    specification: P1,
+    orderBy: P2,
+    limit: Int,
+    offset: Int
+  ): F[List[E]]
+}
+
+trait Repository[F[_], K, E, P] extends ReadRepository[F, K, E] with WriteRepository[F, K, E, P]

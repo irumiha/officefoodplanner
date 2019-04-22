@@ -4,9 +4,10 @@ import java.util.UUID
 
 import doobie.ConnectionIO
 import doobie.syntax.string._
+import doobie.util.fragment.Fragment
 import org.codecannery.lunchplanner.domain.user.UserRepository
 import org.codecannery.lunchplanner.domain.user.model.User
-import org.codecannery.lunchplanner.infrastructure.repository.{SchemaName, Specification, Table, TableName}
+import org.codecannery.lunchplanner.infrastructure.repository.{SchemaName, Table, TableName}
 
 class UserJsonRepository extends UserRepository[ConnectionIO] {
   private val repo: JsonRepository[User] = new JsonRepository[User] {
@@ -23,15 +24,13 @@ class UserJsonRepository extends UserRepository[ConnectionIO] {
 
   def deleteById(userId: UUID): ConnectionIO[Int] = repo.deleteById(userId)
 
-  def list: ConnectionIO[List[User]] = repo.list
-
-  def list(pageSize: Int, offset: Int): ConnectionIO[List[User]] = repo.list(pageSize, offset)
+  def list: ConnectionIO[List[User]] = repo.listAll
 
   def findByUsername(userName: String): ConnectionIO[Option[User]] =
-    repo.find(Specification(byUsername(userName))).option
+    repo.find(byUsername(userName), Fragment.empty, 0, Int.MaxValue).map(_.headOption)
 
   def deleteByUserName(userName: String): ConnectionIO[Int] = {
-    repo.delete(Specification(byUsername(userName))).to[List].map(_.size)
+    repo.delete(byUsername(userName)).map(_.size)
   }
 
 }

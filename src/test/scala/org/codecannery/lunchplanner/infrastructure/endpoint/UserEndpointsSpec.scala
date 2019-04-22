@@ -1,14 +1,14 @@
 package org.codecannery.lunchplanner.infrastructure.endpoint
 
 import cats.effect._
-import doobie.ConnectionIO
 import io.circe.generic.auto._
+import org.codecannery.lunchplanner.config.ApplicationConfig
 import org.codecannery.lunchplanner.domain.authentication.command.SignupRequest
+import org.codecannery.lunchplanner.domain.authentication.{AuthenticationService, SessionRepository}
 import org.codecannery.lunchplanner.domain.user.model.User
+import org.codecannery.lunchplanner.domain.user.{UserRepository, UserService}
 import org.codecannery.lunchplanner.infrastructure.middleware.Authenticate
-import org.codecannery.lunchplanner.infrastructure.repository.postgres.{SessionJsonRepository, UserJsonRepository, testTransactor}
-import org.codecannery.lunchplanner.infrastructure.service.authentication.DoobieAuthenticationService
-import org.codecannery.lunchplanner.infrastructure.service.user.DoobieUserService
+import org.codecannery.lunchplanner.infrastructure.repository.inmemory.{SessionInMemoryRepository, UserInMemoryRepository}
 import org.codecannery.lunchplanner.infrastructure.{LunchPlannerArbitraries, TestConfig}
 import org.http4s._
 import org.http4s.circe._
@@ -17,6 +17,7 @@ import org.http4s.dsl._
 import org.http4s.implicits._
 import org.scalatest._
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
+import tsec.passwordhashers.PasswordHasher
 import tsec.passwordhashers.jca.BCrypt
 
 class UserEndpointsSpec
@@ -32,18 +33,25 @@ class UserEndpointsSpec
   implicit val signupRequestEnc: EntityEncoder[IO, SignupRequest] = jsonEncoderOf
   implicit val signupRequestDec: EntityDecoder[IO, SignupRequest] = jsonOf
 
-  private val cryptService = BCrypt.syncPasswordHasher[ConnectionIO]
+  private val cryptoService = BCrypt.syncPasswordHasher[IO]
 
-  private val userRepo = new UserJsonRepository()
-  private val userService = new DoobieUserService[IO, BCrypt](userRepo, cryptService, testTransactor)
-  private val sessionRepo = new SessionJsonRepository()
-  private val authService = new DoobieAuthenticationService[IO, BCrypt](
-    TestConfig.appTestConfig,
-    sessionRepo,
-    userRepo,
-    testTransactor,
-    cryptService
-  )
+  private val inMemoryUserRepo = new UserInMemoryRepository[IO]()
+
+  private val userService = new UserService[IO, IO, BCrypt] {
+    override val userRepo: UserRepository[IO] = inMemoryUserRepo
+    override val cryptService: PasswordHasher[IO, BCrypt] = cryptoService
+    override def transact[A](t: IO[A]): IO[A] = t
+  }
+
+  private val inMemorySessionRepo = new SessionInMemoryRepository[IO]()
+  private val authService = new AuthenticationService[IO, IO, BCrypt] {
+    override val applicationConfig: ApplicationConfig = TestConfig.appTestConfig
+    override val sessionRepository: SessionRepository[IO] = inMemorySessionRepo
+    override val userRepository: UserRepository[IO] = inMemoryUserRepo
+    override val cryptService: PasswordHasher[IO, BCrypt] = cryptoService
+    override def transact[A](t: IO[A]): IO[A] = t
+  }
+
   private val authMiddleware = new Authenticate(TestConfig.appTestConfig, authService)
   private val userHttpService = UserEndpoints.endpoints(
     userService,

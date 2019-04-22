@@ -91,6 +91,11 @@ private object JsonRepositorySQL {
     q.query[RowWrapper]
   }
 
+  def whereAnd(fs: Fragment*): Fragment = {
+    import Fragments.and
+    if (fs.forall(_ == Fragment.empty)) Fragment.empty else fr"WHERE" ++ and(fs: _*)
+  }
+
   def select(
       table: Table,
       where: Fragment,
@@ -101,7 +106,7 @@ private object JsonRepositorySQL {
     val q =
       fr"""SELECT ID, DATA, CREATED_ON, UPDATED_ON from""" ++
         tableFragment(table) ++
-        where ++
+        whereAnd(where) ++
         orderBy ++
         offset ++
         limit
@@ -110,22 +115,22 @@ private object JsonRepositorySQL {
   }
 
   def deleteBySpecification(
-    table: Table,
-    where: Fragment
+      table: Table,
+      where: Fragment
   ): Query0[RowWrapper] = {
-
     val q =
       fr"""DELETE FROM""" ++
         tableFragment(table) ++
-        where ++
-      fr"""RETURNING *"""
+        whereAnd(where) ++
+        fr"""RETURNING *"""
 
     q.query[RowWrapper]
   }
 }
 
 abstract class JsonRepository[E: Encoder: Decoder: UuidKeyEntity]
-  extends Repository[UUID, E]
+    extends Repository[ConnectionIO, UUID, E, Fragment]
+    with FindRepository[ConnectionIO, UUID, E, Fragment, Fragment]
     with DatabaseRepository {
   import JsonRepositorySQL._
 
@@ -172,65 +177,21 @@ abstract class JsonRepository[E: Encoder: Decoder: UuidKeyEntity]
   override def deleteEntities(entities: List[E]): ConnectionIO[Int] =
     deleteManyIDs(table, entities.map(entity => UuidKeyEntity[E].key(entity))).run
 
-  override def delete(specification: Specification): Query0[E] =
+  override def delete(specification: Fragment): ConnectionIO[List[E]] =
     deleteBySpecification(
       table = table,
-      where = specification.v
-    ).map(toEntity[E])
+      where = specification
+    ).map(toEntity[E]).to[List]
 
-  override def find(specification: Specification): Query0[E] =
+  override def find(specification: Fragment, orderBy: Fragment, limit: Int, offset: Int): ConnectionIO[List[E]] =
     select(
       table = table,
-      where = specification.v,
-      orderBy = Fragment.empty,
-      offset = Fragment.empty,
-      limit = Fragment.empty
-    ).map(toEntity[E])
+      where = specification,
+      orderBy = orderBy,
+      offset = Fragment.const(s"$offset"),
+      limit = Fragment.const(s"$limit"),
+    ).map(toEntity[E]).to[List]
 
-  override def find(
-      specification: Specification,
-      orderBy: OrderBy): Query0[E] =
-    select(
-      table = table,
-      where = specification.v,
-      orderBy = Fragment.const(orderBy.v),
-      offset = Fragment.empty,
-      limit = Fragment.empty
-    ).map(toEntity[E])
-
-  override def find(
-      specification: Specification,
-      limit: Limit): Query0[E] =
-    select(
-      table = table,
-      where = specification.v,
-      orderBy = Fragment.empty,
-      offset = Fragment.empty,
-      limit = limit.v
-    ).map(toEntity[E])
-
-  override def find(
-      specification: Specification,
-      limit: Limit,
-      offset: Offset): Query0[E] =
-    select(
-      table = table,
-      where = specification.v,
-      orderBy = Fragment.empty,
-      offset = offset.v,
-      limit = limit.v
-    ).map(toEntity[E])
-
-  override def find(
-      specification: Specification,
-      orderBy: OrderBy,
-      limit: Limit,
-      offset: Offset): Query0[E] =
-    select(
-      table = table,
-      where = specification.v,
-      orderBy = Fragment.const(orderBy.v),
-      offset = offset.v,
-      limit = limit.v
-    ).map(toEntity[E])
+  override def listAll: doobie.ConnectionIO[List[E]] =
+    find(Fragment.empty, Fragment.empty, 0, Int.MaxValue)
 }
