@@ -6,7 +6,6 @@ import org.codecannery.lunchplanner.domain.authentication.command.SignupRequest
 import org.codecannery.lunchplanner.domain.user.model.User
 import org.scalacheck._
 
-
 trait LunchPlannerArbitraries {
 
   val userNameLength = 16

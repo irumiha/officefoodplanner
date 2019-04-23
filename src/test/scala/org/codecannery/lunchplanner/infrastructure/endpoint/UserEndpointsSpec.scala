@@ -33,36 +33,57 @@ class UserEndpointsSpec
   implicit val signupRequestEnc: EntityEncoder[IO, SignupRequest] = jsonEncoderOf
   implicit val signupRequestDec: EntityDecoder[IO, SignupRequest] = jsonOf
 
-  private val cryptoService = BCrypt.syncPasswordHasher[IO]
+  private def newUserService(
+    customUserRepo: UserRepository[IO],
+    customCryptService: PasswordHasher[IO, BCrypt]
+  ) = {
+    new UserService[IO, IO, BCrypt] {
+      override val userRepo: UserRepository[IO] = customUserRepo
+      override val cryptService: PasswordHasher[IO, BCrypt] = customCryptService
 
-  private val inMemoryUserRepo = new UserInMemoryRepository[IO]()
-
-  private val userService = new UserService[IO, IO, BCrypt] {
-    override val userRepo: UserRepository[IO] = inMemoryUserRepo
-    override val cryptService: PasswordHasher[IO, BCrypt] = cryptoService
-    override def transact[A](t: IO[A]): IO[A] = t
+      override def transact[A](t: IO[A]): IO[A] = t
+    }
   }
 
-  private val inMemorySessionRepo = new SessionInMemoryRepository[IO]()
-  private val authService = new AuthenticationService[IO, IO, BCrypt] {
-    override val applicationConfig: ApplicationConfig = TestConfig.appTestConfig
-    override val sessionRepository: SessionRepository[IO] = inMemorySessionRepo
-    override val userRepository: UserRepository[IO] = inMemoryUserRepo
-    override val cryptService: PasswordHasher[IO, BCrypt] = cryptoService
-    override def transact[A](t: IO[A]): IO[A] = t
+  private def newAuthService(
+    conf: ApplicationConfig,
+    sessionR: SessionRepository[IO],
+    userR: UserRepository[IO],
+    cryptS: PasswordHasher[IO, BCrypt]
+  ) = {
+    new AuthenticationService[IO, IO, BCrypt] {
+      override val applicationConfig: ApplicationConfig = conf
+      override val sessionRepository: SessionRepository[IO] = sessionR
+      override val userRepository: UserRepository[IO] = userR
+      override val cryptService: PasswordHasher[IO, BCrypt] = cryptS
+
+      override def transact[A](t: IO[A]): IO[A] = t
+    }
   }
 
-  private val authMiddleware = new Authenticate(TestConfig.appTestConfig, authService)
-  private val userHttpService = UserEndpoints.endpoints(
-    userService,
-    authMiddleware
-  ).orNotFound
+  private def newUserHttpEndpoints = {
+    val cryptoService = BCrypt.syncPasswordHasher[IO]
+    val inMemoryUserRepo = new UserInMemoryRepository[IO]()
+    val inMemorySessionRepo = new SessionInMemoryRepository[IO]()
+
+    val userService = newUserService(inMemoryUserRepo, cryptoService)
+    val authService = newAuthService(TestConfig.appTestConfig, inMemorySessionRepo, inMemoryUserRepo, cryptoService)
+
+    val authMiddleware = new Authenticate(TestConfig.appTestConfig, authService)
+
+    UserEndpoints.endpoints(
+      userService,
+      authMiddleware
+    ).orNotFound
+  }
 
   test("create user") {
+    val userHttpEndpoints = newUserHttpEndpoints
+
     forAll { userSignup: SignupRequest =>
       (for {
         request <- POST(userSignup, Uri.uri("/"))
-        response <- userHttpService.run(request)
+        response <- userHttpEndpoints.run(request)
       } yield {
         response.status shouldEqual Ok
       }).unsafeRunSync
@@ -70,14 +91,16 @@ class UserEndpointsSpec
   }
 
   test("update user") {
+    val userHttpEndpoints = newUserHttpEndpoints
+
     forAll { userSignup: SignupRequest =>
         (for {
           createRequest <- POST(userSignup, Uri.uri("/"))
-          createResponse <- userHttpService.run(createRequest)
+          createResponse <- userHttpEndpoints.run(createRequest)
           createdUser <- createResponse.as[User]
           userToUpdate = createdUser.copy(lastName = createdUser.lastName.reverse)
           updateUser <- PUT(userToUpdate, Uri.unsafeFromString(s"/${createdUser.userName}"))
-          updateResponse <- userHttpService.run(updateUser)
+          updateResponse <- userHttpEndpoints.run(updateUser)
         } yield {
           updateResponse.status shouldEqual Forbidden
 //          updatedUser.lastName shouldEqual createdUser.lastName.reverse
@@ -87,13 +110,15 @@ class UserEndpointsSpec
   }
 
   test("get user by userName") {
+    val userHttpEndpoints = newUserHttpEndpoints
+
     forAll { userSignup: SignupRequest =>
       (for {
         createRequest <- POST(userSignup, Uri.uri("/"))
-        createResponse <- userHttpService.run(createRequest)
+        createResponse <- userHttpEndpoints.run(createRequest)
         createdUser <- createResponse.as[User]
         getRequest <- GET(Uri.unsafeFromString(s"/${createdUser.userName}"))
-        getResponse <- userHttpService.run(getRequest)
+        getResponse <- userHttpEndpoints.run(getRequest)
 //        getUser <- getResponse.as[User]
       } yield {
         getResponse.status shouldEqual Forbidden
@@ -103,15 +128,17 @@ class UserEndpointsSpec
   }
 
   test("delete user by userName") {
+    val userHttpEndpoints = newUserHttpEndpoints
+
     forAll { userSignup: SignupRequest =>
       (for {
         createRequest <- POST(userSignup, Uri.uri("/"))
-        createResponse <- userHttpService.run(createRequest)
+        createResponse <- userHttpEndpoints.run(createRequest)
         createdUser <- createResponse.as[User]
         deleteRequest <- DELETE(Uri.unsafeFromString(s"/${createdUser.userName}"))
-        deleteResponse <- userHttpService.run(deleteRequest)
+        deleteResponse <- userHttpEndpoints.run(deleteRequest)
         getRequest <- GET(Uri.unsafeFromString(s"/${createdUser.userName}"))
-        getResponse <- userHttpService.run(getRequest)
+        getResponse <- userHttpEndpoints.run(getRequest)
       } yield {
         createResponse.status shouldEqual Ok
         deleteResponse.status shouldEqual Forbidden
