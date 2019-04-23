@@ -27,7 +27,7 @@ class UserEndpoints[F[_]: Effect, D[_], H](
   implicit val loginReqDecoder: EntityDecoder[F, LoginRequest] = jsonOf
   implicit val signupReqDecoder: EntityDecoder[F, SignupRequest] = jsonOf
 
-  def freeEndpoints: HttpRoutes[F] =
+  def nonAuthEndpoints: HttpRoutes[F] =
     HttpRoutes.of[F] {
       case req @ POST -> Root                         => signup(req)
     }
@@ -104,6 +104,7 @@ object UserEndpoints {
   ): HttpRoutes[F] = {
     val userEndpoints = new UserEndpoints[F, D, H](userService, authMiddleware)
 
-    userEndpoints.freeEndpoints <+> userEndpoints.authEndpoints
+    userEndpoints.nonAuthEndpoints <+>
+    userEndpoints.authEndpoints
   }
 }

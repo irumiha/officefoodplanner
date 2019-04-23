@@ -11,6 +11,7 @@ import org.codecannery.lunchplanner.infrastructure.repository.UuidKeyEntity
 case class Session(
   key: UUID = UUID.randomUUID(),
   userID: UUID,
+  created: Instant = Instant.now(),
   expires: Instant
 )
 
