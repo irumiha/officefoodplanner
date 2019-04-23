@@ -18,7 +18,7 @@ object ApplicationServer extends IOApp {
       connEc         <- ExecutionContexts.fixedThreadPool[F](conf.db.connections.poolSize)
       txnEc          <- ExecutionContexts.cachedThreadPool[F]
       xa             <- config.DatabaseConfig.dbTransactor[F](conf.db, connEc, txnEc)
-      app            = new ApplicationModule(conf, xa)
+      app            =  new ApplicationModule(conf, xa)
       httpApp        =  Router(
         "/users" -> app.userEndpoints,
         "/auth"  -> app.authEndpoints
