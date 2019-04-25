@@ -38,10 +38,10 @@ class UserEndpoints[F[_]: Effect, D[_], H](
 
   def authEndpoints: HttpRoutes[F] =
     authM(AuthedService[User, F] {
-      case GET -> Root :? PageSizeQ(ps) :? OffsetQ(o) as session => list(ps, o)
-      case GET -> Root / username                     as session => searchByUsername(username)
-      case req @ PUT -> Root / name                   as session => update(req, name)
-      case DELETE -> Root / username                  as session => deleteByUsername(username)
+      case       GET    -> Root :? PageSizeQ(ps) :? OffsetQ(o) as _ => list(ps, o)
+      case       GET    -> Root / username                     as _ => searchByUsername(username)
+      case req @ PUT    -> Root / name                         as _ => update(req, name)
+      case       DELETE -> Root / username                     as _ => deleteByUsername(username)
     })
 
   private def signup(req: Request[F]): F[Response[F]] = {

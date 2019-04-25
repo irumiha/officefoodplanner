@@ -130,7 +130,7 @@ private object JsonRepositorySQL {
 
 abstract class JsonRepository[E: Encoder: Decoder: UuidKeyEntity]
     extends Repository[ConnectionIO, UUID, E, Fragment]
-    with FindRepository[ConnectionIO, UUID, E, Fragment, Fragment]
+    with FindRepository[ConnectionIO, UUID, E, Fragment]
     with DatabaseRepository {
   import JsonRepositorySQL._
 
@@ -183,15 +183,15 @@ abstract class JsonRepository[E: Encoder: Decoder: UuidKeyEntity]
       where = specification
     ).map(toEntity[E]).to[List]
 
-  override def find(specification: Fragment, orderBy: Fragment, limit: Int, offset: Int): ConnectionIO[List[E]] =
+  override def find(specification: Fragment, orderBy: Option[String], limit: Option[Int], offset: Option[Int]): ConnectionIO[List[E]] =
     select(
       table = table,
       where = specification,
-      orderBy = orderBy,
-      offset = Fragment.const(s"$offset"),
-      limit = Fragment.const(s"$limit"),
+      orderBy = if (orderBy.forall(_.isEmpty)) Fragment.empty else Fragment.const(orderBy.get),
+      offset  = if (offset.isEmpty)            Fragment.empty else Fragment.const(s"OFFSET ${offset.get}"),
+      limit   = if (limit.isEmpty)             Fragment.empty else Fragment.const(s"LIMIT ${limit.get}")
     ).map(toEntity[E]).to[List]
 
   override def listAll: doobie.ConnectionIO[List[E]] =
-    find(Fragment.empty, Fragment.empty, 0, Int.MaxValue)
+    find(Fragment.empty, None, None, None)
 }

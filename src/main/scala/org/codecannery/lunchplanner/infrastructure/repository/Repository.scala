@@ -30,12 +30,12 @@ trait ReadRepository[F[_], K, E] {
 
 }
 
-trait FindRepository[F[_], K, E, P1, P2] {
+trait FindRepository[F[_], K, E, P1] {
   def find(
     specification: P1,
-    orderBy: P2,
-    limit: Int,
-    offset: Int
+    orderBy: Option[String],
+    limit: Option[Int],
+    offset: Option[Int]
   ): F[List[E]]
 }
 

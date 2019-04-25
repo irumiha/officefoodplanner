@@ -14,7 +14,7 @@ class UserJsonRepository extends UserRepository[ConnectionIO] {
     override val table = Table(SchemaName("public"), TableName("users"))
   }
 
-  private def byUsername(userName: String) = fr"where data->>'userName' = $userName"
+  private def byUsername(userName: String) = fr"data->>'userName' = $userName"
 
   def create(user: User): ConnectionIO[User] = repo.create(user)
 
@@ -27,7 +27,7 @@ class UserJsonRepository extends UserRepository[ConnectionIO] {
   def list: ConnectionIO[List[User]] = repo.listAll
 
   def findByUsername(userName: String): ConnectionIO[Option[User]] =
-    repo.find(byUsername(userName), Fragment.empty, 0, Int.MaxValue).map(_.headOption)
+    repo.find(byUsername(userName), None, None, None).map(_.headOption)
 
   def deleteByUserName(userName: String): ConnectionIO[Int] = {
     repo.delete(byUsername(userName)).map(_.size)
