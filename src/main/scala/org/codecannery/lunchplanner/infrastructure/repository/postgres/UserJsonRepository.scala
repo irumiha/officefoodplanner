@@ -4,7 +4,6 @@ import java.util.UUID
 
 import doobie.ConnectionIO
 import doobie.syntax.string._
-import doobie.util.fragment.Fragment
 import org.codecannery.lunchplanner.domain.user.UserRepository
 import org.codecannery.lunchplanner.domain.user.model.User
 import org.codecannery.lunchplanner.infrastructure.repository.{SchemaName, Table, TableName}
