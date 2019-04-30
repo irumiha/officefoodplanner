@@ -4,12 +4,13 @@ import java.util.UUID
 
 import doobie.ConnectionIO
 import doobie.syntax.string._
+import doobie.postgres.implicits._
 import org.codecannery.lunchplanner.domain.user.UserRepository
 import org.codecannery.lunchplanner.domain.user.model.User
 import org.codecannery.lunchplanner.infrastructure.repository.{SchemaName, Table, TableName}
 
 class UserJsonRepository extends UserRepository[ConnectionIO] {
-  private val repo: JsonRepository[User] = new JsonRepository[User] {
+  private val repo: JsonRepository[User, UUID] = new JsonRepository[User, UUID] {
     override val table = Table(SchemaName("public"), TableName("users"))
   }
 

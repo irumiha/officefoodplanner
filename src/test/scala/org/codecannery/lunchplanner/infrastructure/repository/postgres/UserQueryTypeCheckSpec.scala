@@ -8,12 +8,14 @@ import doobie.syntax.string._
 import doobie.scalatest.IOChecker
 import doobie.util.fragment.Fragment
 import doobie.util.transactor.Transactor
-
+import doobie.postgres.implicits._
+import org.codecannery.lunchplanner.domain.user.model.User
 import org.codecannery.lunchplanner.infrastructure.repository._
 import org.codecannery.lunchplanner.infrastructure.LunchPlannerArbitraries.{user => userA}
 
 class UserQueryTypeCheckSpec extends FunSuite with Matchers with IOChecker {
-  import JsonRepositorySQL._
+  import TableRepositorySQL._
+  import UserTableRepository.doobieSupport
 
   override val transactor : Transactor[IO] = testTransactor
 
@@ -21,13 +23,13 @@ class UserQueryTypeCheckSpec extends FunSuite with Matchers with IOChecker {
 
   test("Typecheck user queries") {
     userA.arbitrary.sample.foreach { u =>
-      check(insertOne(table, fromEntity(u)))
+      check(insertOne(table, u))
       check(select(table, fr"data->>'userName' = ${u.userName}", Fragment.empty, Fragment.empty, Fragment.empty))
 
-      check(updateOne(table, fromEntity(u)))
+      check(updateOne(table, u))
     }
-    check(select(table, Fragment.empty, Fragment.empty, Fragment.empty, Fragment.empty))
-    check(getMany(table, List(UUID.randomUUID())))
-    check(deleteManyIDs(table, List(UUID.randomUUID())))
+    check(select[User](table, Fragment.empty, Fragment.empty, Fragment.empty, Fragment.empty))
+    check(getMany[User, UUID](table, List(UUID.randomUUID())))
+    check(deleteManyIDs[User, UUID](table, List(UUID.randomUUID())))
   }
 }

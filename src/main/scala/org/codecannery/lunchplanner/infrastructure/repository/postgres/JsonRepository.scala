@@ -18,17 +18,17 @@ private case class RowWrapper(id: UUID, data: Json, createdOn: JTimestamp, updat
 
 private object JsonRepositorySQL {
 
-  def fromEntity[E: Encoder: Decoder: UuidKeyEntity](entity: E): RowWrapper = {
+  def fromEntity[E: Encoder: Decoder](entity: E)(implicit KE: KeyEntity[E, UUID]): RowWrapper = {
     val now = Instant.now()
     RowWrapper(
       data = Encoder[E].apply(entity),
       createdOn = JTimestamp.from(now),
       updatedOn = JTimestamp.from(now),
-      id = UuidKeyEntity[E].key(entity),
+      id = KE.key(entity),
     )
   }
 
-  def toEntity[E: Encoder: Decoder: UuidKeyEntity](rw: RowWrapper): E =
+  def toEntity[E: Encoder: Decoder](rw: RowWrapper): E =
     rw.data.as[E].right.get
 
   def tableFragment(table: Table): fragment.Fragment =
@@ -128,13 +128,13 @@ private object JsonRepositorySQL {
   }
 }
 
-abstract class JsonRepository[E: Encoder: Decoder: UuidKeyEntity]
+abstract class JsonRepository[E: Encoder: Decoder, K: Put : Get]
     extends Repository[ConnectionIO, UUID, E, Fragment]
     with FindRepository[ConnectionIO, UUID, E, Fragment]
     with DatabaseRepository {
   import JsonRepositorySQL._
 
-  override def create(entity: E): ConnectionIO[E] = {
+  override def create(entity: E)(implicit KE: KeyEntity[E, UUID]): ConnectionIO[E] = {
     val row = fromEntity(entity)
 
     insertOne(table, row)
@@ -142,7 +142,7 @@ abstract class JsonRepository[E: Encoder: Decoder: UuidKeyEntity]
       .map(toEntity[E])
   }
 
-  override def create(entities: List[E]): ConnectionIO[List[E]] = {
+  override def create(entities: List[E])(implicit KE: KeyEntity[E, UUID]): ConnectionIO[List[E]] = {
     val rows = entities.map(fromEntity[E])
     insertMany(table)
       .updateManyWithGeneratedKeys[RowWrapper]("id", "data", "created_on", "updated_on")(rows)
@@ -151,12 +151,12 @@ abstract class JsonRepository[E: Encoder: Decoder: UuidKeyEntity]
       .toList
   }
 
-  override def update(entity: E): ConnectionIO[Int] = {
+  override def update(entity: E)(implicit KE: KeyEntity[E, UUID]): ConnectionIO[Int] = {
     val row = fromEntity(entity)
     updateOne(table, row).run
   }
 
-  override def update(entities: List[E]): ConnectionIO[Int] =
+  override def update(entities: List[E])(implicit KE: KeyEntity[E, UUID]): ConnectionIO[Int] =
     updateMany(table).updateMany(entities.map(fromEntity[E]))
 
   override def get(entityId: UUID): ConnectionIO[Option[E]] =
@@ -171,13 +171,13 @@ abstract class JsonRepository[E: Encoder: Decoder: UuidKeyEntity]
   override def deleteByIds(entityIds: List[UUID]): ConnectionIO[Int] =
     deleteManyIDs(table, entityIds).run
 
-  override def deleteEntity(entity: E): ConnectionIO[Int] =
-    deleteManyIDs(table, List(UuidKeyEntity[E].key(entity))).run
+  override def deleteEntity(entity: E)(implicit KE: KeyEntity[E, UUID]): ConnectionIO[Int] =
+    deleteManyIDs(table, List(KE.key(entity))).run
 
-  override def deleteEntities(entities: List[E]): ConnectionIO[Int] =
-    deleteManyIDs(table, entities.map(entity => UuidKeyEntity[E].key(entity))).run
+  override def deleteEntities(entities: List[E])(implicit KE: KeyEntity[E, UUID]): ConnectionIO[Int] =
+    deleteManyIDs(table, entities.map(entity => KE.key(entity))).run
 
-  override def delete(specification: Fragment): ConnectionIO[List[E]] =
+  override def delete(specification: Fragment)(implicit KE: KeyEntity[E, UUID]): ConnectionIO[List[E]] =
     deleteBySpecification(
       table = table,
       where = specification

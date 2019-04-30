@@ -5,8 +5,7 @@ import java.util.UUID
 
 import io.circe._
 import io.circe.generic.semiauto._
-
-import org.codecannery.lunchplanner.infrastructure.repository.UuidKeyEntity
+import org.codecannery.lunchplanner.infrastructure.repository.KeyEntity
 
 case class Session(
   key: UUID = UUID.randomUUID(),
@@ -16,7 +15,7 @@ case class Session(
 )
 
 object Session {
-  implicit val uuidKeyedUser: UuidKeyEntity[Session] = (u: Session) => u.key
+  implicit val keyed: KeyEntity[Session, UUID] = (u: Session) => u.key
 
   implicit val jsonDecoder: Decoder[Session] = deriveDecoder
   implicit val jsonEncoder: Encoder[Session] = deriveEncoder

@@ -2,13 +2,11 @@ package org.codecannery.lunchplanner.infrastructure.repository
 
 import java.util.UUID
 
-trait KeyEntity[E] {
-  type K
-
+trait KeyEntity[E, K] {
   def key(e: E): K
 }
 object KeyEntity {
-  def apply[E](implicit instance: KeyEntity[E]): KeyEntity[E] = instance
+  def apply[E, K](implicit instance: KeyEntity[E, K]): KeyEntity[E, K] = instance
 }
 
 trait UuidKeyEntity[E] {

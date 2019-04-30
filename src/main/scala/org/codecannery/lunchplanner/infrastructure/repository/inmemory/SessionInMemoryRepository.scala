@@ -7,7 +7,7 @@ import org.codecannery.lunchplanner.domain.authentication.SessionRepository
 import org.codecannery.lunchplanner.domain.authentication.model.Session
 
 class SessionInMemoryRepository[F[_] : Applicative] extends SessionRepository[F] {
-  private def repo = new InMemoryUUIDKeyRepository[F, Session]
+  private def repo = new InMemoryRepository[F, Session, UUID]
 
   def create(session: Session): F[Session] = repo.create(session)
 

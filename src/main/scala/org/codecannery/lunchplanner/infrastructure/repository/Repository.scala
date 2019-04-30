@@ -1,23 +1,23 @@
 package org.codecannery.lunchplanner.infrastructure.repository
 
 trait WriteRepository[F[_], K, E, P] {
-  def create(entity: E): F[E]
+  def create(entity: E)(implicit KE: KeyEntity[E, K]): F[E]
 
-  def create(entities: List[E]): F[List[E]]
+  def create(entities: List[E])(implicit KE: KeyEntity[E, K]): F[List[E]]
 
-  def update(entity: E): F[Int]
+  def update(entity: E)(implicit KE: KeyEntity[E, K]): F[Int]
 
-  def update(entities: List[E]): F[Int]
+  def update(entities: List[E])(implicit KE: KeyEntity[E, K]): F[Int]
 
   def deleteById(entityId: K): F[Int]
 
   def deleteByIds(entityIds: List[K]): F[Int]
 
-  def deleteEntity(entity: E): F[Int]
+  def deleteEntity(entity: E)(implicit KE: KeyEntity[E, K]): F[Int]
 
-  def deleteEntities(entities: List[E]): F[Int]
+  def deleteEntities(entities: List[E])(implicit KE: KeyEntity[E, K]): F[Int]
 
-  def delete(specification: P): F[List[E]]
+  def delete(specification: P)(implicit KE: KeyEntity[E, K]): F[List[E]]
 
 }
 

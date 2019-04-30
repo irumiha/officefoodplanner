@@ -1,14 +1,14 @@
 package org.codecannery.lunchplanner.infrastructure.repository.postgres
 
 import java.util.UUID
-
+import doobie.postgres.implicits._
 import doobie.ConnectionIO
 import org.codecannery.lunchplanner.domain.authentication.SessionRepository
 import org.codecannery.lunchplanner.domain.authentication.model.Session
 import org.codecannery.lunchplanner.infrastructure.repository.{Table, TableName}
 
 class SessionJsonRepository extends SessionRepository[ConnectionIO] {
-  private def repo = new JsonRepository[Session] {
+  private def repo = new JsonRepository[Session, UUID] {
     override def table: Table = Table(tableName = TableName("sessions"))
   }
 

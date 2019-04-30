@@ -8,7 +8,7 @@ import org.codecannery.lunchplanner.domain.user.UserRepository
 import org.codecannery.lunchplanner.domain.user.model.User
 
 class UserInMemoryRepository[F[_]: Applicative] extends UserRepository[F] {
-  private val repo: InMemoryUUIDKeyRepository[F, User]  = new InMemoryUUIDKeyRepository[F, User]
+  private val repo: InMemoryRepository[F, User, UUID]  = new InMemoryRepository[F, User, UUID]
 
   override def create(user: User): F[User] = repo.create(user)
 

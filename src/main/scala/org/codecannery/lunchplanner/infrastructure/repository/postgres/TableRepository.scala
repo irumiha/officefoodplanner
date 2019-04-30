@@ -1,9 +1,7 @@
 package org.codecannery.lunchplanner.infrastructure.repository.postgres
 
-import java.util.UUID
-
 import cats.implicits._
-import doobie._, doobie.implicits._, doobie.postgres.implicits._
+import doobie._, doobie.implicits._
 import doobie.util.query.Query0
 import org.codecannery.lunchplanner.infrastructure.repository._
 
@@ -20,13 +18,13 @@ private object TableRepositorySQL {
   private def columnNameFragment(table: Table, column: String) = Fragment.const(columnName(table, column))
 
   def tableColumns[E: DoobieColumnList](table: Table): Fragment =
-    DoobieColumnList[E].columns.map(columnNameFragment(table, _)).combineAll
+    DoobieColumnList[E].columns.map(columnNameFragment(table, _)).intercalate(fr",")
 
   def insertOne[E: DoobieColumnList : DoobieColumnValues](table: Table, row: E): Update0 = {
     val sql = fr"INSERT INTO " ++
       tableNameFragment(table) ++
       fr0"(" ++ tableColumns(table) ++ fr0")" ++
-      fr"VALUES (" ++ DoobieColumnValues[E].values(row).combineAll ++ fr")"
+      fr"VALUES (" ++ DoobieColumnValues[E].values(row).intercalate(fr",") ++ fr")"
 
     sql.update
   }
@@ -61,7 +59,7 @@ private object TableRepositorySQL {
     Update[(E, K)](updateSQL)
   }
 
-  def deleteManyIDs[E: DoobieIDColumn, K: Write](table: Table, rows: List[K]): Update0 = {
+  def deleteManyIDs[E: DoobieIDColumn, K: Put](table: Table, rows: List[K]): Update0 = {
     import Fragments.{in, whereAndOpt}
     import cats.syntax.list._
     val idColumnName = DoobieIDColumn[E].id
@@ -73,7 +71,7 @@ private object TableRepositorySQL {
     q.update
   }
 
-  def getMany[E: DoobieColumnList : DoobieIDColumn : Read](table: Table, ids: List[UUID]): Query0[E] = {
+  def getMany[E: DoobieColumnList : DoobieIDColumn : Read, K: Put](table: Table, ids: List[K]): Query0[E] = {
     import Fragments.{in, whereAndOpt}
     import cats.syntax.list._
 
@@ -122,54 +120,54 @@ private object TableRepositorySQL {
   }
 }
 
-abstract class TableRepository[E: KeyEntity : DoobieSupport : Read : Write,
-                               K: Read : Write]
-  extends Repository[ConnectionIO, UUID, E, Fragment]
-    with FindRepository[ConnectionIO, UUID, E, Fragment]
+abstract class TableRepository[E: DoobieSupport : Read : Write,
+                               K: Put : Get]
+  extends Repository[ConnectionIO, K, E, Fragment]
+    with FindRepository[ConnectionIO, K, E, Fragment]
     with DatabaseRepository {
 
   import TableRepositorySQL._
 
-  override def create(entity: E): ConnectionIO[E] = {
+  override def create(entity: E)(implicit KE: KeyEntity[E, K]): ConnectionIO[E] = {
     insertOne(table, entity)
       .withUniqueGeneratedKeys[E](DoobieColumnList[E].columns: _*)
   }
 
-  override def create(entities: List[E]): ConnectionIO[List[E]] = {
+  override def create(entities: List[E])(implicit KE: KeyEntity[E, K]): ConnectionIO[List[E]] = {
     insertMany(table)
       .updateManyWithGeneratedKeys[E](DoobieColumnList[E].columns: _*)(entities)
       .compile
       .toList
   }
 
-  override def update(entity: E): ConnectionIO[Int] = {
+  override def update(entity: E)(implicit KE: KeyEntity[E, K]): ConnectionIO[Int] = {
     updateOne(table, entity).run
   }
 
-  override def update(entities: List[E]): ConnectionIO[Int] = {
-    val entitiesWithIDs = entities.map(e => (e, UuidKeyEntity[E].key(e)))
-    updateMany[E, UUID](table).updateMany(entitiesWithIDs)
+  override def update(entities: List[E])(implicit KE: KeyEntity[E, K]): ConnectionIO[Int] = {
+    val entitiesWithIDs = entities.map(e => (e, KE.key(e)))
+    updateMany[E, K](table).updateMany(entitiesWithIDs)
   }
 
-  override def get(entityId: UUID): ConnectionIO[Option[E]] =
+  override def get(entityId: K): ConnectionIO[Option[E]] =
     getMany(table, List(entityId)).option
 
-  override def get(entityIds: List[UUID]): ConnectionIO[List[E]] =
+  override def get(entityIds: List[K]): ConnectionIO[List[E]] =
     getMany(table, entityIds).to[List]
 
-  override def deleteById(entityId: UUID): ConnectionIO[Int] =
+  override def deleteById(entityId: K): ConnectionIO[Int] =
     deleteManyIDs(table, List(entityId)).run
 
-  override def deleteByIds(entityIds: List[UUID]): ConnectionIO[Int] =
+  override def deleteByIds(entityIds: List[K]): ConnectionIO[Int] =
     deleteManyIDs(table, entityIds).run
 
-  override def deleteEntity(entity: E): ConnectionIO[Int] =
-    deleteManyIDs[E, K](table, List(KeyEntity[E].key(entity))).run
+  override def deleteEntity(entity: E)(implicit KE: KeyEntity[E, K]): ConnectionIO[Int] =
+    deleteManyIDs[E, K](table, List(KE.key(entity))).run
 
-  override def deleteEntities(entities: List[E]): ConnectionIO[Int] =
-    deleteManyIDs(table, entities.map(entity => UuidKeyEntity[E].key(entity))).run
+  override def deleteEntities(entities: List[E])(implicit KE: KeyEntity[E, K]): ConnectionIO[Int] =
+    deleteManyIDs(table, entities.map(entity => KE.key(entity))).run
 
-  override def delete(specification: Fragment): ConnectionIO[List[E]] =
+  override def delete(specification: Fragment)(implicit KE: KeyEntity[E, K]): ConnectionIO[List[E]] =
     deleteBySpecification[E](
       table = table,
       where = specification
