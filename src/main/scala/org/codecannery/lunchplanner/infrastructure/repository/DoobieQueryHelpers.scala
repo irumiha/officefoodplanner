@@ -22,3 +22,8 @@ trait DoobieColumnValues[E] {
 object DoobieColumnValues {
   def apply[E](implicit instance: DoobieColumnValues[E]): DoobieColumnValues[E] = instance
 }
+
+trait DoobieSupport[E] extends DoobieColumnList[E] with DoobieIDColumn[E] with DoobieColumnValues[E]
+object DoobieSupport {
+  def apply[E](implicit instance: DoobieSupport[E]): DoobieSupport[E] = instance
+}
