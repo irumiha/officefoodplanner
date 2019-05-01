@@ -1,24 +1,14 @@
 package org.codecannery.lunchplanner.infrastructure.endpoint
 
 import cats.effect._
-import io.circe.generic.auto._
-import org.codecannery.lunchplanner.config.ApplicationConfig
 import org.codecannery.lunchplanner.domain.authentication.command.SignupRequest
-import org.codecannery.lunchplanner.domain.authentication.{AuthenticationService, SessionRepository}
 import org.codecannery.lunchplanner.domain.user.model.User
-import org.codecannery.lunchplanner.domain.user.{UserRepository, UserService}
-import org.codecannery.lunchplanner.infrastructure.middleware.Authenticate
-import org.codecannery.lunchplanner.infrastructure.repository.inmemory.{SessionInMemoryRepository, UserInMemoryRepository}
-import org.codecannery.lunchplanner.infrastructure.{LunchPlannerArbitraries, TestConfig}
+import org.codecannery.lunchplanner.infrastructure.LunchPlannerArbitraries
 import org.http4s._
-import org.http4s.circe._
 import org.http4s.client.dsl.Http4sClientDsl
 import org.http4s.dsl._
-import org.http4s.implicits._
 import org.scalatest._
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
-import tsec.passwordhashers.PasswordHasher
-import tsec.passwordhashers.jca.BCrypt
 
 class UserEndpointsSpec
     extends FunSuite
@@ -28,54 +18,8 @@ class UserEndpointsSpec
     with Http4sDsl[IO]
     with Http4sClientDsl[IO] {
 
-  implicit val userEnc: EntityEncoder[IO, User] = jsonEncoderOf
-  implicit val userDec: EntityDecoder[IO, User] = jsonOf
-  implicit val signupRequestEnc: EntityEncoder[IO, SignupRequest] = jsonEncoderOf
-  implicit val signupRequestDec: EntityDecoder[IO, SignupRequest] = jsonOf
+  import ApplicationSetup._
 
-  private def newUserService(
-    customUserRepo: UserRepository[IO],
-    customCryptService: PasswordHasher[IO, BCrypt]
-  ) = {
-    new UserService[IO, IO, BCrypt] {
-      override val userRepo: UserRepository[IO] = customUserRepo
-      override val cryptService: PasswordHasher[IO, BCrypt] = customCryptService
-
-      override def transact[A](t: IO[A]): IO[A] = t
-    }
-  }
-
-  private def newAuthService(
-    conf: ApplicationConfig,
-    sessionR: SessionRepository[IO],
-    userR: UserRepository[IO],
-    cryptS: PasswordHasher[IO, BCrypt]
-  ) = {
-    new AuthenticationService[IO, IO, BCrypt] {
-      override val applicationConfig: ApplicationConfig = conf
-      override val sessionRepository: SessionRepository[IO] = sessionR
-      override val userRepository: UserRepository[IO] = userR
-      override val cryptService: PasswordHasher[IO, BCrypt] = cryptS
-
-      override def transact[A](t: IO[A]): IO[A] = t
-    }
-  }
-
-  private def newUserHttpEndpoints = {
-    val cryptoService = BCrypt.syncPasswordHasher[IO]
-    val inMemoryUserRepo = new UserInMemoryRepository[IO]()
-    val inMemorySessionRepo = new SessionInMemoryRepository[IO]()
-
-    val userService = newUserService(inMemoryUserRepo, cryptoService)
-    val authService = newAuthService(TestConfig.appTestConfig, inMemorySessionRepo, inMemoryUserRepo, cryptoService)
-
-    val authMiddleware = new Authenticate(TestConfig.appTestConfig, authService)
-
-    UserEndpoints.endpoints(
-      userService,
-      authMiddleware
-    ).orNotFound
-  }
 
   test("create user") {
     val userHttpEndpoints = newUserHttpEndpoints
