@@ -32,7 +32,7 @@ class AuthenticationEndpoints[F[_]: Effect, D[_], H](
 
     ResponseCookie(
       name = config.auth.sessionCookieName,
-      content = sessionData.key.toString,
+      content = sessionData.id.toString,
       expires = HttpDate.fromInstant(cookieExpiresAt).toOption,
     )
   }

@@ -25,7 +25,7 @@ abstract class AuthenticationService[F[_]: Monad, D[_]: Monad, H] extends Transa
       (for {
         session <- OptionT[D, model.Session](sessionRepository.get(sessionID))
         user    <- OptionT[D, User](userRepository.get(session.userID))
-        _       <- OptionT.liftF(sessionRepository.update(session.copy(expires = nextExpire)))
+        _       <- OptionT.liftF(sessionRepository.update(session.copy(expiresOn = nextExpire, updatedOn = Instant.now())))
       } yield (user, session)).value
     )
   }
@@ -51,8 +51,10 @@ abstract class AuthenticationService[F[_]: Monad, D[_]: Monad, H] extends Transa
       EitherT.liftF[D, UserAuthenticationFailedError, model.Session](
         sessionRepository.create(
           model.Session(
-            userID = user.key,
-            expires = Instant.now().plusSeconds(applicationConfig.auth.sessionLength)
+            userID = user.id,
+            expiresOn = Instant.now().plusSeconds(applicationConfig.auth.sessionLength),
+            createdOn = Instant.now(),
+            updatedOn = Instant.now()
           )))
 
     transact((for {

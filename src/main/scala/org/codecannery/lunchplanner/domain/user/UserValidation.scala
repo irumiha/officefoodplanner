@@ -1,5 +1,7 @@
 package org.codecannery.lunchplanner.domain.user
 
+import java.time.Instant
+
 import cats.Applicative
 import cats.data.EitherT
 import io.scalaland.chimney.dsl._
@@ -27,7 +29,12 @@ trait UserValidation[F[_]] {
 
   def validChanges(storedUser: User, newUser: UpdateUser)(
       implicit AP: Applicative[F]): EitherT[F, UserValidationError, User] = {
-    val changed = newUser.into[User].transform
+    val changed =
+      newUser
+        .into[User]
+        .withFieldComputed(_.createdOn, _ => storedUser.createdOn)
+        .withFieldComputed(_.updatedOn, _ => Instant.now())
+        .transform
     val validation = Right[UserValidationError, User](changed)
 
     EitherT.fromEither[F](validation)

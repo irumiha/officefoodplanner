@@ -1,8 +1,12 @@
 CREATE TABLE USERS
 (
-  ID         UUID PRIMARY KEY,
-  DATA       JSONB,
-  CREATED_ON TIMESTAMP,
-  UPDATED_ON TIMESTAMP
+    id         UUID PRIMARY KEY,
+    username   TEXT      NOT NULL,
+    first_name TEXT      NOT NULL,
+    last_name  TEXT      NOT NULL,
+    email      TEXT      NOT NULL,
+    hash       TEXT      NOT NULL,
+    phone      TEXT      NOT NULL,
+    created_on TIMESTAMP NOT NULL,
+    updated_on TIMESTAMP NOT NULL
 );
-

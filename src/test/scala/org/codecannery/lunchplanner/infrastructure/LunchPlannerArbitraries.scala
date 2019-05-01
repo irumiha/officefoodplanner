@@ -26,7 +26,8 @@ trait LunchPlannerArbitraries {
       password <- userNameGen
       phone <- userNameGen
       id <- Gen.uuid
-    } yield User(id, userName, firstName, lastName, email, password, phone)
+      now <- instant.arbitrary
+    } yield User(id, userName, firstName, lastName, email, password, phone, now, now)
   }
 
   implicit val userSignup: Arbitrary[SignupRequest] = Arbitrary[SignupRequest] {

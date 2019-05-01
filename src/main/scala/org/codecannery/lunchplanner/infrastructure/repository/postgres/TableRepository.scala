@@ -11,7 +11,7 @@ private object TableRepositorySQL {
     s""""${table.schemaName.v}"."${table.tableName.v}""""
 
   private def columnName(table: Table, column: String) =
-    s""""${table.schemaName.v}"."${table.tableName.v}"."$column""""
+    s""""$column""""
 
   private def tableNameFragment(table: Table) = Fragment.const(tableName(table))
 
@@ -23,7 +23,7 @@ private object TableRepositorySQL {
   def insertOne[E: DoobieColumnList : DoobieColumnValues](table: Table, row: E): Update0 = {
     val sql = fr"INSERT INTO " ++
       tableNameFragment(table) ++
-      fr0"(" ++ tableColumns(table) ++ fr0")" ++
+      fr0"(" ++ tableColumns(table) ++ fr")" ++
       fr"VALUES (" ++ DoobieColumnValues[E].values(row).intercalate(fr",") ++ fr")"
 
     sql.update

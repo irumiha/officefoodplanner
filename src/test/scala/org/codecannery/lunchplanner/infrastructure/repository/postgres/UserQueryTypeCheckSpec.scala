@@ -24,7 +24,7 @@ class UserQueryTypeCheckSpec extends FunSuite with Matchers with IOChecker {
   test("Typecheck user queries") {
     userA.arbitrary.sample.foreach { u =>
       check(insertOne(table, u))
-      check(select(table, fr"data->>'userName' = ${u.userName}", Fragment.empty, Fragment.empty, Fragment.empty))
+      check(select(table, fr"username = ${u.userName}", Fragment.empty, Fragment.empty, Fragment.empty))
 
       check(updateOne(table, u))
     }

@@ -1,5 +1,6 @@
 package org.codecannery.lunchplanner.domain.user
 
+import java.time.Instant
 import java.util.UUID
 
 import cats._
@@ -23,10 +24,14 @@ abstract class UserService[F[_]: Monad, D[_]: Monad, H] extends TransactingServi
       saved <- createUser(userToCreate)
     } yield saved).mapK(FunctionK.lift(transact))
 
-  private def prepareUserFromCommand(user: command.CreateUser, pwhash: String) =
+  private def prepareUserFromCommand(user: command.CreateUser, pwhash: String) = {
+    val now = Instant.now()
     user.into[model.User]
       .withFieldComputed(_.hash, _ => pwhash)
+      .withFieldComputed(_.createdOn, _ => now)
+      .withFieldComputed(_.updatedOn, _ => now)
       .transform
+  }
 
   private def createUser(userToCreate: model.User) =
     EitherT.liftF[D, UserValidationError, model.User](userRepo.create(userToCreate))

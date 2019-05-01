@@ -37,26 +37,30 @@ class UserTableRepository extends UserRepository[ConnectionIO] {
 
 object UserTableRepository {
   implicit val doobieSupport: DoobieSupport[User] = new DoobieSupport[User] {
-    override def id: String = "key"
+    override def id: String = "id"
 
     override def values(e: User): List[Fragment] = List(
-      fr0"${e.key}",
+      fr0"${e.id}",
       fr0"${e.userName}",
       fr0"${e.firstName}",
       fr0"${e.lastName}",
       fr0"${e.email}",
       fr0"${e.hash}",
       fr0"${e.phone}",
+      fr0"${e.createdOn}",
+      fr0"${e.updatedOn}",
     )
 
     override def columns: List[String] = List(
-      "key",
-      "userName",
-      "firstName",
-      "lastName",
+      "id",
+      "username",
+      "first_name",
+      "last_name",
       "email",
       "hash",
       "phone",
+      "created_on",
+      "updated_on"
     )
   }
 
