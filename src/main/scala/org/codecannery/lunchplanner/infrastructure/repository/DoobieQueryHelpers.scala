@@ -2,28 +2,23 @@ package org.codecannery.lunchplanner.infrastructure.repository
 
 import doobie.util.fragment.Fragment
 
-trait DoobieColumnList[E] {
-  def columns: List[String]
+case class DoobieColumn[E](name: String, value: E => Fragment)
+
+trait DoobieColumns[E] {
+  def columns: List[DoobieColumn[E]]
 }
-object DoobieColumnList {
-  def apply[E](implicit instance: DoobieColumnList[E]): DoobieColumnList[E] = instance
+object DoobieColumns {
+  def apply[E](implicit instance: DoobieColumns[E]): DoobieColumns[E] = instance
 }
 
 trait DoobieIDColumn[E] {
-  def id: String
+  def id: DoobieColumn[E]
 }
 object DoobieIDColumn {
   def apply[E](implicit instance: DoobieIDColumn[E]): DoobieIDColumn[E] = instance
 }
 
-trait DoobieColumnValues[E] {
-  def values(e: E): List[Fragment]
-}
-object DoobieColumnValues {
-  def apply[E](implicit instance: DoobieColumnValues[E]): DoobieColumnValues[E] = instance
-}
-
-trait DoobieSupport[E] extends DoobieColumnList[E] with DoobieIDColumn[E] with DoobieColumnValues[E]
+trait DoobieSupport[E] extends DoobieColumns[E] with DoobieIDColumn[E]
 object DoobieSupport {
   def apply[E](implicit instance: DoobieSupport[E]): DoobieSupport[E] = instance
 }

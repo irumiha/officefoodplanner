@@ -7,7 +7,7 @@ import doobie.implicits._
 import doobie.postgres.implicits._
 import org.codecannery.lunchplanner.domain.authentication.SessionRepository
 import org.codecannery.lunchplanner.domain.authentication.model.Session
-import org.codecannery.lunchplanner.infrastructure.repository.{DoobieSupport, Table, TableName}
+import org.codecannery.lunchplanner.infrastructure.repository.{DoobieColumn, DoobieSupport, Table, TableName}
 
 class SessionTableRepository extends SessionRepository[ConnectionIO] {
   import SessionTableRepository.doobieSupport
@@ -26,22 +26,14 @@ class SessionTableRepository extends SessionRepository[ConnectionIO] {
 
 object SessionTableRepository {
   implicit val doobieSupport: DoobieSupport[Session] = new DoobieSupport[Session] {
-    override def id: String = "id"
+    override val id: DoobieColumn[Session] = DoobieColumn[Session]("id", s => fr0"${s.id}")
 
-    override def values(e: Session): List[Fragment] = List(
-      fr0"${e.id}",
-      fr0"${e.userID}",
-      fr0"${e.createdOn}",
-      fr0"${e.expiresOn}",
-      fr0"${e.updatedOn}",
-    )
-
-    override def columns: List[String] = List(
-      "id",
-      "user_id",
-      "created_on",
-      "expires_on",
-      "updated_on"
+    override val columns: List[DoobieColumn[Session]] = List(
+      DoobieColumn[Session]("id", e => fr0"${e.id}"),
+      DoobieColumn[Session]("user_id", e => fr0"${e.userID}"),
+      DoobieColumn[Session]("created_on", e => fr0"${e.createdOn}"),
+      DoobieColumn[Session]("expires_on", e => fr0"${e.expiresOn}"),
+      DoobieColumn[Session]("updated_on", e => fr0"${e.updatedOn}"),
     )
   }
 }

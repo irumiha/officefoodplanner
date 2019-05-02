@@ -7,9 +7,10 @@ import doobie.implicits._
 import doobie.postgres.implicits._
 import org.codecannery.lunchplanner.domain.user.UserRepository
 import org.codecannery.lunchplanner.domain.user.model.User
-import org.codecannery.lunchplanner.infrastructure.repository.{DoobieSupport, SchemaName, Table, TableName}
+import org.codecannery.lunchplanner.infrastructure.repository.{DoobieColumn, DoobieSupport, SchemaName, Table, TableName}
 
 class UserTableRepository extends UserRepository[ConnectionIO] {
+
   import UserTableRepository.doobieSupport
 
   private val repo: TableRepository[User, UUID] = new TableRepository[User, UUID] {
@@ -37,30 +38,18 @@ class UserTableRepository extends UserRepository[ConnectionIO] {
 
 object UserTableRepository {
   implicit val doobieSupport: DoobieSupport[User] = new DoobieSupport[User] {
-    override def id: String = "id"
+    override val id: DoobieColumn[User] = DoobieColumn[User]("id", u => fr0"${u.id}")
 
-    override def values(e: User): List[Fragment] = List(
-      fr0"${e.id}",
-      fr0"${e.userName}",
-      fr0"${e.firstName}",
-      fr0"${e.lastName}",
-      fr0"${e.email}",
-      fr0"${e.hash}",
-      fr0"${e.phone}",
-      fr0"${e.createdOn}",
-      fr0"${e.updatedOn}",
-    )
-
-    override def columns: List[String] = List(
-      "id",
-      "username",
-      "first_name",
-      "last_name",
-      "email",
-      "hash",
-      "phone",
-      "created_on",
-      "updated_on"
+    override val columns: List[DoobieColumn[User]] = List(
+      DoobieColumn[User]("id",         e => fr0"${e.id}"),
+      DoobieColumn[User]("username",   e => fr0"${e.userName}"),
+      DoobieColumn[User]("first_name", e => fr0"${e.firstName}"),
+      DoobieColumn[User]("last_name",  e => fr0"${e.lastName}"),
+      DoobieColumn[User]("email",      e => fr0"${e.email}"),
+      DoobieColumn[User]("hash",       e => fr0"${e.hash}"),
+      DoobieColumn[User]("phone",      e => fr0"${e.phone}"),
+      DoobieColumn[User]("created_on", e => fr0"${e.createdOn}"),
+      DoobieColumn[User]("updated_on", e => fr0"${e.updatedOn}"),
     )
   }
 
