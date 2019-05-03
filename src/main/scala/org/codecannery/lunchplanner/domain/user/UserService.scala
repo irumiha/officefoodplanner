@@ -6,23 +6,27 @@ import java.util.UUID
 import cats._
 import cats.arrow.FunctionK
 import cats.data.EitherT
+import cats.effect.Async
 import cats.implicits._
 import io.scalaland.chimney.dsl._
 import org.codecannery.lunchplanner.infrastructure.service.TransactingService
 import tsec.passwordhashers.PasswordHasher
 
-abstract class UserService[F[_]: Monad, D[_]: Monad, H] extends TransactingService[F, D] with UserValidation[D] {
+abstract class UserService[F[_]: Monad, D[_]: Monad : Async, H] extends TransactingService[F, D] with UserValidation[D] {
   val userRepo: UserRepository[D]
   val cryptService: PasswordHasher[D, H]
 
-  def createUser(user: command.CreateUser): EitherT[F, UserValidationError, model.User] =
-    (for {
+  def createUser(user: command.CreateUser): EitherT[F, UserValidationError, model.User] = {
+    val savedAction  = for {
       maybeUser <- getUser(user)
       _ <- userMustNotExist(maybeUser)
       hashedPw <- EitherT.right(cryptService.hashpw(user.password))
       userToCreate = prepareUserFromCommand(user, hashedPw.toString)
       saved <- createUser(userToCreate)
-    } yield saved).mapK(FunctionK.lift(transact))
+    } yield saved
+
+    savedAction.mapK(FunctionK.lift(transact))
+  }
 
   private def prepareUserFromCommand(user: command.CreateUser, pwhash: String) = {
     val now = Instant.now()
