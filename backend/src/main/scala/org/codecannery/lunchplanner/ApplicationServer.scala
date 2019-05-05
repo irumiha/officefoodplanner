@@ -20,8 +20,10 @@ object ApplicationServer extends IOApp {
       xa             <- config.DatabaseConfig.dbTransactor[F](conf.db, connEc, txnEc)
       app            =  new ApplicationModule(conf, xa)
       httpApp        =  Router(
-        "/users" -> app.userEndpoints,
-        "/auth"  -> app.authEndpoints
+        "/users"  -> app.userEndpoints,
+        "/auth"   -> app.authEndpoints,
+        "/util"   -> app.utilityEndpoints,
+        "/static" -> app.staticEndpoints
       ).orNotFound
       _              <- Resource.liftF[F, Unit](config.DatabaseConfig.initializeDb[F](conf.db))
       server <-

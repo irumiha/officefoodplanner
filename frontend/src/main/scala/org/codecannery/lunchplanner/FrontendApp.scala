@@ -4,7 +4,6 @@ import org.scalajs.dom
 import scala.scalajs.js.annotation.JSExportTopLevel
 import dom.ext.Ajax
 import scala.concurrent.ExecutionContext.Implicits.global
-import cats.implicits._
 
 @JSExportTopLevel("FrontendApp")
 object FrontendApp {

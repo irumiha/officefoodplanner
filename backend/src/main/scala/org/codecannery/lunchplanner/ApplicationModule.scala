@@ -3,7 +3,7 @@ package org.codecannery.lunchplanner
 import cats.effect.{ConcurrentEffect, ContextShift, Timer}
 import doobie.ConnectionIO
 import org.codecannery.lunchplanner.config.ApplicationConfig
-import org.codecannery.lunchplanner.infrastructure.endpoint.{AuthenticationEndpoints, UserEndpoints}
+import org.codecannery.lunchplanner.infrastructure.endpoint.{AuthenticationEndpoints, StaticEndpoints, UserEndpoints, UtilityEndpoints}
 import org.codecannery.lunchplanner.infrastructure.middleware.Authenticate
 import org.codecannery.lunchplanner.infrastructure.repository.postgres.{SessionTableRepository, UserTableRepository}
 import org.codecannery.lunchplanner.infrastructure.service.authentication.DoobieAuthenticationService
@@ -29,5 +29,7 @@ class ApplicationModule[F[_] : ContextShift : ConcurrentEffect : Timer](
 
   val userEndpoints = UserEndpoints.endpoints(userService, authMiddleware)
   val authEndpoints = AuthenticationEndpoints.endpoints(config, authService)
+  val utilityEndpoints = UtilityEndpoints.endpoints()
+  val staticEndpoints = StaticEndpoints.endpoints()
 
 }

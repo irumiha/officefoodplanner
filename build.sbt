@@ -61,20 +61,23 @@ lazy val sharedJs = shared.js
 
 
 lazy val backend = (project in file("backend"))
-  .enablePlugins(ScalafmtPlugin, JavaAppPackaging)
+  .enablePlugins(ScalafmtPlugin, JavaServerAppPackaging)
   .settings(
     name := "lunchplanner-backend"
   )
   .settings(commonSettings)
   .settings(
     libraryDependencies ++= Seq(
+      // FP goodness
       "org.typelevel"         %% "cats-core"              % CatsVersion,
+      // Json serialization/deserialization
       "io.circe"              %% "circe-generic"          % CirceVersion,
       "io.circe"              %% "circe-literal"          % CirceVersion,
       "io.circe"              %% "circe-generic-extras"   % CirceVersion,
       "io.circe"              %% "circe-parser"           % CirceVersion,
       "io.circe"              %% "circe-java8"            % CirceVersion,
       "io.circe"              %% "circe-config"           % CirceConfigVersion,
+      // Database access
       "org.tpolecat"          %% "doobie-core"            % DoobieVersion,
       "org.tpolecat"          %% "doobie-h2"              % DoobieVersion,
       "org.tpolecat"          %% "doobie-postgres"        % DoobieVersion,
@@ -84,14 +87,19 @@ lazy val backend = (project in file("backend"))
       "com.beachape"          %% "enumeratum"             % EnumeratumVersion,
       "com.beachape"          %% "enumeratum-circe"       % EnumeratumCirceVersion,
       "com.h2database"        %  "h2"                     % H2Version,
+      "org.flywaydb"          %  "flyway-core"            % FlywayVersion,
+      // HTTP server
       "org.http4s"            %% "http4s-blaze-server"    % Http4sVersion,
       "org.http4s"            %% "http4s-circe"           % Http4sVersion,
       "org.http4s"            %% "http4s-dsl"             % Http4sVersion,
       "org.http4s"            %% "http4s-twirl"           % Http4sVersion,
+      // Logging
       "ch.qos.logback"        %  "logback-classic"        % LogbackVersion,
-      "org.flywaydb"          %  "flyway-core"            % FlywayVersion,
+      // Automatic DTO mapping
       "io.scalaland"          %% "chimney"                % ChimneyVersion,
+      // Validations
       "com.github.krzemin"    %% "octopus"                % OctopusVersion,
+      // Test deps
       "org.http4s"            %% "http4s-blaze-client"    % Http4sVersion     % Test,
       "org.scalacheck"        %% "scalacheck"             % ScalaCheckVersion % Test,
       "org.scalatest"         %% "scalatest"              % ScalaTestVersion  % Test,
@@ -156,6 +164,7 @@ lazy val backend = (project in file("backend"))
     scalacOptions in (Compile, console) ~= (_.filterNot(badConsoleFlags.contains(_))),
       // Allows to read the generated JS on client
     resources in Compile += (fastOptJS in (frontend, Compile)).value.data,
+    resources in Compile += (fullOptJS in (frontend, Compile)).value.data,
     // Lets the backend to read the .map file for js
     resources in Compile += (fastOptJS in (frontend, Compile)).value
       .map((x: sbt.File) => new File(x.getAbsolutePath + ".map"))
@@ -167,8 +176,9 @@ lazy val backend = (project in file("backend"))
     // This settings makes reStart to rebuild if a scala.js file changes on the client
     watchSources ++= (watchSources in frontend).value,
     // Support stopping the running server
-    mainClass in reStart := Some("org.http4s.scalajsexample.Server"),
-    fork in run := true
+    mainClass in reStart := Some("org.codecannery.lunchplanner.ApplicationServer"),
+    fork in run := true,
+    javaOptions += "-agentlib:jdwp=transport=dt_socket,server=y,address=localhost:5005,suspend=n"
   )
   .dependsOn(sharedJvm)
 
@@ -188,6 +198,7 @@ lazy val frontend = (project in file("frontend"))
     testFrameworks += new TestFramework("utest.runner.Framework"),
     libraryDependencies ++= Seq(
       "org.scala-js" %%% "scalajs-dom" % ScalaJsDomVersion,
+      "com.thoughtworks.binding" %%% "dom" % "11.7.0+141-9653ff79",
       "com.lihaoyi"  %%% "utest"       % UtestVersion % Test
     )
   )
