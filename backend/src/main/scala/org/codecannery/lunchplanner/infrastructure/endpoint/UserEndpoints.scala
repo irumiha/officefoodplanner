@@ -32,9 +32,9 @@ class UserEndpoints[F[_]: Effect, D[_], H](
       case req @ POST -> Root                         => signup(req)
     }
 
-  val onFailure: AuthedService[String, F] = Kleisli(req => OptionT.liftF(Forbidden(req.authInfo)))
+  val onAuthFailure: AuthedService[String, F] = Kleisli(req => OptionT.liftF(Forbidden(req.authInfo)))
   val authM: AuthMiddleware[F, User] =
-    AuthMiddleware(authMiddleware.authUser, onFailure)
+    AuthMiddleware(authMiddleware.authUser, onAuthFailure)
 
   def authEndpoints: HttpRoutes[F] =
     authM(AuthedService[User, F] {

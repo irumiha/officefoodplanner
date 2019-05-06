@@ -1,15 +1,37 @@
-import sbtcrossproject.CrossPlugin.autoImport.crossProject
-import sbtcrossproject.CrossType
+import sbt._
+import Keys._
+import scala.sys.process.Process
+import complete.DefaultParsers._
 
+lazy val updateNpm  = taskKey[Unit]("Update npm")
+lazy val npmTask    = inputKey[Unit]("Run npm with arguments")
+lazy val distApp    = taskKey[Unit]("Build final app package")
 
-// Filter out compiler flags to make the repl experience functional...
-val badConsoleFlags = Seq("-Xfatal-warnings", "-Ywarn-unused:imports")
-lazy val commonSettings = {
-  organization := "org.codecannery"
-  version      := "0.0.1-SNAPSHOT"
-  scalaVersion := "2.12.8"
-  addCompilerPlugin("com.olegpy" %% "better-monadic-for" % "0.3.0")
+def haltOnCmdResultError(result: Int) {
+  if (result != 0) {
+    throw new Exception("Build failed.")
+  }
 }
+
+lazy val commonSettings = Seq(
+  organization := "org.codecannery",
+  version      := "0.0.1-SNAPSHOT",
+  scalaVersion := "2.12.8",
+  addCompilerPlugin("com.olegpy" %% "better-monadic-for" % "0.3.0"),
+  updateNpm := {
+    println("Updating npm dependencies")
+    haltOnCmdResultError(Process("npm install", baseDirectory.value / ".." / "ui").!)
+  },
+  npmTask := {
+    val taskName = spaceDelimited("<arg>").parsed.mkString(" ")
+    updateNpm.value
+    val localNpmCommand = "npm " + taskName
+    def buildWebpack() =
+      Process(localNpmCommand, baseDirectory.value / ".." / "ui").!
+    println("Building with Webpack : " + taskName)
+    haltOnCmdResultError(buildWebpack())
+  },
+)
 
 resolvers += Resolver.sonatypeRepo("snapshots")
 
@@ -28,44 +50,42 @@ val FlywayVersion          = "5.2.4"
 val TsecVersion            = "0.1.0"
 val ChimneyVersion         = "0.3.1"
 val OctopusVersion         = "0.3.3"
-val UtestVersion           = "0.6.7"
-val ScalaJsDomVersion      = "0.9.7"
-val ScalaTagsVersion       = "0.6.8"
+val SeleniumVersion        = "2.53.0"
 
-// This function allows triggered compilation to run only when scala files changes
-// It lets change static files freely
-def includeInTrigger(f: java.io.File): Boolean =
-  f.isFile && {
-    val name = f.getName.toLowerCase
-    name.endsWith(".scala") || name.endsWith(".js")
-  }
+lazy val rootProject = (project in file("."))
+  .settings(commonSettings: _*)
+  .settings(
+    name := "lunchplanner",
+//    herokuFatJar in Compile := Some((assemblyOutputPath in backend in assembly).value),
+//    deployHeroku in Compile := ((deployHeroku in Compile) dependsOn (assembly in backend)).value
+  )
+  .aggregate(backend, ui)
 
-lazy val shared =
-  (crossProject(JSPlatform, JVMPlatform).crossType(CrossType.Pure) in file("shared"))
-    .settings(
-      name := "lunchplanner-shared"
-    )
-    .settings(commonSettings)
-    .settings(
-      libraryDependencies ++= Seq(
-        "com.lihaoyi" %%% "scalatags"     % ScalaTagsVersion,
-        "io.circe"    %%% "circe-core"    % CirceVersion,
-        "io.circe"    %%% "circe-generic" % CirceVersion,
-        "io.circe"    %%% "circe-parser"  % CirceVersion
-        //        "org.typelevel" %% "cats-effect" % catsEffectV
-      )
-    )
+lazy val ui = (project in file("ui"))
+  .settings(commonSettings: _*)
+  .settings(test in Test := (test in Test).dependsOn(npmTask.toTask(" run test")).value)
 
-lazy val sharedJvm = shared.jvm
-lazy val sharedJs = shared.js
+val seleniumJava    = "org.seleniumhq.selenium" % "selenium-java" % SeleniumVersion % "test"
+val seleniumFirefox = "org.seleniumhq.selenium" % "selenium-firefox-driver" % SeleniumVersion % "test"
+val seleniumStack   = Seq(seleniumJava, seleniumFirefox)
 
+lazy val uiTests = (project in file("ui-tests"))
+  .settings(commonSettings: _*)
+  .settings(
+    parallelExecution := false,
+    libraryDependencies ++= seleniumStack,
+    test in Test := (test in Test).dependsOn(npmTask.toTask(" run build")).value
+  ) dependsOn backend
+
+// Filter out compiler flags to make the repl experience functional...
+val badConsoleFlags = Seq("-Xfatal-warnings", "-Ywarn-unused:imports")
 
 lazy val backend = (project in file("backend"))
   .enablePlugins(ScalafmtPlugin, JavaServerAppPackaging)
   .settings(
     name := "lunchplanner-backend"
   )
-  .settings(commonSettings)
+  .settings(commonSettings: _*)
   .settings(
     libraryDependencies ++= Seq(
       // FP goodness
@@ -92,7 +112,6 @@ lazy val backend = (project in file("backend"))
       "org.http4s"            %% "http4s-blaze-server"    % Http4sVersion,
       "org.http4s"            %% "http4s-circe"           % Http4sVersion,
       "org.http4s"            %% "http4s-dsl"             % Http4sVersion,
-      "org.http4s"            %% "http4s-twirl"           % Http4sVersion,
       // Logging
       "ch.qos.logback"        %  "logback-classic"        % LogbackVersion,
       // Automatic DTO mapping
@@ -110,7 +129,7 @@ lazy val backend = (project in file("backend"))
       "io.github.jmcardon"    %% "tsec-signatures"        % TsecVersion,
       "io.github.jmcardon"    %% "tsec-jwt-mac"           % TsecVersion,
       "io.github.jmcardon"    %% "tsec-jwt-sig"           % TsecVersion,
-      "io.github.jmcardon"    %% "tsec-http4s"            % TsecVersion
+      "io.github.jmcardon"    %% "tsec-http4s"            % TsecVersion,
     ),
     scalacOptions ++= Seq(
       // format: off
@@ -162,44 +181,20 @@ lazy val backend = (project in file("backend"))
       // format: on
     ),
     scalacOptions in (Compile, console) ~= (_.filterNot(badConsoleFlags.contains(_))),
-      // Allows to read the generated JS on client
-    resources in Compile += (fastOptJS in (frontend, Compile)).value.data,
-    resources in Compile += (fullOptJS in (frontend, Compile)).value.data,
-    // Lets the backend to read the .map file for js
-    resources in Compile += (fastOptJS in (frontend, Compile)).value
-      .map((x: sbt.File) => new File(x.getAbsolutePath + ".map"))
-      .data,
-    // Lets the server read the jsdeps file
-    (managedResources in Compile) += (artifactPath in (frontend, Compile, packageJSDependencies)).value,
-    // do a fastOptJS on reStart
-    reStart := (reStart dependsOn (fastOptJS in (frontend, Compile))).evaluated,
-    // This settings makes reStart to rebuild if a scala.js file changes on the client
-    watchSources ++= (watchSources in frontend).value,
     // Support stopping the running server
     mainClass in reStart := Some("org.codecannery.lunchplanner.ApplicationServer"),
     fork in run := true,
-    javaOptions += "-agentlib:jdwp=transport=dt_socket,server=y,address=localhost:5005,suspend=n"
-  )
-  .dependsOn(sharedJvm)
+    javaOptions += "-agentlib:jdwp=transport=dt_socket,server=y,address=localhost:5005,suspend=n",
+    unmanagedResourceDirectories in Compile := {
+      (unmanagedResourceDirectories in Compile).value ++ List(
+        baseDirectory.value.getParentFile / ui.base.getName / "dist"
+      )
+    },
+    compile in Compile := {
+      val compilationResult = (compile in Compile).value
+      IO.touch(target.value / "compilationFinished")
 
-lazy val frontend = (project in file("frontend"))
-  .settings(
-    name := "lunchplanner-frontend"
+      compilationResult
+    },
+    distApp := dist.dependsOn(npmTask.toTask(" run build")).value
   )
-  .enablePlugins(ScalaJSPlugin)
-  .settings(commonSettings: _*)
-  .settings(
-    // Build a js dependencies file
-    skip in packageJSDependencies := false,
-    jsEnv := new org.scalajs.jsenv.nodejs.NodeJSEnv(),
-
-    // Put the jsdeps file on a place reachable for the server
-    crossTarget in (Compile, packageJSDependencies) := (resourceManaged in Compile).value,
-    testFrameworks += new TestFramework("utest.runner.Framework"),
-    libraryDependencies ++= Seq(
-      "org.scala-js" %%% "scalajs-dom" % ScalaJsDomVersion,
-      "com.thoughtworks.binding" %%% "dom" % "11.7.0+141-9653ff79",
-      "com.lihaoyi"  %%% "utest"       % UtestVersion % Test
-    )
-  )
-  .dependsOn(sharedJs)

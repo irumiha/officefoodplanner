@@ -9,6 +9,8 @@ package object config {
   implicit val dbconnDec: Decoder[DatabaseConnectionsConfig] = deriveDecoder
   implicit val authDec: Decoder[AuthConfig] = deriveDecoder
   implicit val csrfDec: Decoder[CsrfConfig] = deriveDecoder
+  implicit val oauthOffice365Dec: Decoder[OauthDetails] = deriveDecoder
+  implicit val oauthDec: Decoder[Oauth] = deriveDecoder
 
   implicit val psDec: Decoder[ApplicationConfig] = deriveDecoder
 }
