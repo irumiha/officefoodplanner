@@ -9,6 +9,7 @@ import org.http4s.headers.`Cache-Control`
 import org.http4s.CacheDirective._
 import scala.concurrent.ExecutionContext.global
 import org.http4s.implicits._
+import org.http4s.server.middleware._
 
 import scala.language.higherKinds
 
@@ -16,6 +17,8 @@ class StaticEndpoints[F[_]: Effect: ContextShift, D[_], H] extends Http4sDsl[F] 
 
   object dsl extends Http4sDsl[F]
   import dsl._
+
+  val gzippedEndpoints = GZip(nonAuthEndpoints)
 
   private val supportedStaticExtensions =
     List(".html", ".js", ".map", ".css", ".png", ".ico")
@@ -36,6 +39,6 @@ object StaticEndpoints {
   def endpoints[F[_]: Effect: ContextShift, D[_], H]() = {
     val staticEndpoints = new StaticEndpoints[F, D, H]
 
-    staticEndpoints.nonAuthEndpoints
+    staticEndpoints.gzippedEndpoints
   }
 }
