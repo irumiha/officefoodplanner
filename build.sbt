@@ -196,5 +196,5 @@ lazy val backend = (project in file("backend"))
 
       compilationResult
     },
-    distApp := dist.dependsOn(npmTask.toTask(" run build")).value
+    distApp := dist.dependsOn((npmTask in ui).toTask(" run build")).value
   )
