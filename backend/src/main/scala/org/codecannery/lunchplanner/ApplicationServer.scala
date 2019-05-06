@@ -8,6 +8,7 @@ import io.circe.config.parser
 import org.http4s.implicits._
 import org.http4s.server.{Router, Server}
 import org.http4s.server.blaze.BlazeServerBuilder
+import org.http4s.client.oauth1
 
 object ApplicationServer extends IOApp {
 
