@@ -58,10 +58,10 @@ abstract class AuthenticationService[F[_]: Monad, D[_]: Monad, H] extends Transa
           )))
 
     transact((for {
-      user <- getUserOrFailLogin(login)
+      user        <- getUserOrFailLogin(login)
       checkResult <- checkUserPassword(login, user)
-      resp <- if (checkResult == Verified) loggedInUser(user) else failedLoginForUsername(login)
-      session <- createSession(resp)
+      resp        <- if (checkResult == Verified) loggedInUser(user) else failedLoginForUsername(login)
+      session     <- createSession(resp)
     } yield session).value)
   }
 

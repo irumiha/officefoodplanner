@@ -63,11 +63,11 @@ abstract class UserService[F[_]: Monad, D[_]: Monad : Async, H] extends Transact
       _ <- EitherT.liftF[D, UserValidationError, Int](userRepo.update(userToUpdate))
     } yield userToUpdate).mapK(FunctionK.lift(transact))
 
-  def list(pageSize: Int, offset: Int): F[List[view.UserListView]] =
+  def list(pageSize: Int, offset: Int): F[List[view.UserSimpleView]] =
     for {
       dbList <- transact(userRepo.list.map(_.slice(offset, offset + pageSize)))
     } yield {
-      dbList.map(u => u.into[view.UserListView].transform)
+      dbList.map(u => u.into[view.UserSimpleView].transform)
     }
 
 }

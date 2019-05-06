@@ -14,6 +14,7 @@ import org.http4s._
 import org.http4s.circe._
 import org.http4s.dsl.Http4sDsl
 import org.http4s.server.AuthMiddleware
+import io.scalaland.chimney.dsl._
 
 import scala.language.higherKinds
 
@@ -38,10 +39,11 @@ class UserEndpoints[F[_]: Effect, D[_], H](
 
   def authEndpoints: HttpRoutes[F] =
     authM(AuthedService[User, F] {
-      case       GET    -> Root :? PageSizeQ(ps) :? OffsetQ(o) as _ => list(ps, o)
-      case       GET    -> Root / username                     as _ => searchByUsername(username)
-      case req @ PUT    -> Root / name                         as _ => update(req, name)
-      case       DELETE -> Root / username                     as _ => deleteByUsername(username)
+      case       GET    -> Root :? PageSizeQ(ps) :? OffsetQ(o) as _            => list(ps, o)
+      case       GET    -> Root / username                     as _            => searchByUsername(username)
+      case req @ PUT    -> Root / name                         as _            => update(req, name)
+      case       DELETE -> Root / username                     as _            => deleteByUsername(username)
+      case       GET    -> Root / "loggedin"                   as loggedInUser => showLoggedInUser(loggedInUser)
     })
 
   private def signup(req: Request[F]): F[Response[F]] = {
@@ -94,6 +96,10 @@ class UserEndpoints[F[_]: Effect, D[_], H](
       _ <- userService.deleteByUsername(username)
       resp <- Ok()
     } yield resp
+
+  def showLoggedInUser(loggedInUser: User): F[Response[F]] = {
+    Ok(loggedInUser.into[view.UserSimpleView].transform.asJson)
+  }
 
 }
 
