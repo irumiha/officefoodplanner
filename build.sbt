@@ -14,7 +14,7 @@ def haltOnCmdResultError(result: Int) {
 }
 
 lazy val commonSettings = Seq(
-  organization := "org.codecannery",
+  organization := "com.officefoodplanner",
   version      := "0.0.1-SNAPSHOT",
   scalaVersion := "2.12.8",
   addCompilerPlugin("com.olegpy" %% "better-monadic-for" % "0.3.0"),
@@ -183,7 +183,7 @@ lazy val backend = (project in file("backend"))
     ),
     scalacOptions in (Compile, console) ~= (_.filterNot(badConsoleFlags.contains(_))),
     // Support stopping the running server
-    mainClass in reStart := Some("org.codecannery.lunchplanner.ApplicationServer"),
+    mainClass in reStart := Some("com.officefoodplanner.ApplicationServer"),
     fork in run := true,
     javaOptions += "-agentlib:jdwp=transport=dt_socket,server=y,address=localhost:5005,suspend=n",
     unmanagedResourceDirectories in Compile := {

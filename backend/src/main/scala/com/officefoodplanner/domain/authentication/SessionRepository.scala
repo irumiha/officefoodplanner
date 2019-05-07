@@ -1,0 +1,13 @@
+package com.officefoodplanner.domain.authentication
+
+import java.util.UUID
+
+import com.officefoodplanner.domain.authentication.model.Session
+
+trait SessionRepository[F[_]] {
+  def create(session: Session): F[Session]
+
+  def get(sessionID: UUID): F[Option[Session]]
+
+  def update(session: Session): F[Int]
+}
