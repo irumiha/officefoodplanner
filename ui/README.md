@@ -1,4 +1,4 @@
-# lunchplanner
+# officefoodplanner
 
 ## Project setup
 ```

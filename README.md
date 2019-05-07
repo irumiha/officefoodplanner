@@ -1,4 +1,4 @@
-# Lunchplanner 
+# Office Food Planner 
 
 A application that connects office cooks with their consumers. Design and organise meals, set up seating, track attendance, 
 gather feedback.
@@ -31,7 +31,7 @@ This application also an experiment that should also serve as a blueprint for bu
 - Frontend: SPA built with Vue.js.
 - Migrations: we use FlywayDB.
 - Sessions are cookie-based, persisted in the database. 
-- Password based auth (not used in the lunchplanner app)
+- Password based auth (not used in the Office Food Planner app)
 - Oauth2 for easy integration with other identity providers
 
 When making a new app just clone this one and delete all entities and functionality not related to users and authentication.

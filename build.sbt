@@ -55,7 +55,7 @@ val SeleniumVersion        = "2.53.0"
 lazy val rootProject = (project in file("."))
   .settings(commonSettings: _*)
   .settings(
-    name := "lunchplanner",
+    name := "officefoodplanner",
 //    herokuFatJar in Compile := Some((assemblyOutputPath in backend in assembly).value),
 //    deployHeroku in Compile := ((deployHeroku in Compile) dependsOn (assembly in backend)).value
   )
@@ -83,7 +83,7 @@ val badConsoleFlags = Seq("-Xfatal-warnings", "-Ywarn-unused:imports")
 lazy val backend = (project in file("backend"))
   .enablePlugins(ScalafmtPlugin, JavaServerAppPackaging)
   .settings(
-    name := "lunchplanner-backend"
+    name := "officefoodplanner-backend"
   )
   .settings(commonSettings: _*)
   .settings(

@@ -6,7 +6,7 @@ import com.officefoodplanner.domain.authentication.command.SignupRequest
 import com.officefoodplanner.domain.user.model.User
 import org.scalacheck._
 
-trait LunchPlannerArbitraries {
+trait OfficeFoodPlannerArbitraries {
 
   val userNameLength = 16
   val userNameGen: Gen[String] = Gen.listOfN(userNameLength, Gen.alphaChar).map(_.mkString)
@@ -42,4 +42,4 @@ trait LunchPlannerArbitraries {
   }
 }
 
-object LunchPlannerArbitraries extends LunchPlannerArbitraries
+object OfficeFoodPlannerArbitraries extends OfficeFoodPlannerArbitraries
