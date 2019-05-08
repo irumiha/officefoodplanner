@@ -1,4 +1,4 @@
-package com.officefoodplanner.domain.user.model
+package com.officefoodplanner.domain.auth.model
 
 import java.time.Instant
 import java.util.UUID
@@ -13,6 +13,7 @@ case class User(
     email: String,
     hash: String,
     phone: String,
+    initialized: Boolean = false,
     createdOn: Instant,
     updatedOn: Instant
 )

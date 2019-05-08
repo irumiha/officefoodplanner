@@ -4,8 +4,8 @@ import java.util.UUID
 
 import cats._
 import cats.implicits._
-import com.officefoodplanner.domain.user.UserRepository
-import com.officefoodplanner.domain.user.model.User
+import com.officefoodplanner.domain.auth.UserRepository
+import com.officefoodplanner.domain.auth.model.User
 
 class UserInMemoryRepository[F[_]: Applicative] extends UserRepository[F] {
   private val repo: InMemoryRepository[F, User, UUID]  = new InMemoryRepository[F, User, UUID]

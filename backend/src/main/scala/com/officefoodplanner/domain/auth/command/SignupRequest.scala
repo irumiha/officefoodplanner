@@ -1,6 +1,4 @@
-package com.officefoodplanner.domain.authentication.command
-
-import com.officefoodplanner.domain.user.command.CreateUser
+package com.officefoodplanner.domain.auth.command
 
 final case class SignupRequest(
     userName: String,

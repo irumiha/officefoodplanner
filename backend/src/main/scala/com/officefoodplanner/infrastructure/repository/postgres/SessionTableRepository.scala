@@ -2,8 +2,8 @@ package com.officefoodplanner.infrastructure.repository.postgres
 
 import java.util.UUID
 
-import com.officefoodplanner.domain.authentication.SessionRepository
-import com.officefoodplanner.domain.authentication.model.Session
+import com.officefoodplanner.domain.auth.SessionRepository
+import com.officefoodplanner.domain.auth.model.Session
 import com.officefoodplanner.infrastructure.repository.{DoobieColumn, DoobieSupport, Table, TableName}
 import doobie._
 import doobie.implicits._

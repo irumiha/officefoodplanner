@@ -1,11 +1,11 @@
-package com.officefoodplanner.domain.user
+package com.officefoodplanner.domain.auth
 
 import java.time.Instant
 
 import cats.Applicative
 import cats.data.EitherT
-import com.officefoodplanner.domain.user.command.UpdateUser
-import com.officefoodplanner.domain.user.model.User
+import com.officefoodplanner.domain.auth.command.UpdateUser
+import com.officefoodplanner.domain.auth.model.User
 import io.scalaland.chimney.dsl._
 
 trait UserValidation[F[_]] {

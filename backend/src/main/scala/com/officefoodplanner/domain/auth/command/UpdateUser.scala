@@ -1,4 +1,4 @@
-package com.officefoodplanner.domain.user.command
+package com.officefoodplanner.domain.auth.command
 
 import java.util.UUID
 

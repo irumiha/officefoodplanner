@@ -1,4 +1,4 @@
-package com.officefoodplanner.domain.user
+package com.officefoodplanner.domain.auth
 
 sealed trait UserValidationError extends Product with Serializable
 case object UserNotFoundError extends UserValidationError

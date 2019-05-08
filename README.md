@@ -24,7 +24,7 @@ Shift editor allows you to add or remove shifts and manually or randomly assign 
 
 ## Technical
 
-This application also an experiment that should also serve as a blueprint for building new applications. To that end we have defined:
+This application also an experiment that should serve as a blueprint for building new applications. To that end we have defined:
 
 - Programming language: Scala.
 - Backend framework: Http4s with Doobie/Postgres for data persistence.

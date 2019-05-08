@@ -1,8 +1,8 @@
-package com.officefoodplanner.domain.user
+package com.officefoodplanner.domain.auth
 
 import java.util.UUID
 
-import com.officefoodplanner.domain.user.model.User
+import com.officefoodplanner.domain.auth.model.User
 
 trait UserRepository[F[_]] {
   def create(user: User): F[User]

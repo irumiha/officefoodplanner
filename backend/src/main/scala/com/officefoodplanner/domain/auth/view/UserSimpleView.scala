@@ -1,4 +1,4 @@
-package com.officefoodplanner.domain.user.view
+package com.officefoodplanner.domain.auth.view
 
 case class UserSimpleView(
     userName: String,

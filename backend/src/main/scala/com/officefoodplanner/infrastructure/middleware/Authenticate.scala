@@ -7,8 +7,8 @@ import org.http4s._
 import java.util.UUID
 
 import com.officefoodplanner.config.ApplicationConfig
-import com.officefoodplanner.domain.authentication.AuthenticationService
-import com.officefoodplanner.domain.user.model.User
+import com.officefoodplanner.domain.auth.AuthenticationService
+import com.officefoodplanner.domain.auth.model.User
 
 class Authenticate[F[_]: Effect, D[_], H](
   config: ApplicationConfig,

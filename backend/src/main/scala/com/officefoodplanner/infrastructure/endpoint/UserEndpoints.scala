@@ -3,11 +3,10 @@ package com.officefoodplanner.infrastructure.endpoint
 import cats.data.{Kleisli, OptionT}
 import cats.effect._
 import cats.implicits._
-import com.officefoodplanner.domain.authentication.command.{LoginRequest, SignupRequest}
-import com.officefoodplanner.domain.user.{UserAlreadyExistsError, UserNotFoundError, UserService}
-import com.officefoodplanner.domain.user.command.{CreateUser, UpdateUser}
-import com.officefoodplanner.domain.user.model.User
-import com.officefoodplanner.domain.user.view.UserSimpleView
+import com.officefoodplanner.domain.auth.{UserAlreadyExistsError, UserNotFoundError, UserService}
+import com.officefoodplanner.domain.auth.command.{CreateUser, LoginRequest, SignupRequest, UpdateUser}
+import com.officefoodplanner.domain.auth.model.User
+import com.officefoodplanner.domain.auth.view.UserSimpleView
 import com.officefoodplanner.infrastructure.endpoint.Pagination.{OffsetQ, PageSizeQ}
 import com.officefoodplanner.infrastructure.middleware.Authenticate
 import io.circe.generic.auto._

@@ -1,4 +1,4 @@
-package com.officefoodplanner.domain.authentication
+package com.officefoodplanner.domain.auth
 
 import java.time.Instant
 import java.util.UUID
@@ -6,8 +6,7 @@ import java.util.UUID
 import cats._
 import cats.data._
 import com.officefoodplanner.config.ApplicationConfig
-import com.officefoodplanner.domain.user.{UserAuthenticationFailedError, UserRepository}
-import com.officefoodplanner.domain.user.model.User
+import com.officefoodplanner.domain.auth.model.User
 import com.officefoodplanner.infrastructure.service.TransactingService
 import tsec.common.{VerificationStatus, Verified}
 import tsec.passwordhashers.{PasswordHash, PasswordHasher}

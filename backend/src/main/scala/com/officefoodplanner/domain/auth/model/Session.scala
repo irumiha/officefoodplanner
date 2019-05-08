@@ -1,4 +1,4 @@
-package com.officefoodplanner.domain.authentication.model
+package com.officefoodplanner.domain.auth.model
 
 import java.time.Instant
 import java.util.UUID
@@ -15,5 +15,4 @@ case class Session(
 
 object Session {
   implicit val keyed: KeyEntity[Session, UUID] = (u: Session) => u.id
-
 }

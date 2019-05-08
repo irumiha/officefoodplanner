@@ -3,8 +3,8 @@ package com.officefoodplanner.infrastructure.repository.inmemory
 import java.util.UUID
 
 import cats.Applicative
-import com.officefoodplanner.domain.authentication.SessionRepository
-import com.officefoodplanner.domain.authentication.model.Session
+import com.officefoodplanner.domain.auth.SessionRepository
+import com.officefoodplanner.domain.auth.model.Session
 
 class SessionInMemoryRepository[F[_] : Applicative] extends SessionRepository[F] {
   private def repo = new InMemoryRepository[F, Session, UUID]

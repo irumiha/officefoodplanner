@@ -2,8 +2,8 @@ package com.officefoodplanner.infrastructure
 
 import java.time.Instant
 
-import com.officefoodplanner.domain.authentication.command.SignupRequest
-import com.officefoodplanner.domain.user.model.User
+import com.officefoodplanner.domain.auth.command.SignupRequest
+import com.officefoodplanner.domain.auth.model.User
 import org.scalacheck._
 
 trait OfficeFoodPlannerArbitraries {

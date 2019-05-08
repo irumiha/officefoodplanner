@@ -4,7 +4,7 @@ import java.util.UUID
 
 import org.scalatest._
 import cats.effect.IO
-import com.officefoodplanner.domain.user.model.User
+import com.officefoodplanner.domain.auth.model.User
 import com.officefoodplanner.infrastructure.repository.{SchemaName, Table, TableName}
 import doobie.syntax.string._
 import doobie.scalatest.IOChecker

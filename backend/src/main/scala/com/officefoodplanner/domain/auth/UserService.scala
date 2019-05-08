@@ -1,4 +1,4 @@
-package com.officefoodplanner.domain.user
+package com.officefoodplanner.domain.auth
 
 import java.time.Instant
 import java.util.UUID
@@ -8,6 +8,9 @@ import cats.arrow.FunctionK
 import cats.data.EitherT
 import cats.effect.Async
 import cats.implicits._
+import com.officefoodplanner.domain.auth.command.{CreateUser, UpdateUser}
+import com.officefoodplanner.domain.auth.model.User
+import com.officefoodplanner.domain.auth.view.UserSimpleView
 import com.officefoodplanner.infrastructure.service.TransactingService
 import io.scalaland.chimney.dsl._
 import tsec.passwordhashers.PasswordHasher
@@ -16,7 +19,7 @@ abstract class UserService[F[_]: Monad, D[_]: Monad : Async, H] extends Transact
   val userRepo: UserRepository[D]
   val cryptService: PasswordHasher[D, H]
 
-  def createUser(user: command.CreateUser): EitherT[F, UserValidationError, model.User] = {
+  def createUser(user: CreateUser): EitherT[F, UserValidationError, User] = {
     val savedAction  = for {
       maybeUser <- getUser(user)
       _ <- userMustNotExist(maybeUser)
@@ -28,25 +31,25 @@ abstract class UserService[F[_]: Monad, D[_]: Monad : Async, H] extends Transact
     savedAction.mapK(FunctionK.lift(transact))
   }
 
-  private def prepareUserFromCommand(user: command.CreateUser, pwhash: String) = {
+  private def prepareUserFromCommand(user: CreateUser, pwhash: String) = {
     val now = Instant.now()
-    user.into[model.User]
+    user.into[User]
       .withFieldComputed(_.hash, _ => pwhash)
       .withFieldComputed(_.createdOn, _ => now)
       .withFieldComputed(_.updatedOn, _ => now)
       .transform
   }
 
-  private def createUser(userToCreate: model.User) =
-    EitherT.liftF[D, UserValidationError, model.User](userRepo.create(userToCreate))
+  private def createUser(userToCreate: User) =
+    EitherT.liftF[D, UserValidationError, User](userRepo.create(userToCreate))
 
-  private def getUser(user: command.CreateUser): EitherT[D, UserValidationError, Option[model.User]] =
+  private def getUser(user: CreateUser): EitherT[D, UserValidationError, Option[User]] =
     EitherT.right(userRepo.findByUsername(user.userName))
 
-  def getUser(userId: UUID): EitherT[F, UserValidationError, model.User] =
+  def getUser(userId: UUID): EitherT[F, UserValidationError, User] =
     EitherT.fromOptionF(transact(userRepo.get(userId)), UserNotFoundError)
 
-  def getUserByUsername(username: String): EitherT[F, UserValidationError, model.User] =
+  def getUserByUsername(username: String): EitherT[F, UserValidationError, User] =
     EitherT.fromOptionF(transact(userRepo.findByUsername(username)), UserNotFoundError)
 
   def deleteUser(userId: UUID): F[Unit] =
@@ -55,7 +58,7 @@ abstract class UserService[F[_]: Monad, D[_]: Monad : Async, H] extends Transact
   def deleteByUsername(username: String): F[Unit] =
     transact(userRepo.deleteByUserName(username).as(()))
 
-  def update(user: command.UpdateUser): EitherT[F, UserValidationError, model.User] =
+  def update(user: UpdateUser): EitherT[F, UserValidationError, User] =
     (for {
       maybeUser <- EitherT.right(userRepo.findByUsername(user.userName))
       storedUser <- userMustExist(maybeUser)
@@ -63,11 +66,11 @@ abstract class UserService[F[_]: Monad, D[_]: Monad : Async, H] extends Transact
       _ <- EitherT.liftF[D, UserValidationError, Int](userRepo.update(userToUpdate))
     } yield userToUpdate).mapK(FunctionK.lift(transact))
 
-  def list(pageSize: Int, offset: Int): F[List[view.UserSimpleView]] =
+  def list(pageSize: Int, offset: Int): F[List[UserSimpleView]] =
     for {
       dbList <- transact(userRepo.list.map(_.slice(offset, offset + pageSize)))
     } yield {
-      dbList.map(u => u.into[view.UserSimpleView].transform)
+      dbList.map(u => u.into[UserSimpleView].transform)
     }
 
 }

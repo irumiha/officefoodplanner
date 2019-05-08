@@ -1,8 +1,8 @@
-package com.officefoodplanner.domain.authentication
+package com.officefoodplanner.domain.auth
 
 import java.util.UUID
 
-import com.officefoodplanner.domain.authentication.model.Session
+import com.officefoodplanner.domain.auth.model.Session
 
 trait SessionRepository[F[_]] {
   def create(session: Session): F[Session]

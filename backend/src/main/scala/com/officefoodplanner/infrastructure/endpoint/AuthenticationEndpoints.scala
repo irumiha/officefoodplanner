@@ -6,10 +6,9 @@ import cats.data._
 import cats.effect._
 import cats.implicits._
 import com.officefoodplanner.config.ApplicationConfig
-import com.officefoodplanner.domain.authentication.AuthenticationService
-import com.officefoodplanner.domain.authentication.command.LoginRequest
-import com.officefoodplanner.domain.authentication.model.Session
-import com.officefoodplanner.domain.user.UserAuthenticationFailedError
+import com.officefoodplanner.domain.auth.{AuthenticationService, UserAuthenticationFailedError}
+import com.officefoodplanner.domain.auth.command.LoginRequest
+import com.officefoodplanner.domain.auth.model.Session
 import io.circe.generic.auto._
 import org.http4s._
 import org.http4s.circe._
