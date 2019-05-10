@@ -15,7 +15,7 @@ import com.officefoodplanner.infrastructure.service.TransactingService
 import io.scalaland.chimney.dsl._
 import tsec.passwordhashers.PasswordHasher
 
-abstract class UserService[F[_]: Monad, D[_]: Monad : Async, H] extends TransactingService[F, D] with UserValidation[D] {
+abstract class UserService[F[_]: Monad, D[_]: Async, H] extends TransactingService[F, D] with UserValidation[D] {
   val userRepo: UserRepository[D]
   val cryptService: PasswordHasher[D, H]
 
