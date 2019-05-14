@@ -19,10 +19,10 @@ class UserInMemoryRepository[F[_]: Applicative] extends UserRepository[F] {
   override def deleteById(userId: UUID): F[Int] = repo.deleteById(userId)
 
   override def findByUsername(userName: String): F[Option[User]] =
-    repo.listAll.map { l => l.find(_.userName == userName)}
+    repo.listAll.map { l => l.find(_.username == userName)}
 
   override def deleteByUserName(userName: String): F[Int] =
-    repo.delete( _.userName == userName).map(_.length)
+    repo.delete( _.username == userName).map(_.length)
 
   override def list: F[List[User]] = repo.listAll
 }

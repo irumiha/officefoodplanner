@@ -7,7 +7,7 @@ import com.officefoodplanner.infrastructure.repository.KeyEntity
 
 case class User(
     id: UUID = UUID.randomUUID(),
-    userName: String,
+    username: String,
     firstName: String,
     lastName: String,
     email: String,

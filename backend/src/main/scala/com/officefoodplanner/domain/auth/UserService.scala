@@ -44,7 +44,7 @@ abstract class UserService[F[_]: Monad, D[_]: Async, H] extends TransactingServi
     EitherT.liftF[D, UserValidationError, User](userRepo.create(userToCreate))
 
   private def getUser(user: CreateUser): EitherT[D, UserValidationError, Option[User]] =
-    EitherT.right(userRepo.findByUsername(user.userName))
+    EitherT.right(userRepo.findByUsername(user.username))
 
   def getUser(userId: UUID): EitherT[F, UserValidationError, User] =
     EitherT.fromOptionF(transact(userRepo.get(userId)), UserNotFoundError)
@@ -60,7 +60,7 @@ abstract class UserService[F[_]: Monad, D[_]: Async, H] extends TransactingServi
 
   def update(user: UpdateUser): EitherT[F, UserValidationError, User] =
     (for {
-      maybeUser <- EitherT.right(userRepo.findByUsername(user.userName))
+      maybeUser <- EitherT.right(userRepo.findByUsername(user.username))
       storedUser <- userMustExist(maybeUser)
       userToUpdate <- validChanges(storedUser, user)
       _ <- EitherT.liftF[D, UserValidationError, Int](userRepo.update(userToUpdate))

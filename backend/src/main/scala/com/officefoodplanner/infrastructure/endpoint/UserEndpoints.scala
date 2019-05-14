@@ -64,7 +64,7 @@ class UserEndpoints[F[_]: Effect, D[_], H](
   private def update(req: AuthedRequest[F, User], name: String): F[Response[F]] = {
     val action = for {
       user <- req.req.as[UpdateUser]
-      updated = user.copy(userName = name)
+      updated = user.copy(username = name)
       result <- userService.update(updated).value
     } yield result
 

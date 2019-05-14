@@ -12,7 +12,7 @@ trait UserValidation[F[_]] {
 
   def userMustNotExist(user: Option[User])(implicit AP: Applicative[F]): EitherT[F, UserValidationError, Unit] = {
     val validation = user match {
-      case Some(u) => Left(UserAlreadyExistsError(u.userName))
+      case Some(u) => Left(UserAlreadyExistsError(u.username))
       case None    => Right(())
     }
 

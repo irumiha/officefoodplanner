@@ -43,7 +43,7 @@ class UserEndpointsSpec
           createResponse <- userHttpEndpoints.run(createRequest)
           createdUser <- createResponse.as[User]
           userToUpdate = createdUser.copy(lastName = createdUser.lastName.reverse)
-          updateUser <- PUT(userToUpdate, Uri.unsafeFromString(s"/${createdUser.userName}"))
+          updateUser <- PUT(userToUpdate, Uri.unsafeFromString(s"/${createdUser.getUsername}"))
           updateResponse <- userHttpEndpoints.run(updateUser)
         } yield {
           updateResponse.status shouldEqual Forbidden
@@ -61,7 +61,7 @@ class UserEndpointsSpec
         createRequest <- POST(userSignup, Uri.uri("/"))
         createResponse <- userHttpEndpoints.run(createRequest)
         createdUser <- createResponse.as[User]
-        getRequest <- GET(Uri.unsafeFromString(s"/${createdUser.userName}"))
+        getRequest <- GET(Uri.unsafeFromString(s"/${createdUser.getUsername}"))
         getResponse <- userHttpEndpoints.run(getRequest)
 //        getUser <- getResponse.as[User]
       } yield {
@@ -79,9 +79,9 @@ class UserEndpointsSpec
         createRequest <- POST(userSignup, Uri.uri("/"))
         createResponse <- userHttpEndpoints.run(createRequest)
         createdUser <- createResponse.as[User]
-        deleteRequest <- DELETE(Uri.unsafeFromString(s"/${createdUser.userName}"))
+        deleteRequest <- DELETE(Uri.unsafeFromString(s"/${createdUser.getUsername}"))
         deleteResponse <- userHttpEndpoints.run(deleteRequest)
-        getRequest <- GET(Uri.unsafeFromString(s"/${createdUser.userName}"))
+        getRequest <- GET(Uri.unsafeFromString(s"/${createdUser.getUsername}"))
         getResponse <- userHttpEndpoints.run(getRequest)
       } yield {
         createResponse.status shouldEqual Ok

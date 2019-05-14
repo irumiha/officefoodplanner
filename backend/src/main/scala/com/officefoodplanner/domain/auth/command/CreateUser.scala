@@ -1,7 +1,7 @@
 package com.officefoodplanner.domain.auth.command
 
 case class CreateUser(
-    userName: String,
+    username: String,
     firstName: String,
     lastName: String,
     email: String,

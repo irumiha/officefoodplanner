@@ -42,7 +42,7 @@ object UserTableRepository {
 
     override val columns: List[DoobieColumn[User]] = List(
       DoobieColumn[User]("id",          e => fr0"${e.id}"),
-      DoobieColumn[User]("username",    e => fr0"${e.userName}"),
+      DoobieColumn[User]("username",    e => fr0"${e.username}"),
       DoobieColumn[User]("first_name",  e => fr0"${e.firstName}"),
       DoobieColumn[User]("last_name",   e => fr0"${e.lastName}"),
       DoobieColumn[User]("email",       e => fr0"${e.email}"),
