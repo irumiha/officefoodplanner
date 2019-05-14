@@ -11,7 +11,7 @@ import com.officefoodplanner.infrastructure.service.TransactingService
 import tsec.common.{VerificationStatus, Verified}
 import tsec.passwordhashers.{PasswordHash, PasswordHasher}
 
-abstract class AuthenticationService[F[_]: Monad, D[_]: MonadError, H] extends TransactingService[F, D] {
+abstract class AuthenticationService[F[_]: Monad, D[_]: Monad, H] extends TransactingService[F, D] {
   val applicationConfig: ApplicationConfig
   val sessionRepository: SessionRepository[D]
   val userRepository: UserRepository[D]

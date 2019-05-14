@@ -5,8 +5,7 @@ import cats.effect.IO
 import com.officefoodplanner.config.ApplicationConfig
 import com.officefoodplanner.domain.auth.command.SignupRequest
 import com.officefoodplanner.domain.auth.model.User
-import com.officefoodplanner.domain.auth.{AuthenticationService, SessionRepository, UserRepository, UserService}
-import com.officefoodplanner.domain.user.UserService
+import com.officefoodplanner.domain.auth._
 import com.officefoodplanner.infrastructure.TestConfig
 import com.officefoodplanner.infrastructure.middleware.Authenticate
 import com.officefoodplanner.infrastructure.repository.inmemory.{SessionInMemoryRepository, UserInMemoryRepository}

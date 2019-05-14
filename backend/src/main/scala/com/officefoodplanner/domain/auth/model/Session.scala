@@ -14,5 +14,5 @@ case class Session(
 )
 
 object Session {
-  implicit val keyed: KeyEntity[Session, UUID] = (u: Session) => u.id
+  implicit val keyed: KeyEntity[Session, UUID] = u => u.id
 }

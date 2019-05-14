@@ -14,10 +14,10 @@ class UserTableRepository extends UserRepository[ConnectionIO] {
   import UserTableRepository.doobieSupport
 
   private val repo: TableRepository[User, UUID] = new TableRepository[User, UUID] {
-    override val table = Table(SchemaName("public"), TableName("users"))
+    override val table = Table(SchemaName("auth"), TableName("users"))
   }
 
-  private def byUsername(userName: String) = fr"data->>'userName' = $userName"
+  private def byUsername(userName: String) = fr"username = $userName"
 
   def create(user: User): ConnectionIO[User] = repo.create(user)
 
@@ -41,15 +41,16 @@ object UserTableRepository {
     override val id: DoobieColumn[User] = DoobieColumn[User]("id", u => fr0"${u.id}")
 
     override val columns: List[DoobieColumn[User]] = List(
-      DoobieColumn[User]("id",         e => fr0"${e.id}"),
-      DoobieColumn[User]("username",   e => fr0"${e.userName}"),
-      DoobieColumn[User]("first_name", e => fr0"${e.firstName}"),
-      DoobieColumn[User]("last_name",  e => fr0"${e.lastName}"),
-      DoobieColumn[User]("email",      e => fr0"${e.email}"),
-      DoobieColumn[User]("hash",       e => fr0"${e.hash}"),
-      DoobieColumn[User]("phone",      e => fr0"${e.phone}"),
-      DoobieColumn[User]("created_on", e => fr0"${e.createdOn}"),
-      DoobieColumn[User]("updated_on", e => fr0"${e.updatedOn}"),
+      DoobieColumn[User]("id",          e => fr0"${e.id}"),
+      DoobieColumn[User]("username",    e => fr0"${e.userName}"),
+      DoobieColumn[User]("first_name",  e => fr0"${e.firstName}"),
+      DoobieColumn[User]("last_name",   e => fr0"${e.lastName}"),
+      DoobieColumn[User]("email",       e => fr0"${e.email}"),
+      DoobieColumn[User]("hash",        e => fr0"${e.hash}"),
+      DoobieColumn[User]("phone",       e => fr0"${e.phone}"),
+      DoobieColumn[User]("initialized", e => fr0"${e.initialized}"),
+      DoobieColumn[User]("created_on",  e => fr0"${e.createdOn}"),
+      DoobieColumn[User]("updated_on",  e => fr0"${e.updatedOn}"),
     )
   }
 

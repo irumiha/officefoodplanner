@@ -10,5 +10,5 @@ case class Group(
 )
 
 object Group {
-  implicit val keyedGroup: KeyEntity[Group, UUID] = (e: Group) => e.id
+  implicit val keyedGroup: KeyEntity[Group, UUID] = e => e.id
 }

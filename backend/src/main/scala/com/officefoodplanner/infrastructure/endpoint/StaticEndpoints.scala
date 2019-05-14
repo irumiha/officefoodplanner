@@ -24,7 +24,7 @@ class StaticEndpoints[F[_]: Effect: ContextShift, D[_], H] extends Http4sDsl[F] 
   private val supportedStaticExtensions =
     List(".html", ".js", ".map", ".css", ".png", ".ico", "/")
 
-  def nonAuthEndpoints =
+  def nonAuthEndpoints: HttpRoutes[F] =
     HttpRoutes.of[F] {
       case req if supportedStaticExtensions.exists(req.pathInfo.endsWith) || !req.pathInfo.contains(".") =>
         val isItStatic = req.pathInfo.startsWith("/static")

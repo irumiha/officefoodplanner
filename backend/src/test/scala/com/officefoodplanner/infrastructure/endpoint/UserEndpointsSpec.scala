@@ -3,7 +3,7 @@ package com.officefoodplanner.infrastructure.endpoint
 import cats.effect._
 import com.officefoodplanner.domain.auth.command.SignupRequest
 import com.officefoodplanner.domain.auth.model.User
-import com.officefoodplanner.infrastructure.OfficeFoodPlannerArbitraries$
+import com.officefoodplanner.infrastructure.OfficeFoodPlannerArbitraries
 import org.http4s._
 import org.http4s.client.dsl.Http4sClientDsl
 import org.http4s.dsl._
@@ -14,7 +14,7 @@ class UserEndpointsSpec
     extends FunSuite
     with Matchers
     with ScalaCheckPropertyChecks
-    with OfficeFoodPlannerArbitraries$
+    with OfficeFoodPlannerArbitraries
     with Http4sDsl[IO]
     with Http4sClientDsl[IO] {
 

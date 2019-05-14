@@ -1,4 +1,6 @@
-CREATE TABLE users
+CREATE SCHEMA auth AUTHORIZATION officefoodplanner;
+
+CREATE TABLE auth.users
 (
     id          UUID PRIMARY KEY,
     username    TEXT      NOT NULL,
@@ -12,7 +14,7 @@ CREATE TABLE users
     updated_on  TIMESTAMP NOT NULL
 );
 
-CREATE TABLE sessions
+CREATE TABLE auth.sessions
 (
     id         UUID PRIMARY KEY,
     user_id    UUID      NOT NULL,
@@ -21,39 +23,39 @@ CREATE TABLE sessions
     updated_on TIMESTAMP NOT NULL
 );
 
-CREATE TABLE groups
+CREATE TABLE auth.groups
 (
     id   UUID PRIMARY KEY,
     name TEXT NOT NULL
 );
 
-CREATE TABLE user_groups
+CREATE TABLE auth.user_groups
 (
     user_id  UUID NOT NULL,
     group_id UUID NOT NULL,
-    FOREIGN KEY (user_id) REFERENCES users (id),
-    FOREIGN KEY (group_id) REFERENCES groups (id)
+    FOREIGN KEY (user_id) REFERENCES auth.users (id),
+    FOREIGN KEY (group_id) REFERENCES auth.groups (id)
 );
 
-CREATE TABLE permissions
+CREATE TABLE auth.permissions
 (
     id          UUID PRIMARY KEY,
     code        TEXT,
     description TEXT
 );
 
-CREATE TABLE user_permissions
+CREATE TABLE auth.user_permissions
 (
     user_id       UUID NOT NULL,
     permission_id UUID NOT NULL,
-    FOREIGN KEY (user_id) REFERENCES users (id),
-    FOREIGN KEY (permission_id) REFERENCES permissions (id)
+    FOREIGN KEY (user_id) REFERENCES auth.users (id),
+    FOREIGN KEY (permission_id) REFERENCES auth.permissions (id)
 );
 
-CREATE TABLE group_permissions
+CREATE TABLE auth.group_permissions
 (
     group_id      UUID NOT NULL,
     permission_id UUID NOT NULL,
-    FOREIGN KEY (group_id) REFERENCES groups (id),
-    FOREIGN KEY (permission_id) REFERENCES permissions (id)
+    FOREIGN KEY (group_id) REFERENCES auth.groups (id),
+    FOREIGN KEY (permission_id) REFERENCES auth.permissions (id)
 );

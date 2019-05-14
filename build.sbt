@@ -81,7 +81,7 @@ lazy val uiTests = (project in file("ui-tests"))
 val badConsoleFlags = Seq("-Xfatal-warnings", "-Ywarn-unused:imports")
 
 lazy val backend = (project in file("backend"))
-  .enablePlugins(ScalafmtPlugin, JavaServerAppPackaging)
+  .enablePlugins(ScalafmtPlugin, JavaServerAppPackaging, FlywayPlugin)
   .settings(
     name := "officefoodplanner-backend"
   )
@@ -181,11 +181,17 @@ lazy val backend = (project in file("backend"))
       "-Ywarn-value-discard"               // Warn when non-Unit expression results are unused.
       // format: on
     ),
+    flywayUrl := "jdbc:postgresql://localhost:5432/officefoodplanner",
+    flywayUser := "officefoodplanner",
+    flywayPassword := "officefoodplanner",
+    flywayLocations += "db/migration",
+    flywayUrl in Test := "jdbc:postgresql://localhost:5432/officefoodplanner",
+    flywayUser in Test := "officefoodplanner",
+    flywayPassword in Test := "officefoodplanner",
     scalacOptions in (Compile, console) ~= (_.filterNot(badConsoleFlags.contains(_))),
     // Support stopping the running server
     mainClass in reStart := Some("com.officefoodplanner.ApplicationServer"),
     fork in run := true,
-    javaOptions += "-agentlib:jdwp=transport=dt_socket,server=y,address=localhost:5005,suspend=n",
     unmanagedResourceDirectories in Compile := {
       (unmanagedResourceDirectories in Compile).value ++ List(
         baseDirectory.value.getParentFile / ui.base.getName / "dist"

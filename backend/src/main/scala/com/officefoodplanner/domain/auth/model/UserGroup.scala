@@ -4,12 +4,12 @@ import java.util.UUID
 
 import com.officefoodplanner.infrastructure.repository.KeyEntity
 
-case class Permission (
+case class UserGroup (
   id: UUID = UUID.randomUUID(),
-  code: String,
-  description: String
+  groupId: UUID,
+  userId: UUID
 )
 
-object Permission {
-  implicit val keyedPermission: KeyEntity[Permission, UUID] = e => e.id
+object UserGroup {
+  implicit val keyed: KeyEntity[UserGroup, UUID] = e => e.id
 }

@@ -19,5 +19,5 @@ case class User(
 )
 
 object User {
-  implicit val keyedUser: KeyEntity[User, UUID] = (e: User) => e.id
+  implicit val keyedUser: KeyEntity[User, UUID] = e => e.id
 }

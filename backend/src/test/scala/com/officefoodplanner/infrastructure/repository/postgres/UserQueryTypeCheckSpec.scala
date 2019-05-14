@@ -15,13 +15,14 @@ import doobie.postgres.implicits._
 class UserQueryTypeCheckSpec extends FunSuite with Matchers with IOChecker {
   import TableRepositorySQL._
   import UserTableRepository.doobieSupport
+  import com.officefoodplanner.infrastructure.OfficeFoodPlannerArbitraries.user
 
   override val transactor : Transactor[IO] = testTransactor
 
-  val table = Table(SchemaName("public"), TableName("users"))
+  val table = Table(SchemaName("auth"), TableName("users"))
 
   test("Typecheck user queries") {
-    userA.arbitrary.sample.foreach { u =>
+    user.arbitrary.sample.foreach { u =>
       check(insertOne(table, u))
       check(select(table, fr"username = ${u.userName}", Fragment.empty, Fragment.empty, Fragment.empty))
 
