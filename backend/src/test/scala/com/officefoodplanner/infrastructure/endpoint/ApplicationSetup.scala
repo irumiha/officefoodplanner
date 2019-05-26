@@ -6,6 +6,7 @@ import com.officefoodplanner.config.ApplicationConfig
 import com.officefoodplanner.domain.auth.command.SignupRequest
 import com.officefoodplanner.domain.auth.model.User
 import com.officefoodplanner.domain.auth._
+import com.officefoodplanner.domain.auth.repository.{SessionRepository, UserRepository}
 import com.officefoodplanner.infrastructure.TestConfig
 import com.officefoodplanner.infrastructure.middleware.Authenticate
 import com.officefoodplanner.infrastructure.repository.inmemory.{SessionInMemoryRepository, UserInMemoryRepository}

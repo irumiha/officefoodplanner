@@ -3,8 +3,8 @@ package com.officefoodplanner.infrastructure.repository.inmemory
 import java.util.UUID
 
 import cats._
-import com.officefoodplanner.domain.auth.UserPermissionRepository
 import com.officefoodplanner.domain.auth.model.{Permission, User, UserPermission}
+import com.officefoodplanner.domain.auth.repository.UserPermissionRepository
 
 class UserPermissionInMemoryRepository[F[_] : Applicative] extends UserPermissionRepository[F] {
 

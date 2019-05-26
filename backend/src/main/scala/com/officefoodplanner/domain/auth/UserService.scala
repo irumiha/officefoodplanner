@@ -10,6 +10,7 @@ import cats.effect.Async
 import cats.implicits._
 import com.officefoodplanner.domain.auth.command.{CreateUser, UpdateUser}
 import com.officefoodplanner.domain.auth.model.User
+import com.officefoodplanner.domain.auth.repository.UserRepository
 import com.officefoodplanner.domain.auth.view.UserSimpleView
 import com.officefoodplanner.infrastructure.service.TransactingService
 import io.scalaland.chimney.dsl._

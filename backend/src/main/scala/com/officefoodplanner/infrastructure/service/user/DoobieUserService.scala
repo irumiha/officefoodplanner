@@ -1,7 +1,8 @@
 package com.officefoodplanner.infrastructure.service.user
 
 import cats.effect.Bracket
-import com.officefoodplanner.domain.auth.{UserRepository, UserService}
+import com.officefoodplanner.domain.auth.UserService
+import com.officefoodplanner.domain.auth.repository.UserRepository
 import doobie._
 import doobie.implicits._
 import tsec.passwordhashers.PasswordHasher

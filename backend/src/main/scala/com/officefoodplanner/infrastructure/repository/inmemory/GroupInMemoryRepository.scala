@@ -3,8 +3,8 @@ package com.officefoodplanner.infrastructure.repository.inmemory
 import java.util.UUID
 
 import cats._
-import com.officefoodplanner.domain.auth.GroupRepository
 import com.officefoodplanner.domain.auth.model.Group
+import com.officefoodplanner.domain.auth.repository.GroupRepository
 
 class GroupInMemoryRepository[F[_] : Applicative] extends GroupRepository[F] {
 

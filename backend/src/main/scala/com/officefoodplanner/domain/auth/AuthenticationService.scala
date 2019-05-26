@@ -7,6 +7,7 @@ import cats._
 import cats.data._
 import com.officefoodplanner.config.ApplicationConfig
 import com.officefoodplanner.domain.auth.model.User
+import com.officefoodplanner.domain.auth.repository.{SessionRepository, UserRepository}
 import com.officefoodplanner.infrastructure.service.TransactingService
 import tsec.common.{VerificationStatus, Verified}
 import tsec.passwordhashers.{PasswordHash, PasswordHasher}
@@ -30,7 +31,7 @@ abstract class AuthenticationService[F[_]: Monad, D[_]: Monad, H] extends Transa
   }
 
   def authenticate(login: command.LoginRequest): F[Either[UserAuthenticationFailedError, model.Session]] = {
-    def getUserOrFailLogin(login: command.LoginRequest) =
+    def getUserOrFailLogin(login: command.LoginRequest): EitherT[D, UserAuthenticationFailedError, User] =
       EitherT.fromOptionF[D, UserAuthenticationFailedError, User](
         userRepository.findByUsername(login.username),
         UserAuthenticationFailedError(login.username)

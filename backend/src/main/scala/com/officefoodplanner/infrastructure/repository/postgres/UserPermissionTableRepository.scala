@@ -2,8 +2,8 @@ package com.officefoodplanner.infrastructure.repository.postgres
 
 import java.util.UUID
 
-import com.officefoodplanner.domain.auth.UserPermissionRepository
 import com.officefoodplanner.domain.auth.model.{Permission, User, UserPermission}
+import com.officefoodplanner.domain.auth.repository.UserPermissionRepository
 import com.officefoodplanner.infrastructure.repository._
 import doobie._
 import doobie.implicits._

@@ -1,8 +1,8 @@
-package com.officefoodplanner.domain.auth
+package com.officefoodplanner.domain.auth.repository
 
 import java.util.UUID
 
-import com.officefoodplanner.domain.auth.model.{Group, UserGroup, User}
+import com.officefoodplanner.domain.auth.model.{Group, User, UserGroup}
 
 trait UserGroupRepository[F[_]] {
   def create(user: User, group: Group): F[UserGroup]

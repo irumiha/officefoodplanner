@@ -166,8 +166,8 @@ abstract class TableRepository[E: DoobieSupport : Read : Write, K: Put : Get]
       table = table,
       where = specification,
       orderBy = if (orderBy.forall(_.isEmpty)) Fragment.empty else Fragment.const(orderBy.get),
-      offset =  if (offset.isEmpty)             Fragment.empty else Fragment.const(s"OFFSET ${offset.get}"),
-      limit =   if (limit.isEmpty)               Fragment.empty else Fragment.const(s"LIMIT ${limit.get}")
+      offset =  if (offset.isEmpty)            Fragment.empty else Fragment.const(s"OFFSET ${offset.get}"),
+      limit =   if (limit.isEmpty)             Fragment.empty else Fragment.const(s"LIMIT ${limit.get}")
     ).to[List]
 
   override def listAll: doobie.ConnectionIO[List[E]] =

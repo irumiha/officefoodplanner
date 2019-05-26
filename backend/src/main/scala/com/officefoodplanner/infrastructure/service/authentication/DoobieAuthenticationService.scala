@@ -2,7 +2,8 @@ package com.officefoodplanner.infrastructure.service.authentication
 
 import cats.effect.Bracket
 import com.officefoodplanner.config.ApplicationConfig
-import com.officefoodplanner.domain.auth.{AuthenticationService, SessionRepository, UserRepository}
+import com.officefoodplanner.domain.auth.repository.{SessionRepository, UserRepository}
+import com.officefoodplanner.domain.auth.AuthenticationService
 import doobie._
 import doobie.implicits._
 import tsec.passwordhashers.PasswordHasher
