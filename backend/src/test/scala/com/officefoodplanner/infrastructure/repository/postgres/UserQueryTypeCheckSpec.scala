@@ -24,12 +24,13 @@ class UserQueryTypeCheckSpec extends FunSuite with Matchers with IOChecker {
   test("Typecheck user queries") {
     user.arbitrary.sample.foreach { u =>
       check(insertOne(table, u))
-      check(select(table, fr"username = ${u.userName}", Fragment.empty, Fragment.empty, Fragment.empty))
-
-      check(updateOne(table, u))
+      check(insertMany(table))
+      check(select(table, fr"username = ${u.username}", Fragment.empty, Fragment.empty, Fragment.empty))
+      check(updateOne[User, UUID](table, u))
     }
     check(select[User](table, Fragment.empty, Fragment.empty, Fragment.empty, Fragment.empty))
     check(getMany[User, UUID](table, List(UUID.randomUUID())))
     check(deleteManyIDs[User, UUID](table, List(UUID.randomUUID())))
+    check(deleteBy(table, fr"id = ${UUID.randomUUID()}"))
   }
 }

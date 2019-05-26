@@ -18,6 +18,7 @@ lazy val commonSettings = Seq(
   version      := "0.0.1-SNAPSHOT",
   scalaVersion := "2.12.8",
   addCompilerPlugin("com.olegpy" %% "better-monadic-for" % "0.3.0"),
+  addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.10.1"),
   updateNpm := {
     println("Updating npm dependencies")
     haltOnCmdResultError(Process("npm install", baseDirectory.value / ".." / "ui").!)
@@ -31,6 +32,7 @@ lazy val commonSettings = Seq(
     println("Building with Webpack : " + taskName)
     haltOnCmdResultError(buildWebpack())
   },
+  resolvers += Resolver.sonatypeRepo("releases")
 )
 
 resolvers += Resolver.sonatypeRepo("snapshots")
@@ -60,6 +62,27 @@ lazy val rootProject = (project in file("."))
 //    deployHeroku in Compile := ((deployHeroku in Compile) dependsOn (assembly in backend)).value
   )
   .aggregate(backend, ui)
+
+lazy val persistence = (project in file("persistence"))
+  .settings(commonSettings: _*)
+  .settings(
+    name := "officefoodplanner-persistence",
+    libraryDependencies ++= Seq(
+      "org.scala-lang"        %  "scala-reflect"            % "2.12.8",
+      "org.tpolecat"          %% "doobie-core"              % DoobieVersion,
+      "org.tpolecat"          %% "doobie-h2"                % DoobieVersion,
+      "org.tpolecat"          %% "doobie-postgres"          % DoobieVersion,
+      "org.tpolecat"          %% "doobie-postgres-circe"    % DoobieVersion,
+      "org.tpolecat"          %% "doobie-scalatest"         % DoobieVersion,
+      "org.tpolecat"          %% "doobie-hikari"            % DoobieVersion,
+      "org.typelevel"         %% "cats-core"                % CatsVersion,
+      "io.circe"              %% "circe-generic"            % CirceVersion,
+      "io.circe"              %% "circe-literal"            % CirceVersion,
+      "io.circe"              %% "circe-generic-extras"     % CirceVersion,
+      "io.circe"              %% "circe-parser"             % CirceVersion,
+      "io.circe"              %% "circe-java8"              % CirceVersion,
+    ),
+  )
 
 lazy val ui = (project in file("ui"))
   .settings(commonSettings: _*)
@@ -204,4 +227,4 @@ lazy val backend = (project in file("backend"))
       compilationResult
     },
     distApp := dist.dependsOn((npmTask in ui).toTask(" run build")).value
-  )
+  ) dependsOn persistence

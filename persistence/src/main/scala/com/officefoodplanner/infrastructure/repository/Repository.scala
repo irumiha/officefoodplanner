@@ -1,13 +1,13 @@
 package com.officefoodplanner.infrastructure.repository
 
+import scala.language.higherKinds
+
 trait WriteRepository[F[_], K, E, P] {
   def create(entity: E)(implicit KE: KeyEntity[E, K]): F[E]
 
   def create(entities: List[E])(implicit KE: KeyEntity[E, K]): F[List[E]]
 
   def update(entity: E)(implicit KE: KeyEntity[E, K]): F[Int]
-
-  def update(entities: List[E])(implicit KE: KeyEntity[E, K]): F[Int]
 
   def deleteById(entityId: K): F[Int]
 

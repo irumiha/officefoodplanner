@@ -4,15 +4,15 @@ import java.sql.{Timestamp => JTimestamp}
 import java.time.Instant
 import java.util.UUID
 
+import io.circe.{Decoder, Encoder, Json}
 import cats.implicits._
-import com.officefoodplanner.infrastructure.repository.{DatabaseRepository, FindRepository, KeyEntity, Repository, Table}
 import doobie._
 import doobie.implicits._
+import doobie.util.fragment
+import doobie.util.fragments._
 import doobie.postgres.implicits._
 import doobie.postgres.circe.jsonb.implicits._
-import doobie.util.fragment
-import doobie.util.query.Query0
-import io.circe._
+import com.officefoodplanner.infrastructure.repository.{DatabaseRepository, FindRepository, KeyEntity, Repository, Table}
 
 private case class RowWrapper(id: UUID, data: Json, createdOn: JTimestamp, updatedOn: JTimestamp)
 
@@ -60,18 +60,7 @@ private object JsonRepositorySQL {
     sql.update
   }
 
-  def updateMany(table: Table): Update[RowWrapper] = {
-
-    val updateSQL =
-      s"""UPDATE "${table.schemaName.v}"."${table.tableName.v}" SET DATA = ?, UPDATED_ON = ? WHERE ID = ?"""
-
-    Update[RowWrapper](updateSQL)
-  }
-
   def deleteManyIDs(table: Table, rows: List[UUID]): Update0 = {
-    import Fragments.{in, whereAndOpt}
-    import cats.syntax.list._
-
     val q =
       fr"""DELETE FROM """ ++ tableFragment(table) ++
         whereAndOpt(rows.toNel.map(r => in(fr"ID", r)))
@@ -80,8 +69,6 @@ private object JsonRepositorySQL {
   }
 
   def getMany(table: Table, ids: List[UUID]): Query0[RowWrapper] = {
-    import Fragments.{in, whereAndOpt}
-    import cats.syntax.list._
 
     val q =
       fr"""SELECT ID, DATA, CREATED_ON, UPDATED_ON from """ ++
@@ -92,7 +79,6 @@ private object JsonRepositorySQL {
   }
 
   def whereAnd(fs: Fragment*): Fragment = {
-    import Fragments.and
     if (fs.forall(_ == Fragment.empty)) Fragment.empty else fr"WHERE" ++ and(fs: _*)
   }
 
@@ -155,9 +141,6 @@ abstract class JsonRepository[E: Encoder: Decoder, K: Put : Get]
     val row = fromEntity(entity)
     updateOne(table, row).run
   }
-
-  override def update(entities: List[E])(implicit KE: KeyEntity[E, UUID]): ConnectionIO[Int] =
-    updateMany(table).updateMany(entities.map(fromEntity[E]))
 
   override def get(entityId: UUID): ConnectionIO[Option[E]] =
     getMany(table, List(entityId)).map(toEntity[E]).option

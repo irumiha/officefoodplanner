@@ -6,6 +6,8 @@ import com.officefoodplanner.infrastructure.repository.{KeyEntity, Repository}
 
 import scala.collection.concurrent.TrieMap
 
+import scala.language.higherKinds
+
 class InMemoryRepository[F[_]: Applicative, E, K]
   extends Repository[F, K, E, E => Boolean]
 {
@@ -49,14 +51,6 @@ class InMemoryRepository[F[_]: Applicative, E, K]
       0.pure[F]
     }
   }
-
-  override def update(entities: List[E])(implicit KE: KeyEntity[E, K]): F[Int] =
-    entities
-      .map { entity =>
-        update(entity)
-      }
-      .sequence
-      .map(_.sum)
 
   override def deleteById(entityId: K): F[Int] =
     cache.remove(entityId).toList.length.pure[F]

@@ -1,10 +1,12 @@
 package com.officefoodplanner.infrastructure.repository.postgres
 
 import cats.implicits._
-import com.officefoodplanner.infrastructure.repository.{DatabaseRepository, DoobieColumns, DoobieIDColumn, DoobieSupport, FindRepository, KeyEntity, Repository, Table}
 import doobie._
 import doobie.implicits._
+import doobie.util.fragments._
 import doobie.util.query.Query0
+
+import com.officefoodplanner.infrastructure.repository._
 
 private object TableRepositorySQL {
 
@@ -33,36 +35,29 @@ private object TableRepositorySQL {
   def insertMany[E: DoobieColumns : Write](table: Table): Update[E] = {
     val insertSQL =
       s"""INSERT INTO ${tableName(table)}
-         (${DoobieColumns[E].columns.mkString(", ")})
+         (${DoobieColumns[E].columns.map(_.name).mkString(", ")})
          VALUES (${DoobieColumns[E].columns.map(_ => "?").mkString(", ")})"""
 
     Update[E](insertSQL)
   }
 
-  def updateOne[E: DoobieColumns](table: Table, row: E): Update0 = {
+  def updateOne[E: DoobieColumns: DoobieIDColumn, K: Put](table: Table, row: E)(implicit KE: KeyEntity[E, K]): Update0 = {
+    val idColumn = DoobieIDColumn[E].id
+
     val sql =
       fr"""UPDATE""" ++
         tableNameFragment(table) ++
-        fr"SET" ++
-        DoobieColumns[E].columns.map(c => Fragment.const(columnName(table, c.name)))
-          .zip(DoobieColumns[E].columns.map(c => c.value(row)))
+      fr"SET" ++
+        DoobieColumns[E].columns.filterNot(_.name == idColumn.name).map(c => Fragment.const(columnName(table, c.name)))
+          .zip(DoobieColumns[E].columns.filterNot(_.name == idColumn.name).map(c => c.value(row)))
           .map { case (c, v) => c ++ Fragment.const("=") ++ v }
-          .intercalate(fr",")
+          .intercalate(fr",") ++
+      fr" WHERE " ++ Fragment.const(columnName(table, DoobieIDColumn[E].id.name)) ++ Fragment.const("=") ++ fr"${KE.key(row)}"
 
     sql.update
   }
 
-  def updateMany[E: DoobieColumns : DoobieIDColumn : Write, K: Write](table: Table): Update[(E, K)] = {
-    val columnPlaceholders = DoobieColumns[E].columns.map(c => s"${columnName(table, c.name)} = ?").mkString(", ")
-    val updateSQL =
-      s"""UPDATE "${table.schemaName.v}"."${table.tableName.v}" SET $columnPlaceholders WHERE ${columnName(table, DoobieIDColumn[E].id.name)} = ?"""
-
-    Update[(E, K)](updateSQL)
-  }
-
   def deleteManyIDs[E: DoobieIDColumn, K: Put](table: Table, rows: List[K]): Update0 = {
-    import Fragments.{in, whereAndOpt}
-    import cats.syntax.list._
     val idColumn = DoobieIDColumn[E].id
 
     val q =
@@ -73,8 +68,6 @@ private object TableRepositorySQL {
   }
 
   def getMany[E: DoobieColumns : DoobieIDColumn : Read, K: Put](table: Table, ids: List[K]): Query0[E] = {
-    import Fragments.{in, whereAndOpt}
-    import cats.syntax.list._
     val idColumn = DoobieIDColumn[E].id
 
     val q =
@@ -86,7 +79,6 @@ private object TableRepositorySQL {
   }
 
   def whereAnd(fs: Fragment*): Fragment = {
-    import Fragments.and
     if (fs.forall(_ == Fragment.empty)) Fragment.empty else fr"WHERE" ++ and(fs: _*)
   }
 
@@ -108,7 +100,7 @@ private object TableRepositorySQL {
     q.query[E]
   }
 
-  def deleteBySpecification[E: Read](
+  def deleteBy[E: DoobieColumns: Read](
     table: Table,
     where: Fragment
   ): Query0[E] = {
@@ -116,14 +108,13 @@ private object TableRepositorySQL {
       fr"""DELETE FROM""" ++
         tableNameFragment(table) ++
         whereAnd(where) ++
-        fr"""RETURNING *"""
+        fr"""RETURNING""" ++ tableColumns(table)
 
     q.query[E]
   }
 }
 
-abstract class TableRepository[E: DoobieSupport : Read : Write,
-                               K: Put : Get]
+abstract class TableRepository[E: DoobieSupport : Read : Write, K: Put : Get]
   extends Repository[ConnectionIO, K, E, Fragment]
     with FindRepository[ConnectionIO, K, E, Fragment]
     with DatabaseRepository {
@@ -146,11 +137,6 @@ abstract class TableRepository[E: DoobieSupport : Read : Write,
     updateOne(table, entity).run
   }
 
-  override def update(entities: List[E])(implicit KE: KeyEntity[E, K]): ConnectionIO[Int] = {
-    val entitiesWithIDs = entities.map(e => (e, KE.key(e)))
-    updateMany[E, K](table).updateMany(entitiesWithIDs)
-  }
-
   override def get(entityId: K): ConnectionIO[Option[E]] =
     getMany(table, List(entityId)).option
 
@@ -170,7 +156,7 @@ abstract class TableRepository[E: DoobieSupport : Read : Write,
     deleteManyIDs(table, entities.map(entity => KE.key(entity))).run
 
   override def delete(specification: Fragment)(implicit KE: KeyEntity[E, K]): ConnectionIO[List[E]] =
-    deleteBySpecification[E](
+    deleteBy[E](
       table = table,
       where = specification
     ).to[List]
@@ -180,8 +166,8 @@ abstract class TableRepository[E: DoobieSupport : Read : Write,
       table = table,
       where = specification,
       orderBy = if (orderBy.forall(_.isEmpty)) Fragment.empty else Fragment.const(orderBy.get),
-      offset = if (offset.isEmpty) Fragment.empty else Fragment.const(s"OFFSET ${offset.get}"),
-      limit = if (limit.isEmpty) Fragment.empty else Fragment.const(s"LIMIT ${limit.get}")
+      offset =  if (offset.isEmpty)             Fragment.empty else Fragment.const(s"OFFSET ${offset.get}"),
+      limit =   if (limit.isEmpty)               Fragment.empty else Fragment.const(s"LIMIT ${limit.get}")
     ).to[List]
 
   override def listAll: doobie.ConnectionIO[List[E]] =

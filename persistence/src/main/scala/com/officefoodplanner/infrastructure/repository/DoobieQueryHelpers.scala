@@ -1,9 +1,14 @@
 package com.officefoodplanner.infrastructure.repository
 
+import doobie.implicits._
+import doobie.util.Put
 import doobie.util.fragment.Fragment
 
 case class DoobieColumn[E](name: String, value: E => Fragment)
-
+object DoobieColumn {
+  def apply[E, C: Put](name: String)(vp: E => C): DoobieColumn[E] =
+    DoobieColumn[E](name, e => fr0"${vp(e)}")
+}
 trait DoobieColumns[E] {
   def columns: List[DoobieColumn[E]]
 }

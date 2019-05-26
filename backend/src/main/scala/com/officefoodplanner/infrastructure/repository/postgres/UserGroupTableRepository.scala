@@ -33,10 +33,10 @@ object UserGroupTableRepository {
   implicit val doobieSupport: DoobieSupport[UserGroup] = new DoobieSupport[UserGroup] {
     override def columns: List[DoobieColumn[UserGroup]] = List(
       id,
-      DoobieColumn[UserGroup]("user_id", p => fr0"${p.userId}"),
-      DoobieColumn[UserGroup]("group_id", p => fr0"${p.groupId}"),
+      DoobieColumn("user_id" )(_.userId),
+      DoobieColumn("group_id")(_.groupId),
     )
 
-    override def id: DoobieColumn[UserGroup] = DoobieColumn[UserGroup]("id", ug => fr0"${ug.id}")
+    override def id: DoobieColumn[UserGroup] = DoobieColumn("id")(_.id)
   }
 }

@@ -11,13 +11,11 @@ import doobie.postgres.implicits._
 
 class UserTableRepository extends UserRepository[ConnectionIO] {
 
-  import UserTableRepository.doobieSupport
+  import UserTableRepository._
 
   private val repo: TableRepository[User, UUID] = new TableRepository[User, UUID] {
     override val table = Table(SchemaName("auth"), TableName("users"))
   }
-
-  private def byUsername(userName: String) = fr"username = $userName"
 
   def create(user: User): ConnectionIO[User] = repo.create(user)
 
@@ -37,6 +35,8 @@ class UserTableRepository extends UserRepository[ConnectionIO] {
 }
 
 object UserTableRepository {
+  private[postgres] def byUsername(userName: String) = fr"username = $userName"
+
   implicit val doobieSupport: DoobieSupport[User] = new DoobieSupport[User] {
     override val id: DoobieColumn[User] = DoobieColumn[User]("id", u => fr0"${u.id}")
 

@@ -37,7 +37,7 @@ object GroupPermissionTableRepository {
       DoobieColumn[GroupPermission]("permission_id", c => fr0"${c.permissionId}")
     )
 
-    override def id: DoobieColumn[GroupPermission] = DoobieColumn("id", c => fr0"${c.id}")
+    override def id: DoobieColumn[GroupPermission] = DoobieColumn[GroupPermission]("id", c => fr0"${c.id}")
   }
 }
 
