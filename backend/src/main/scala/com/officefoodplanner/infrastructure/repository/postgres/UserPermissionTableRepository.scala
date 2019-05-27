@@ -31,12 +31,11 @@ class UserPermissionTableRepository extends UserPermissionRepository[ConnectionI
 
 object UserPermissionTableRepository {
   implicit val doobieSupport: DoobieSupport[UserPermission] = new DoobieSupport[UserPermission] {
-    override def columns: List[DoobieColumn[UserPermission]] = List(
+    override val id: DoobieColumn[UserPermission] = DoobieColumn[UserPermission]("id", p => fr0"${p.id}")
+    override val columns: List[DoobieColumn[UserPermission]] = List(
       id,
       DoobieColumn[UserPermission]("user_id", p => fr0"${p.userId}"),
       DoobieColumn[UserPermission]("permission_id", p => fr0"${p.permissionId}")
     )
-
-    override def id: DoobieColumn[UserPermission] = DoobieColumn[UserPermission]("id", p => fr0"${p.id}")
   }
 }

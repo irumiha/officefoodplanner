@@ -31,13 +31,12 @@ class GroupPermissionTableRepository extends GroupPermissionRepository[Connectio
 
 object GroupPermissionTableRepository {
   implicit val doobieSupport: DoobieSupport[GroupPermission] = new DoobieSupport[GroupPermission] {
-    override def columns: List[DoobieColumn[GroupPermission]] = List(
+    override val id: DoobieColumn[GroupPermission] = DoobieColumn[GroupPermission]("id", c => fr0"${c.id}")
+    override val columns: List[DoobieColumn[GroupPermission]] = List(
       id,
       DoobieColumn[GroupPermission]("group_id", c => fr0"${c.groupId}"),
       DoobieColumn[GroupPermission]("permission_id", c => fr0"${c.permissionId}")
     )
-
-    override def id: DoobieColumn[GroupPermission] = DoobieColumn[GroupPermission]("id", c => fr0"${c.id}")
   }
 }
 

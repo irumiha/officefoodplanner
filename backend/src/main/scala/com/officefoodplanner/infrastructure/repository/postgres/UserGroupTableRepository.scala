@@ -30,13 +30,13 @@ class UserGroupTableRepository extends UserGroupRepository[ConnectionIO] {
 }
 
 object UserGroupTableRepository {
+
   implicit val doobieSupport: DoobieSupport[UserGroup] = new DoobieSupport[UserGroup] {
-    override def columns: List[DoobieColumn[UserGroup]] = List(
+    override val id: DoobieColumn[UserGroup] = DoobieColumn("id")(_.id)
+    override val columns: List[DoobieColumn[UserGroup]] = List(
       id,
       DoobieColumn("user_id" )(_.userId),
       DoobieColumn("group_id")(_.groupId),
     )
-
-    override def id: DoobieColumn[UserGroup] = DoobieColumn("id")(_.id)
   }
 }

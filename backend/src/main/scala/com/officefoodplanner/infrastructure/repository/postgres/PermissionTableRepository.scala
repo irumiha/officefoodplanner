@@ -34,12 +34,11 @@ class PermissionTableRepository extends PermissionRepository[ConnectionIO] {
 
 object PermissionTableRepository {
   implicit val doobieSupport: DoobieSupport[Permission] = new DoobieSupport[Permission] {
-    override def columns: List[DoobieColumn[Permission]] = List(
+    override val id: DoobieColumn[Permission] = DoobieColumn[Permission]("id", p => fr0"${p.id}")
+    override val columns: List[DoobieColumn[Permission]] = List(
       id,
       DoobieColumn[Permission]("code",        p => fr0"${p.code}"),
       DoobieColumn[Permission]("description", p => fr0"${p.description}"),
     )
-
-    override def id: DoobieColumn[Permission] = DoobieColumn[Permission]("id", p => fr0"${p.id}")
   }
 }

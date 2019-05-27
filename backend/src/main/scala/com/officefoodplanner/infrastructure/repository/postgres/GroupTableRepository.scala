@@ -33,9 +33,9 @@ class GroupTableRepository extends GroupRepository[ConnectionIO] {
 
 object GroupTableRepository {
   implicit val doobieSupport: DoobieSupport[Group] = new DoobieSupport[Group] {
-    override def id: DoobieColumn[Group] = DoobieColumn[Group]("id", g => fr0"${g.id}")
+    override val id: DoobieColumn[Group] = DoobieColumn[Group]("id", g => fr0"${g.id}")
 
-    override def columns: List[DoobieColumn[Group]] = List(
+    override val columns: List[DoobieColumn[Group]] = List(
       DoobieColumn[Group]("id",   g => fr0"${g.id}"),
       DoobieColumn[Group]("name", g => fr0"${g.name}"),
     )

@@ -10,14 +10,14 @@ object DoobieColumn {
     DoobieColumn[E](name, e => fr0"${vp(e)}")
 }
 trait DoobieColumns[E] {
-  def columns: List[DoobieColumn[E]]
+  val columns: List[DoobieColumn[E]]
 }
 object DoobieColumns {
   def apply[E](implicit instance: DoobieColumns[E]): DoobieColumns[E] = instance
 }
 
 trait DoobieIDColumn[E] {
-  def id: DoobieColumn[E]
+  val id: DoobieColumn[E]
 }
 object DoobieIDColumn {
   def apply[E](implicit instance: DoobieIDColumn[E]): DoobieIDColumn[E] = instance
