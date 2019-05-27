@@ -6,7 +6,6 @@ import com.officefoodplanner.domain.auth.model.Session
 import com.officefoodplanner.domain.auth.repository.SessionRepository
 import com.officefoodplanner.infrastructure.repository.{DoobieColumn, DoobieSupport, SchemaName, Table, TableName}
 import doobie._
-import doobie.implicits._
 import doobie.postgres.implicits._
 
 class SessionTableRepository extends SessionRepository[ConnectionIO] {
@@ -26,14 +25,14 @@ class SessionTableRepository extends SessionRepository[ConnectionIO] {
 
 object SessionTableRepository {
   implicit val doobieSupport: DoobieSupport[Session] = new DoobieSupport[Session] {
-    override val id: DoobieColumn[Session] = DoobieColumn[Session]("id", s => fr0"${s.id}")
+    override val id: DoobieColumn[Session] = DoobieColumn("id")(_.id)
 
-    override val columns: List[DoobieColumn[Session]] = List(
-      DoobieColumn[Session]("id", e => fr0"${e.id}"),
-      DoobieColumn[Session]("user_id", e => fr0"${e.userID}"),
-      DoobieColumn[Session]("created_on", e => fr0"${e.createdOn}"),
-      DoobieColumn[Session]("expires_on", e => fr0"${e.expiresOn}"),
-      DoobieColumn[Session]("updated_on", e => fr0"${e.updatedOn}"),
+    override val columns = List(
+      id,
+      DoobieColumn("user_id"   )((p: Session) => p.userID),
+      DoobieColumn("created_on")((p: Session) => p.createdOn),
+      DoobieColumn("expires_on")((p: Session) => p.expiresOn),
+      DoobieColumn("updated_on")((p: Session) => p.updatedOn),
     )
   }
 }

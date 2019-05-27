@@ -1,7 +1,7 @@
 package com.officefoodplanner.infrastructure.endpoint
 
 import cats.effect._
-import com.officefoodplanner.domain.auth.command.SignupRequest
+import com.officefoodplanner.domain.auth.command.CreateUser
 import com.officefoodplanner.domain.auth.model.User
 import com.officefoodplanner.infrastructure.OfficeFoodPlannerArbitraries
 import org.http4s._
@@ -24,7 +24,7 @@ class UserEndpointsSpec
   test("create user") {
     val userHttpEndpoints = newUserHttpEndpoints
 
-    forAll { userSignup: SignupRequest =>
+    forAll { userSignup: CreateUser =>
       (for {
         request <- POST(userSignup, Uri.uri("/"))
         response <- userHttpEndpoints.run(request)
@@ -37,7 +37,7 @@ class UserEndpointsSpec
   test("update user") {
     val userHttpEndpoints = newUserHttpEndpoints
 
-    forAll { userSignup: SignupRequest =>
+    forAll { userSignup: CreateUser =>
         (for {
           createRequest <- POST(userSignup, Uri.uri("/"))
           createResponse <- userHttpEndpoints.run(createRequest)
@@ -56,7 +56,7 @@ class UserEndpointsSpec
   test("get user by userName") {
     val userHttpEndpoints = newUserHttpEndpoints
 
-    forAll { userSignup: SignupRequest =>
+    forAll { userSignup: CreateUser =>
       (for {
         createRequest <- POST(userSignup, Uri.uri("/"))
         createResponse <- userHttpEndpoints.run(createRequest)
@@ -74,7 +74,7 @@ class UserEndpointsSpec
   test("delete user by userName") {
     val userHttpEndpoints = newUserHttpEndpoints
 
-    forAll { userSignup: SignupRequest =>
+    forAll { userSignup: CreateUser =>
       (for {
         createRequest <- POST(userSignup, Uri.uri("/"))
         createResponse <- userHttpEndpoints.run(createRequest)

@@ -35,9 +35,9 @@ abstract class UserService[F[_]: Monad, D[_]: Async, H] extends TransactingServi
   private def prepareUserFromCommand(user: CreateUser, pwhash: String) = {
     val now = Instant.now()
     user.into[User]
-      .withFieldComputed(_.hash, _ => pwhash)
-      .withFieldComputed(_.createdOn, _ => now)
-      .withFieldComputed(_.updatedOn, _ => now)
+      .withFieldConst(_.passwordHash, pwhash)
+      .withFieldConst(_.createdOn,    now)
+      .withFieldConst(_.updatedOn,    now)
       .transform
   }
 

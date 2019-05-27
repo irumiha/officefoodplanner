@@ -7,7 +7,5 @@ case class UpdateUser(
     firstName: String,
     lastName: String,
     email: String,
-    hash: String,
-    phone: String,
     key: UUID
 )

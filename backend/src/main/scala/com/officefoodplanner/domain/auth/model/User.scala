@@ -11,9 +11,9 @@ case class User(
     firstName: String,
     lastName: String,
     email: String,
-    hash: String,
-    phone: String,
+    passwordHash: String,
     initialized: Boolean = false,
+    active: Boolean = false,
     createdOn: Instant,
     updatedOn: Instant
 )

@@ -2,14 +2,14 @@ package com.officefoodplanner.infrastructure
 
 import java.time.Instant
 
-import com.officefoodplanner.domain.auth.command.SignupRequest
+import com.officefoodplanner.domain.auth.command.CreateUser
 import com.officefoodplanner.domain.auth.model.User
 import org.scalacheck._
 
 trait OfficeFoodPlannerArbitraries {
 
   val userNameLength = 16
-  val userNameGen: Gen[String] = Gen.listOfN(userNameLength, Gen.alphaChar).map(_.mkString)
+  val randomStringGen: Gen[String] = Gen.listOfN(userNameLength, Gen.alphaChar).map(_.mkString)
 
   implicit val instant: Arbitrary[Instant] = Arbitrary[Instant] {
     for {
@@ -19,26 +19,24 @@ trait OfficeFoodPlannerArbitraries {
 
   implicit val user: Arbitrary[User] = Arbitrary[User] {
     for {
-      userName <- userNameGen
-      firstName <- userNameGen
-      lastName <- userNameGen
-      email <- userNameGen
-      password <- userNameGen
-      phone <- userNameGen
+      userName <- randomStringGen
+      firstName <- randomStringGen
+      lastName <- randomStringGen
+      email <- randomStringGen
+      password <- randomStringGen
       id <- Gen.uuid
       now <- instant.arbitrary
-    } yield User(id, userName, firstName, lastName, email, password, phone, initialized = false, now, now)
+    } yield User(id, userName, firstName, lastName, email, password, initialized = false, active=true, now, now)
   }
 
-  implicit val userSignup: Arbitrary[SignupRequest] = Arbitrary[SignupRequest] {
+  implicit val userSignup: Arbitrary[CreateUser] = Arbitrary[CreateUser] {
     for {
-      userName <- userNameGen
-      firstName <- userNameGen
-      lastName <- userNameGen
-      email <- userNameGen
-      password <- userNameGen
-      phone <- userNameGen
-    } yield SignupRequest(userName, firstName, lastName, email, password, phone)
+      userName <- randomStringGen
+      firstName <- randomStringGen
+      lastName <- randomStringGen
+      email <- randomStringGen
+      password <- randomStringGen
+    } yield CreateUser(userName, firstName, lastName, email, password)
   }
 }
 

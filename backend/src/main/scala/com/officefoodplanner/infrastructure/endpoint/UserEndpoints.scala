@@ -3,19 +3,19 @@ package com.officefoodplanner.infrastructure.endpoint
 import cats.data.{Kleisli, OptionT}
 import cats.effect._
 import cats.implicits._
-import com.officefoodplanner.domain.auth.{UserAlreadyExistsError, UserNotFoundError, UserService}
-import com.officefoodplanner.domain.auth.command.{CreateUser, LoginRequest, SignupRequest, UpdateUser}
+import com.officefoodplanner.domain.auth.command.{CreateUser, LoginRequest, UpdateUser}
 import com.officefoodplanner.domain.auth.model.User
 import com.officefoodplanner.domain.auth.view.UserSimpleView
+import com.officefoodplanner.domain.auth.{UserAlreadyExistsError, UserNotFoundError, UserService}
 import com.officefoodplanner.infrastructure.endpoint.Pagination.{OffsetQ, PageSizeQ}
 import com.officefoodplanner.infrastructure.middleware.Authenticate
 import io.circe.generic.auto._
 import io.circe.syntax._
+import io.scalaland.chimney.dsl._
 import org.http4s._
 import org.http4s.circe._
 import org.http4s.dsl.Http4sDsl
 import org.http4s.server.AuthMiddleware
-import io.scalaland.chimney.dsl._
 
 import scala.language.higherKinds
 
@@ -27,7 +27,6 @@ class UserEndpoints[F[_]: Effect, D[_], H](
   implicit val userUpdateDecoder: EntityDecoder[F, UpdateUser] = jsonOf
   implicit val userCreateDecoder: EntityDecoder[F, CreateUser] = jsonOf
   implicit val loginReqDecoder: EntityDecoder[F, LoginRequest] = jsonOf
-  implicit val signupReqDecoder: EntityDecoder[F, SignupRequest] = jsonOf
 
   def nonAuthEndpoints: HttpRoutes[F] =
     HttpRoutes.of[F] {
@@ -49,9 +48,8 @@ class UserEndpoints[F[_]: Effect, D[_], H](
 
   private def signup(req: Request[F]): F[Response[F]] = {
     val action = for {
-      signup <- req.as[SignupRequest]
-      user <- signup.asCreateUser.pure[F]
-      result <- userService.createUser(user).value
+      signup <- req.as[CreateUser]
+      result <- userService.createUser(signup).value
     } yield result
 
     action.flatMap {

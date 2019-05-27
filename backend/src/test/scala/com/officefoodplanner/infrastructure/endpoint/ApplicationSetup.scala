@@ -3,9 +3,9 @@ package com.officefoodplanner.infrastructure.endpoint
 import cats.data.Kleisli
 import cats.effect.IO
 import com.officefoodplanner.config.ApplicationConfig
-import com.officefoodplanner.domain.auth.command.SignupRequest
-import com.officefoodplanner.domain.auth.model.User
 import com.officefoodplanner.domain.auth._
+import com.officefoodplanner.domain.auth.command.CreateUser
+import com.officefoodplanner.domain.auth.model.User
 import com.officefoodplanner.domain.auth.repository.{SessionRepository, UserRepository}
 import com.officefoodplanner.infrastructure.TestConfig
 import com.officefoodplanner.infrastructure.middleware.Authenticate
@@ -20,8 +20,8 @@ import tsec.passwordhashers.jca.BCrypt
 object ApplicationSetup {
   implicit val userEnc: EntityEncoder[IO, User] = jsonEncoderOf
   implicit val userDec: EntityDecoder[IO, User] = jsonOf
-  implicit val signupRequestEnc: EntityEncoder[IO, SignupRequest] = jsonEncoderOf
-  implicit val signupRequestDec: EntityDecoder[IO, SignupRequest] = jsonOf
+  implicit val signupRequestEnc: EntityEncoder[IO, CreateUser] = jsonEncoderOf
+  implicit val signupRequestDec: EntityDecoder[IO, CreateUser] = jsonOf
 
   def newUserService(
     customUserRepo: UserRepository[IO],

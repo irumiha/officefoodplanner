@@ -32,8 +32,10 @@ trait UserValidation[F[_]] {
     val changed =
       newUser
         .into[User]
-        .withFieldComputed(_.createdOn, _ => storedUser.createdOn)
-        .withFieldComputed(_.updatedOn, _ => Instant.now())
+        .withFieldComputed(_.createdOn,    _ => storedUser.createdOn)
+        .withFieldComputed(_.active,       _ => storedUser.active)
+        .withFieldComputed(_.passwordHash, _ => storedUser.passwordHash)
+        .withFieldConst(_.updatedOn, Instant.now()) // TODO take current time from environment
         .transform
     val validation = Right[UserValidationError, User](changed)
 

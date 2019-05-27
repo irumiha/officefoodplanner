@@ -39,7 +39,7 @@ abstract class AuthenticationService[F[_]: Monad, D[_]: Monad, H] extends Transa
 
     def checkUserPassword(login: command.LoginRequest, user: User) =
       EitherT.liftF[D, UserAuthenticationFailedError, VerificationStatus](
-        cryptService.checkpw(login.password, PasswordHash[H](user.hash)))
+        cryptService.checkpw(login.password, PasswordHash[H](user.passwordHash)))
 
     def loggedInUser(user: User) =
       EitherT.rightT[D, UserAuthenticationFailedError](user)
