@@ -61,7 +61,7 @@ lazy val rootProject = (project in file("."))
 //    herokuFatJar in Compile := Some((assemblyOutputPath in backend in assembly).value),
 //    deployHeroku in Compile := ((deployHeroku in Compile) dependsOn (assembly in backend)).value
   )
-  .aggregate(backend, ui)
+  .aggregate(persistence, backend, ui)
 
 lazy val persistence = (project in file("persistence"))
   .settings(commonSettings: _*)
