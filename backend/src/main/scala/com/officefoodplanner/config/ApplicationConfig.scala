@@ -1,7 +1,13 @@
 package com.officefoodplanner.config
 
 final case class ServerConfig(host: String, port: Int)
-final case class AuthConfig(sessionLength: Long, coookieSignKey: String, cookieDuration: Long, sessionCookieName: String)
+final case class AuthConfig(
+  sessionLength: Long,
+  coookieSignKey: String,
+  cookieDuration: Long,
+  sessionCookieName: String,
+  minimumPasswordLength: Int
+)
 final case class CsrfConfig(secret: String)
 final case class OauthDetails(
   clientId: String,

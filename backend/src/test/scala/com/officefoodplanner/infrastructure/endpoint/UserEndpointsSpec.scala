@@ -1,12 +1,13 @@
 package com.officefoodplanner.infrastructure.endpoint
 
 import cats.effect._
-import com.officefoodplanner.domain.auth.command.CreateUser
+import com.officefoodplanner.domain.auth.command.{CreateUser, LoginRequest, UpdateUserPassword}
 import com.officefoodplanner.domain.auth.model.User
 import com.officefoodplanner.infrastructure.OfficeFoodPlannerArbitraries
 import org.http4s._
 import org.http4s.client.dsl.Http4sClientDsl
 import org.http4s.dsl._
+import org.http4s.headers.Location
 import org.scalatest._
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 
@@ -26,7 +27,7 @@ class UserEndpointsSpec
 
     forAll { userSignup: CreateUser =>
       (for {
-        request <- POST(userSignup, Uri.uri("/"))
+        request <- POST(userSignup, uri"/")
         response <- userHttpEndpoints.run(request)
       } yield {
         response.status shouldEqual Ok
@@ -39,7 +40,7 @@ class UserEndpointsSpec
 
     forAll { userSignup: CreateUser =>
         (for {
-          createRequest <- POST(userSignup, Uri.uri("/"))
+          createRequest <- POST(userSignup, uri"/")
           createResponse <- userHttpEndpoints.run(createRequest)
           createdUser <- createResponse.as[User]
           userToUpdate = createdUser.copy(lastName = createdUser.lastName.reverse)
@@ -53,12 +54,36 @@ class UserEndpointsSpec
     }
   }
 
+  test("update user password success") {
+    val endpoints = newUserAndAuthHttpEndpoints
+
+    forAll { userCreate: CreateUser =>
+        (for {
+          createRequest    <- POST(userCreate, Uri.uri("/users/"))
+          createResponse   <- endpoints.run(createRequest)
+          createdUser      <- createResponse.as[User]
+          loginRequest     <- POST(LoginRequest(userCreate.username, userCreate.password), Uri.fromString("/auth/login?next=/").toOption.get)
+          loginResponse    <- endpoints.run(loginRequest)
+          sessionCookie = loginResponse.cookies.find(_.name == "session")
+          updatePwRequest  <- PUT(UpdateUserPassword(userCreate.password, "NewPw1", createdUser.id), Uri.fromString(s"/users/change-password/${userCreate.username}").toOption.get)
+          updateText <- updatePwRequest.bodyAsText.compile.toList
+          updatePwResponse <- endpoints.run(updatePwRequest.addCookie("session", sessionCookie.map(_.content).getOrElse("")))
+          updatedUser      <- updatePwResponse.as[User]
+          testRedirect     <- TemporaryRedirect(Location(uri"/"))
+        } yield {
+          loginResponse.status.code shouldEqual testRedirect.status.code
+          updatePwResponse.status shouldEqual Ok
+          updatedUser.passwordHash should not equal createdUser.passwordHash
+        }).unsafeRunSync
+    }
+  }
+
   test("get user by userName") {
     val userHttpEndpoints = newUserHttpEndpoints
 
     forAll { userSignup: CreateUser =>
       (for {
-        createRequest <- POST(userSignup, Uri.uri("/"))
+        createRequest <- POST(userSignup, uri"/")
         createResponse <- userHttpEndpoints.run(createRequest)
         createdUser <- createResponse.as[User]
         getRequest <- GET(Uri.unsafeFromString(s"/${createdUser.username}"))
@@ -76,7 +101,7 @@ class UserEndpointsSpec
 
     forAll { userSignup: CreateUser =>
       (for {
-        createRequest <- POST(userSignup, Uri.uri("/"))
+        createRequest <- POST(userSignup, uri"/")
         createResponse <- userHttpEndpoints.run(createRequest)
         createdUser <- createResponse.as[User]
         deleteRequest <- DELETE(Uri.unsafeFromString(s"/${createdUser.username}"))

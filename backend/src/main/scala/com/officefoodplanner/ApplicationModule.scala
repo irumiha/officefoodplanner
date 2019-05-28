@@ -19,7 +19,7 @@ class ApplicationModule[F[_] : ContextShift : ConcurrentEffect : Timer](
 ) {
   val cryptService: PasswordHasher[ConnectionIO, BCrypt] =  BCrypt.syncPasswordHasher[ConnectionIO]
   val userRepo: UserTableRepository =  new UserTableRepository()
-  val userService: DoobieUserService[F, BCrypt] =  new DoobieUserService[F, BCrypt](userRepo, cryptService, xa)
+  val userService: DoobieUserService[F, BCrypt] =  new DoobieUserService[F, BCrypt](userRepo, cryptService, config, xa)
   val sessionRepo: SessionTableRepository =  new SessionTableRepository
   val authService: DoobieAuthenticationService[F, BCrypt] =  new DoobieAuthenticationService[F, BCrypt](
     config,

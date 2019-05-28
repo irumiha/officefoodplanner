@@ -8,17 +8,20 @@ import cats.arrow.FunctionK
 import cats.data.EitherT
 import cats.effect.Async
 import cats.implicits._
-import com.officefoodplanner.domain.auth.command.{CreateUser, UpdateUser}
+import com.officefoodplanner.config.ApplicationConfig
+import com.officefoodplanner.domain.auth.command.{CreateUser, UpdateUser, UpdateUserPassword}
 import com.officefoodplanner.domain.auth.model.User
 import com.officefoodplanner.domain.auth.repository.UserRepository
 import com.officefoodplanner.domain.auth.view.UserSimpleView
 import com.officefoodplanner.infrastructure.service.TransactingService
 import io.scalaland.chimney.dsl._
-import tsec.passwordhashers.PasswordHasher
+import tsec.common.Verified
+import tsec.passwordhashers.{PasswordHash, PasswordHasher}
 
 abstract class UserService[F[_]: Monad, D[_]: Async, H] extends TransactingService[F, D] with UserValidation[D] {
   val userRepo: UserRepository[D]
   val cryptService: PasswordHasher[D, H]
+  val applicationConfig: ApplicationConfig
 
   def createUser(user: CreateUser): EitherT[F, UserValidationError, User] = {
     val savedAction  = for {
@@ -64,6 +67,22 @@ abstract class UserService[F[_]: Monad, D[_]: Async, H] extends TransactingServi
       maybeUser <- EitherT.right(userRepo.findByUsername(user.username))
       storedUser <- userMustExist(maybeUser)
       userToUpdate <- validChanges(storedUser, user)
+      _ <- EitherT.liftF[D, UserValidationError, Int](userRepo.update(userToUpdate))
+    } yield userToUpdate).mapK(FunctionK.lift(transact))
+
+  def updatePassword(username: String, updatePw: UpdateUserPassword): EitherT[F, UserValidationError, User] =
+    (for {
+      maybeUser    <- EitherT.right(userRepo.findByUsername(username))
+      storedUser   <- userMustExist(maybeUser)
+      oldPasswordCheck <- EitherT.liftF(
+        cryptService.checkpw(updatePw.oldPassword, PasswordHash[H](storedUser.passwordHash))
+      )
+      newHash      <- EitherT.right(cryptService.hashpw(updatePw.newPassword))
+      userToUpdate <-
+        if (oldPasswordCheck == Verified)
+          checkNewPassword(applicationConfig, storedUser, updatePw.newPassword, newHash.toString)
+        else
+          EitherT.leftT[D, User](OldPasswordMismatch)
       _ <- EitherT.liftF[D, UserValidationError, Int](userRepo.update(userToUpdate))
     } yield userToUpdate).mapK(FunctionK.lift(transact))
 

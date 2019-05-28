@@ -7,7 +7,7 @@ import com.officefoodplanner.domain.auth.model.Session
 import com.officefoodplanner.domain.auth.repository.SessionRepository
 
 class SessionInMemoryRepository[F[_] : Applicative] extends SessionRepository[F] {
-  private def repo = new InMemoryRepository[F, Session, UUID]
+  private val repo = new InMemoryRepository[F, Session, UUID]
 
   def create(session: Session): F[Session] = repo.create(session)
 
