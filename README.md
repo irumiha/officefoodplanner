@@ -3,6 +3,10 @@
 A application that connects office cooks with their consumers. Design and organise meals, set up seating, track attendance, 
 gather feedback.
 
+---
+WARNING: Everything below is basically a TODO item.
+---
+
 ## For users
 
 You will log in using your company's Oauth2 provider (everyone is using one these days, be it Microsoft Office or Google Apps, etc.)
