@@ -96,6 +96,7 @@ lazy val uiTests = (project in file("ui-tests"))
   .settings(commonSettings: _*)
   .settings(
     parallelExecution := false,
+    fork := true,
     libraryDependencies ++= seleniumStack,
     test in Test := (test in Test).dependsOn(npmTask.toTask(" run build")).value
   ) dependsOn backend
@@ -214,7 +215,7 @@ lazy val backend = (project in file("backend"))
     scalacOptions in (Compile, console) ~= (_.filterNot(badConsoleFlags.contains(_))),
     // Support stopping the running server
     mainClass in reStart := Some("com.officefoodplanner.ApplicationServer"),
-    fork in run := true,
+    fork := true,
     unmanagedResourceDirectories in Compile := {
       (unmanagedResourceDirectories in Compile).value ++ List(
         baseDirectory.value.getParentFile / ui.base.getName / "dist"
