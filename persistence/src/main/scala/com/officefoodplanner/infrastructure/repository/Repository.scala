@@ -17,7 +17,7 @@ trait WriteRepository[F[_], K, E, P] {
 
   def deleteEntities(entities: List[E])(implicit KE: KeyEntity[E, K]): F[Int]
 
-  def delete(specification: P)(implicit KE: KeyEntity[E, K]): F[List[E]]
+  def delete(filter: P)(implicit KE: KeyEntity[E, K]): F[List[E]]
 
 }
 
@@ -32,7 +32,7 @@ trait ReadRepository[F[_], K, E] {
 
 trait FindRepository[F[_], K, E, P1] {
   def find(
-    specification: P1,
+    filter: P1,
     orderBy: Option[String],
     limit: Option[Int],
     offset: Option[Int]

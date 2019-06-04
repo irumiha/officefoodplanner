@@ -66,8 +66,8 @@ class InMemoryRepository[F[_]: Applicative, E, K]
   override def deleteEntities(entities: List[E])(implicit KE: KeyEntity[E, K]): F[Int] =
     entities.map(deleteEntity).sequence.map(_.sum)
 
-  override def delete(specification: E => Boolean)(implicit KE: KeyEntity[E, K]): F[List[E]] = {
-    val toDelete = cache.filter { case (_, v) => specification(v) }.values.toList
+  override def delete(filter: E => Boolean)(implicit KE: KeyEntity[E, K]): F[List[E]] = {
+    val toDelete = cache.filter { case (_, v) => filter(v) }.values.toList
     deleteEntities(toDelete)
     toDelete.pure[F]
   }

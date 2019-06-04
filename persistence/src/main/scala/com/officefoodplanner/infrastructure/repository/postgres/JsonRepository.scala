@@ -100,7 +100,7 @@ private object JsonRepositorySQL {
     q.query[RowWrapper]
   }
 
-  def deleteBySpecification(
+  def deleteBy(
       table: Table,
       where: Fragment
   ): Query0[RowWrapper] = {
@@ -160,10 +160,10 @@ abstract class JsonRepository[E: Encoder: Decoder, K: Put : Get]
   override def deleteEntities(entities: List[E])(implicit KE: KeyEntity[E, UUID]): ConnectionIO[Int] =
     deleteManyIDs(table, entities.map(entity => KE.key(entity))).run
 
-  override def delete(specification: Fragment)(implicit KE: KeyEntity[E, UUID]): ConnectionIO[List[E]] =
-    deleteBySpecification(
+  override def delete(filter: Fragment)(implicit KE: KeyEntity[E, UUID]): ConnectionIO[List[E]] =
+    deleteBy(
       table = table,
-      where = specification
+      where = filter
     ).map(toEntity[E]).to[List]
 
   override def find(specification: Fragment, orderBy: Option[String], limit: Option[Int], offset: Option[Int]): ConnectionIO[List[E]] =

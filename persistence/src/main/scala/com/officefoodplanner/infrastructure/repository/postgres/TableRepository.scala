@@ -155,16 +155,16 @@ abstract class TableRepository[E: DoobieSupport : Read : Write, K: Put : Get]
   override def deleteEntities(entities: List[E])(implicit KE: KeyEntity[E, K]): ConnectionIO[Int] =
     deleteManyIDs(table, entities.map(entity => KE.key(entity))).run
 
-  override def delete(specification: Fragment)(implicit KE: KeyEntity[E, K]): ConnectionIO[List[E]] =
+  override def delete(filter: Fragment)(implicit KE: KeyEntity[E, K]): ConnectionIO[List[E]] =
     deleteBy[E](
       table = table,
-      where = specification
+      where = filter
     ).to[List]
 
-  override def find(specification: Fragment, orderBy: Option[String], limit: Option[Int], offset: Option[Int]): ConnectionIO[List[E]] =
+  override def find(filter: Fragment, orderBy: Option[String], limit: Option[Int], offset: Option[Int]): ConnectionIO[List[E]] =
     select(
       table = table,
-      where = specification,
+      where = filter,
       orderBy = if (orderBy.forall(_.isEmpty)) Fragment.empty else Fragment.const(orderBy.get),
       offset =  if (offset.isEmpty)            Fragment.empty else Fragment.const(s"OFFSET ${offset.get}"),
       limit =   if (limit.isEmpty)             Fragment.empty else Fragment.const(s"LIMIT ${limit.get}")
