@@ -1,8 +1,9 @@
 package com.officefoodplanner
 
+import java.util.UUID
+
 import cats.effect._
 import cats.implicits._
-
 import doobie.util.ExecutionContexts
 import io.circe.config.parser
 import org.http4s.implicits._

@@ -26,10 +26,10 @@ abstract class UserService[F[_]: Monad, D[_]: Async, H] extends TransactingServi
   def createUser(user: CreateUser): EitherT[F, UserValidationError, User] = {
     val savedAction  = for {
       maybeUser <- getUser(user)
-      _ <- userMustNotExist(maybeUser)
-      hashedPw <- EitherT.right(cryptService.hashpw(user.password))
+      _         <- userMustNotExist(maybeUser)
+      hashedPw  <- EitherT.right(cryptService.hashpw(user.password))
       userToCreate = prepareUserFromCommand(user, hashedPw.toString)
-      saved <- createUser(userToCreate)
+      saved     <- createUser(userToCreate)
     } yield saved
 
     savedAction.mapK(FunctionK.lift(transact))

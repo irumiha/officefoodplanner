@@ -5,6 +5,8 @@ import java.util.UUID
 
 import cats._
 import cats.data._
+import cats.implicits._
+import cats.effect.Timer
 import com.officefoodplanner.config.ApplicationConfig
 import com.officefoodplanner.domain.auth.model.User
 import com.officefoodplanner.domain.auth.repository.{SessionRepository, UserRepository}
@@ -23,8 +25,8 @@ abstract class AuthenticationService[F[_]: Monad, D[_]: Monad, H] extends Transa
 
     transact(
       (for {
-        session <- OptionT[D, model.Session](sessionRepository.get(sessionID))
-        user    <- OptionT[D, User](userRepository.get(session.userID))
+        session <- OptionT(sessionRepository.get(sessionID))
+        user    <- OptionT(userRepository.get(session.userID))
         _       <- OptionT.liftF(sessionRepository.update(session.copy(expiresOn = nextExpire, updatedOn = Instant.now())))
       } yield (user, session)).value
     )
