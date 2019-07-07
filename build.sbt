@@ -16,9 +16,9 @@ def haltOnCmdResultError(result: Int) {
 lazy val commonSettings = Seq(
   organization := "com.officefoodplanner",
   version      := "0.0.1-SNAPSHOT",
-  scalaVersion := "2.12.8",
+  scalaVersion := ScalaVersion,
   addCompilerPlugin("com.olegpy" %% "better-monadic-for" % "0.3.0"),
-  addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.10.1"),
+  addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.10.3"),
   updateNpm := {
     println("Updating npm dependencies")
     haltOnCmdResultError(Process("npm install", baseDirectory.value / ".." / "ui").!)
@@ -37,20 +37,21 @@ lazy val commonSettings = Seq(
 
 resolvers += Resolver.sonatypeRepo("snapshots")
 
-val CatsVersion            = "1.6.0"
-val CirceVersion           = "0.11.1"
-val CirceConfigVersion     = "0.6.1"
-val DoobieVersion          = "0.7.0"
+val ScalaVersion           = "2.12.8"
+val CatsVersion            = "2.0.0-M4"
+val CirceVersion           = "0.12.0-M1"
+val CirceConfigVersion     = "0.7.0-M1"
+val DoobieVersion          = "0.8.0-M1"
 val EnumeratumVersion      = "1.5.13"
 val EnumeratumCirceVersion = "1.5.21"
 val H2Version              = "1.4.199"
-val Http4sVersion          = "0.20.1"
+val Http4sVersion          = "0.21.0-M1"
 val LogbackVersion         = "1.2.3"
 val ScalaCheckVersion      = "1.14.0"
-val ScalaTestVersion       = "3.0.7"
+val ScalaTestVersion       = "3.0.8"
 val FlywayVersion          = "5.2.4"
 val TsecVersion            = "0.1.0"
-val ChimneyVersion         = "0.3.1"
+val ChimneyVersion         = "0.3.2"
 val OctopusVersion         = "0.3.3"
 val SeleniumVersion        = "2.53.0"
 
@@ -68,7 +69,7 @@ lazy val persistence = (project in file("persistence"))
   .settings(
     name := "officefoodplanner-persistence",
     libraryDependencies ++= Seq(
-      "org.scala-lang"        %  "scala-reflect"            % "2.12.8",
+      "org.scala-lang"        %  "scala-reflect"            % ScalaVersion,
       "org.tpolecat"          %% "doobie-core"              % DoobieVersion,
       "org.tpolecat"          %% "doobie-h2"                % DoobieVersion,
       "org.tpolecat"          %% "doobie-postgres"          % DoobieVersion,

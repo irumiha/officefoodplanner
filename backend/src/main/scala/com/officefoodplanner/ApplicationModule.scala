@@ -13,9 +13,12 @@ import org.http4s.{HttpRoutes, Request, Response}
 import tsec.passwordhashers.PasswordHasher
 import tsec.passwordhashers.jca.BCrypt
 
+import scala.concurrent.ExecutionContext
+
 class ApplicationModule[F[_] : ContextShift : ConcurrentEffect : Timer](
   config: ApplicationConfig,
-  xa: doobie.Transactor[F]
+  xa: doobie.Transactor[F],
+  blockingIoEc: ExecutionContext
 ) {
   val cryptService: PasswordHasher[ConnectionIO, BCrypt] =  BCrypt.syncPasswordHasher[ConnectionIO]
   val userRepo: UserTableRepository =  new UserTableRepository()
@@ -33,6 +36,6 @@ class ApplicationModule[F[_] : ContextShift : ConcurrentEffect : Timer](
   val userEndpoints: HttpRoutes[F] = UserEndpoints.endpoints(userService, authMiddleware)
   val authEndpoints: HttpRoutes[F] = AuthenticationEndpoints.endpoints(config, authService)
   val utilityEndpoints: HttpRoutes[F] = UtilityEndpoints.endpoints()
-  val staticEndpoints: Kleisli[OptionT[F, ?], Request[F], Response[F]] = StaticEndpoints.endpoints()
+  val staticEndpoints: Kleisli[OptionT[F, ?], Request[F], Response[F]] = StaticEndpoints.endpoints(blockingIoEc)
 
 }

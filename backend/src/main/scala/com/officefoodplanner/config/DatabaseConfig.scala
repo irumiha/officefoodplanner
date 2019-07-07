@@ -1,7 +1,7 @@
 package com.officefoodplanner.config
 
 import cats.syntax.functor._
-import cats.effect.{Async, ContextShift, Resource, Sync}
+import cats.effect.{Async, Blocker, ContextShift, Resource, Sync}
 import doobie.hikari.HikariTransactor
 import doobie.hikari.HikariTransactor.initial
 import org.flywaydb.core.Flyway
@@ -15,7 +15,7 @@ object DatabaseConfig {
   def dbTransactor[F[_]: Async : ContextShift](
     dbc: DatabaseConfig,
     connEc : ExecutionContext,
-    transEc : ExecutionContext
+    transEc : Blocker
   ): Resource[F, HikariTransactor[F]] =
     for {
       _ <- Resource.liftF(Async[F].delay(Class.forName(dbc.driver)))

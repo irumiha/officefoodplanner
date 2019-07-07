@@ -3,6 +3,7 @@ package com.officefoodplanner
 import java.util.UUID
 
 import cats.effect._
+import Blocker.liftExecutionContext
 import cats.implicits._
 import doobie.util.ExecutionContexts
 import io.circe.config.parser
@@ -17,9 +18,9 @@ object ApplicationServer extends IOApp {
     for {
       conf           <- Resource.liftF(parser.decodePathF[F, config.ApplicationConfig]("application"))
       connEc         <- ExecutionContexts.fixedThreadPool[F](conf.db.connections.poolSize)
-      txnEc          <- ExecutionContexts.cachedThreadPool[F]
-      xa             <- config.DatabaseConfig.dbTransactor[F](conf.db, connEc, txnEc)
-      app            =  new ApplicationModule(conf, xa)
+      unboundedEc    <- ExecutionContexts.cachedThreadPool[F]
+      xa             <- config.DatabaseConfig.dbTransactor[F](conf.db, connEc, liftExecutionContext(unboundedEc))
+      app            =  new ApplicationModule(conf, xa, unboundedEc)
       httpApp        =  Router(
         "/users"                 -> app.userEndpoints,
         "/auth"                  -> app.authEndpoints,
