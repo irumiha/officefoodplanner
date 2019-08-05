@@ -8,6 +8,7 @@ import org.http4s._
 import org.http4s.client.dsl.Http4sClientDsl
 import org.http4s.dsl._
 import org.http4s.headers.Location
+import org.http4s.implicits._
 import org.scalatest._
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 
@@ -66,7 +67,7 @@ class UserEndpointsSpec
           loginResponse    <- endpoints.run(loginRequest)
           sessionCookie = loginResponse.cookies.find(_.name == "session")
           updatePwRequest  <- PUT(UpdateUserPassword(userCreate.password, "NewPw1", createdUser.id), Uri.fromString(s"/users/change-password/${userCreate.username}").toOption.get)
-          updateText <- updatePwRequest.bodyAsText.compile.toList
+          updateText       <- updatePwRequest.bodyAsText.compile.toList
           updatePwResponse <- endpoints.run(updatePwRequest.addCookie("session", sessionCookie.map(_.content).getOrElse("")))
           updatedUser      <- updatePwResponse.as[User]
           testRedirect     <- TemporaryRedirect(Location(uri"/"))
