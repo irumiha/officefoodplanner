@@ -7,6 +7,8 @@ lazy val updateNpm  = taskKey[Unit]("Update npm")
 lazy val npmTask    = inputKey[Unit]("Run npm with arguments")
 lazy val distApp    = taskKey[Unit]("Build final app package")
 
+ThisBuild / turbo := true
+
 def haltOnCmdResultError(result: Int) {
   if (result != 0) {
     throw new Exception("Build failed.")
@@ -17,7 +19,7 @@ lazy val commonSettings = Seq(
   organization := "com.officefoodplanner",
   version      := "0.0.1-SNAPSHOT",
   scalaVersion := ScalaVersion,
-  addCompilerPlugin("com.olegpy" %% "better-monadic-for" % "0.3.0"),
+  addCompilerPlugin("com.olegpy" %% "better-monadic-for" % "0.3.1"),
   addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.10.3"),
   updateNpm := {
     println("Updating npm dependencies")
@@ -37,22 +39,22 @@ lazy val commonSettings = Seq(
 
 resolvers += Resolver.sonatypeRepo("snapshots")
 
-val ScalaVersion           = "2.12.8"
+val ScalaVersion           = "2.13.0"
 val CatsVersion            = "2.0.0-M4"
-val CirceVersion           = "0.12.0-M1"
+val CirceVersion           = "0.12.0-M4"
 val CirceConfigVersion     = "0.7.0-M1"
-val DoobieVersion          = "0.8.0-M1"
+val DoobieVersion          = "0.8.0-M3"
 val EnumeratumVersion      = "1.5.13"
 val EnumeratumCirceVersion = "1.5.21"
 val H2Version              = "1.4.199"
-val Http4sVersion          = "0.21.0-M1"
+val Http4sVersion          = "0.21.0-M3"
 val LogbackVersion         = "1.2.3"
 val ScalaCheckVersion      = "1.14.0"
 val ScalaTestVersion       = "3.0.8"
 val FlywayVersion          = "5.2.4"
-val TsecVersion            = "0.1.0"
+val TsecVersion            = "0.2.0-M1"
 val ChimneyVersion         = "0.3.2"
-val OctopusVersion         = "0.3.3"
+val OctopusVersion         = "0.4.0"
 val SeleniumVersion        = "2.53.0"
 
 lazy val rootProject = (project in file("."))
@@ -81,7 +83,6 @@ lazy val persistence = (project in file("persistence"))
       "io.circe"              %% "circe-literal"            % CirceVersion,
       "io.circe"              %% "circe-generic-extras"     % CirceVersion,
       "io.circe"              %% "circe-parser"             % CirceVersion,
-      "io.circe"              %% "circe-java8"              % CirceVersion,
     ),
   )
 
@@ -120,7 +121,6 @@ lazy val backend = (project in file("backend"))
       "io.circe"              %% "circe-literal"            % CirceVersion,
       "io.circe"              %% "circe-generic-extras"     % CirceVersion,
       "io.circe"              %% "circe-parser"             % CirceVersion,
-      "io.circe"              %% "circe-java8"              % CirceVersion,
       "io.circe"              %% "circe-config"             % CirceConfigVersion,
       // Database access
       "org.tpolecat"          %% "doobie-core"              % DoobieVersion,
@@ -143,8 +143,6 @@ lazy val backend = (project in file("backend"))
       "ch.qos.logback"        %  "logback-classic"          % LogbackVersion,
       // Automatic DTO mapping
       "io.scalaland"          %% "chimney"                  % ChimneyVersion,
-      // Validations
-      "com.github.krzemin"    %% "octopus"                  % OctopusVersion,
       // Test deps
       "org.scalacheck"        %% "scalacheck"               % ScalaCheckVersion % Test,
       "org.scalatest"         %% "scalatest"                % ScalaTestVersion  % Test,
@@ -170,9 +168,7 @@ lazy val backend = (project in file("backend"))
       "-unchecked",                        // Enable additional warnings where generated code depends on assumptions.
       "-Xcheckinit",                       // Wrap field accessors to throw an exception on uninitialized access.
       //  "-Xfatal-warnings",                  // Fail the compilation if there are any warnings.
-      "-Xfuture",                          // Turn on future language features.
       "-Xlint:adapted-args",               // Warn if an argument list is modified to match the receiver.
-      "-Xlint:by-name-right-associative",  // By-name parameter of right associative operator.
       "-Xlint:constant",                   // Evaluation of a constant arithmetic expression results in an error.
       "-Xlint:delayedinit-select",         // Selecting member of DelayedInit.
       "-Xlint:doc-detached",               // A Scaladoc comment appears to be detached from its element.
@@ -187,15 +183,8 @@ lazy val backend = (project in file("backend"))
       "-Xlint:private-shadow",             // A private field (or class parameter) shadows a superclass field.
       "-Xlint:stars-align",                // Pattern sequence wildcard must align with sequence component.
       "-Xlint:type-parameter-shadow",      // A local type parameter shadows a type already in scope.
-      "-Xlint:unsound-match",              // Pattern match may not be typesafe.
-      "-Yno-adapted-args",                 // Do not adapt an argument list (either by inserting () or creating a tuple) to match the receiver.
-      "-Ypartial-unification",             // Enable partial unification in type constructor inference
       "-Ywarn-dead-code",                  // Warn when dead code is identified.
       "-Ywarn-extra-implicit",             // Warn when more than one implicit parameter section is defined.
-      "-Ywarn-inaccessible",               // Warn about inaccessible types in method signatures.
-      "-Ywarn-infer-any",                  // Warn when a type argument is inferred to be `Any`.
-      "-Ywarn-nullary-unit",               // Warn when nullary methods return Unit.
-      "-Ywarn-nullary-override",           // Warn when non-nullary `def f()' overrides nullary `def f'.
       "-Ywarn-numeric-widen",              // Warn when numerics are widened.
       "-Ywarn-unused:implicits",           // Warn if an implicit parameter is unused.
       "-Ywarn-unused:imports",             // Warn if an import selector is not referenced.

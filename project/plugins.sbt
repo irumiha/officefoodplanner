@@ -1,5 +1,5 @@
 // Makes our code tidy
-addSbtPlugin("com.geirsson" % "sbt-scalafmt" % "1.5.1")
+addSbtPlugin("org.scalameta" % "sbt-scalafmt" % "2.0.2")
 
 // Revolver allows us to use re-start and work a lot faster!
 addSbtPlugin("io.spray" % "sbt-revolver" % "0.9.1")
@@ -8,14 +8,12 @@ addSbtPlugin("io.spray" % "sbt-revolver" % "0.9.1")
 addSbtPlugin("com.eed3si9n" % "sbt-buildinfo" % "0.9.0")
 
 // Native Packager allows us to create standalone jar
-addSbtPlugin("com.typesafe.sbt" % "sbt-native-packager" % "1.3.17")
+addSbtPlugin("com.typesafe.sbt" % "sbt-native-packager" % "1.3.25")
 
 // Database migrations
 addSbtPlugin("io.github.davidmweber" % "flyway-sbt" % "5.2.0")
 
-addSbtPlugin("com.timushev.sbt" % "sbt-updates" % "0.4.0")
-
-addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
+addSbtPlugin("com.timushev.sbt" % "sbt-updates" % "0.4.2")
 
 resolvers += "Flyway".at("https://davidmweber.github.io/flyway-sbt.repo")
 
