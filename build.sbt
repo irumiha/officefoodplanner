@@ -7,7 +7,7 @@ lazy val updateNpm  = taskKey[Unit]("Update npm")
 lazy val npmTask    = inputKey[Unit]("Run npm with arguments")
 lazy val distApp    = taskKey[Unit]("Build final app package")
 
-ThisBuild / turbo := true
+// ThisBuild / turbo := true
 
 def haltOnCmdResultError(result: Int) {
   if (result != 0) {
