@@ -18,8 +18,6 @@ import org.http4s.circe._
 import org.http4s.dsl.Http4sDsl
 import org.http4s.server.AuthMiddleware
 
-import scala.language.higherKinds
-
 class UserEndpoints[F[_]: Effect, D[_], H](
     userService: UserService[F, D, H],
     authMiddleware: Authenticate[F, D, H]
@@ -35,12 +33,12 @@ class UserEndpoints[F[_]: Effect, D[_], H](
       case req @ POST -> Root                         => signup(req)
     }
 
-  val onAuthFailure: AuthedService[String, F] = Kleisli(req => OptionT.liftF(Forbidden(req.authInfo)))
+  val onAuthFailure: AuthedRoutes[String, F] = Kleisli(req => OptionT.liftF(Forbidden(req.authInfo)))
   val authM: AuthMiddleware[F, User] =
     AuthMiddleware(authMiddleware.authUser, onAuthFailure)
 
   def authEndpoints: HttpRoutes[F] =
-    authM(AuthedService[User, F] {
+    authM(AuthedRoutes.of[User, F] {
       case       GET    -> Root :? PageSizeQ(ps) :? OffsetQ(o) as _            => list(ps, o)
       case       GET    -> Root / username                     as _            => searchByUsername(username)
       case req @ PUT    -> Root / name                         as _            => update(req, name)

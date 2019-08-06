@@ -1,6 +1,7 @@
 package com.officefoodplanner.infrastructure.endpoint
 
-import cats.data.{Kleisli, NonEmptyList}
+import cats.data.NonEmptyList
+import cats.effect.Blocker.liftExecutionContext
 import cats.effect._
 import cats.implicits._
 import org.http4s.CacheDirective._
@@ -9,10 +10,8 @@ import org.http4s.dsl.Http4sDsl
 import org.http4s.headers.`Cache-Control`
 import org.http4s.server.HttpMiddleware
 import org.http4s.server.middleware._
-import cats.effect.Blocker.liftExecutionContext
 
 import scala.concurrent.ExecutionContext
-import scala.language.higherKinds
 
 class StaticEndpoints[F[_]: Effect: ContextShift, D[_], H](
   blockingIoEc: ExecutionContext

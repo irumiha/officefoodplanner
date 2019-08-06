@@ -5,10 +5,8 @@ import java.util.UUID
 
 import cats._
 import cats.data._
-import cats.implicits._
-import cats.effect.Timer
 import com.officefoodplanner.config.ApplicationConfig
-import com.officefoodplanner.domain.auth.model.User
+import com.officefoodplanner.domain.auth.model.{Session, User}
 import com.officefoodplanner.domain.auth.repository.{SessionRepository, UserRepository}
 import com.officefoodplanner.infrastructure.service.TransactingService
 import tsec.common.{VerificationStatus, Verified}
@@ -39,17 +37,17 @@ abstract class AuthenticationService[F[_]: Monad, D[_]: Monad, H] extends Transa
         UserAuthenticationFailedError(login.username)
       )
 
-    def checkUserPassword(login: command.LoginRequest, user: User) =
+    def checkUserPassword(login: command.LoginRequest, user: User): EitherT[D, UserAuthenticationFailedError, VerificationStatus] =
       EitherT.liftF[D, UserAuthenticationFailedError, VerificationStatus](
         cryptService.checkpw(login.password, PasswordHash[H](user.passwordHash)))
 
-    def loggedInUser(user: User) =
+    def loggedInUser(user: User): EitherT[D, UserAuthenticationFailedError, User] =
       EitherT.rightT[D, UserAuthenticationFailedError](user)
 
-    def failedLoginForUsername(login: command.LoginRequest) =
+    def failedLoginForUsername(login: command.LoginRequest): EitherT[D, UserAuthenticationFailedError, User] =
       EitherT.leftT[D, User](UserAuthenticationFailedError(login.username))
 
-    def createSession(user: User) =
+    def createSession(user: User): EitherT[D, UserAuthenticationFailedError, Session] =
       EitherT.liftF[D, UserAuthenticationFailedError, model.Session](
         sessionRepository.create(
           model.Session(
