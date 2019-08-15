@@ -7,19 +7,19 @@ import com.officefoodplanner.domain.auth.model.Group
 import com.officefoodplanner.domain.auth.repository.GroupRepository
 
 class GroupInMemoryRepository[F[_] : Applicative] extends GroupRepository[F] {
+  private val dao: InMemoryDao.Aux[F, Group, UUID] =
+    InMemoryDao[F, Group](InMemoryDao.derive[F, Group, UUID].apply(_.id))
+  
+  def create(user: Group): F[Group] = dao.create(user)
 
-  private val repo = new InMemoryRepository[F, Group, UUID]
+  def update(user: Group): F[Int] = dao.update(user)
 
-  def create(user: Group): F[Group] = repo.create(user)
+  def get(userId: UUID): F[Option[Group]] = dao.get(userId)
 
-  def update(user: Group): F[Int] = repo.update(user)
-
-  def get(userId: UUID): F[Option[Group]] = repo.get(userId)
-
-  def list: F[List[Group]] = repo.listAll
+  def list: F[List[Group]] = dao.listAll
 
   def findByGroupName(groupName: String): F[Option[Group]] =
-    Applicative[F].map(repo.listAll)(_.find(_.name == groupName))
+    Applicative[F].map(dao.listAll)(_.find(_.name == groupName))
 }
 
 

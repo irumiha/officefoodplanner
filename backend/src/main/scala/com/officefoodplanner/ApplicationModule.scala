@@ -10,7 +10,6 @@ import com.officefoodplanner.infrastructure.service.authentication.DoobieAuthent
 import com.officefoodplanner.infrastructure.service.user.DoobieUserService
 import doobie.ConnectionIO
 import org.http4s.{HttpRoutes, Request, Response}
-import tsec.passwordhashers.PasswordHasher
 import tsec.passwordhashers.jca.BCrypt
 
 import scala.concurrent.ExecutionContext
@@ -20,10 +19,10 @@ class ApplicationModule[F[_] : ContextShift : ConcurrentEffect : Timer](
   xa: doobie.Transactor[F],
   blockingIoEc: ExecutionContext
 ) {
-  val cryptService: PasswordHasher[ConnectionIO, BCrypt] =  BCrypt.syncPasswordHasher[ConnectionIO]
-  val userRepo: UserTableRepository =  new UserTableRepository()
+  private val cryptService =  BCrypt.syncPasswordHasher[ConnectionIO]
+  private val userRepo = UserTableRepository
   val userService: DoobieUserService[F, BCrypt] =  new DoobieUserService[F, BCrypt](userRepo, cryptService, config, xa)
-  val sessionRepo: SessionTableRepository =  new SessionTableRepository
+  private val sessionRepo = SessionTableRepository
   val authService: DoobieAuthenticationService[F, BCrypt] =  new DoobieAuthenticationService[F, BCrypt](
     config,
     sessionRepo,

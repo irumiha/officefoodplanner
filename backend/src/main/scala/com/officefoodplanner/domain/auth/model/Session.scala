@@ -3,8 +3,6 @@ package com.officefoodplanner.domain.auth.model
 import java.time.Instant
 import java.util.UUID
 
-import com.officefoodplanner.infrastructure.repository.KeyEntity
-
 case class Session(
   id: UUID = UUID.randomUUID(),
   userID: UUID,
@@ -12,7 +10,3 @@ case class Session(
   expiresOn: Instant,
   updatedOn: Instant
 )
-
-object Session {
-  implicit val keyed: KeyEntity[Session, UUID] = u => u.id
-}

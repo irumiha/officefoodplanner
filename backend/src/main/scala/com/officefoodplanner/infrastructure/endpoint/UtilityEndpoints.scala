@@ -7,8 +7,6 @@ import org.http4s._
 import org.http4s.circe._
 import org.http4s.dsl.Http4sDsl
 
-import scala.language.higherKinds
-
 class UtilityEndpoints[F[_]: Effect, D[_], H] extends Http4sDsl[F] {
 
   case class ClassPathList(cp: List[String])

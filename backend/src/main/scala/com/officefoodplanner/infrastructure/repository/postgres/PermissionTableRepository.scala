@@ -6,39 +6,24 @@ import com.officefoodplanner.domain.auth.model.Permission
 import com.officefoodplanner.domain.auth.repository.PermissionRepository
 import com.officefoodplanner.infrastructure.repository._
 import doobie._
-import doobie.implicits._
 import doobie.postgres.implicits._
 
-class PermissionTableRepository extends PermissionRepository[ConnectionIO] {
+object PermissionTableRepository extends PermissionRepository[ConnectionIO] {
+  private val table = Table(SchemaName("auth"), TableName("permissions"))
+  private val dao: TableDao.Aux[Permission, UUID] =
+    TableDao[Permission](TableDao.derive[Permission, UUID](_.id, "id", table))
 
-  import PermissionTableRepository.doobieSupport
+  override def create(permission: Permission): ConnectionIO[Permission] = dao.create(permission)
 
-  private val repo: TableRepository[Permission, UUID] = new TableRepository[Permission, UUID] {
-    override val table = Table(SchemaName("auth"), TableName("permissions"))
-  }
-
-  private def byCode(code: String) = fr"code = $code"
-
-  override def create(permission: Permission): ConnectionIO[Permission] = repo.create(permission)
-
-  override def update(permission: Permission): ConnectionIO[Int] = repo.update(permission)
+  override def update(permission: Permission): ConnectionIO[Int] = dao.update(permission)
 
   override def findByPermissionCode(permissionCode: String): ConnectionIO[Option[Permission]] =
-    repo.find(byCode(permissionCode), None, None, None).map(_.headOption)
+    Query[String, Permission](
+      s"select ${dao.columnsQuoted} from $table where group_id = ?"
+    ).option(permissionCode)
 
-  def get(permissionId: UUID): ConnectionIO[Option[Permission]] = repo.get(permissionId)
+  override def get(permissionId: UUID): ConnectionIO[Option[Permission]] = dao.get(permissionId)
 
-  def list: ConnectionIO[List[Permission]] = repo.listAll
+  override def list: ConnectionIO[List[Permission]] = dao.listAll
 
-}
-
-object PermissionTableRepository {
-  implicit val doobieSupport: DoobieSupport[Permission] = new DoobieSupport[Permission] {
-    override val id: DoobieColumn[Permission] = DoobieColumn[Permission]("id", p => fr0"${p.id}")
-    override val columns: List[DoobieColumn[Permission]] = List(
-      id,
-      DoobieColumn[Permission]("code",        p => fr0"${p.code}"),
-      DoobieColumn[Permission]("description", p => fr0"${p.description}"),
-    )
-  }
 }

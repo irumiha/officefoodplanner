@@ -7,18 +7,18 @@ import com.officefoodplanner.domain.auth.model.{Group, GroupPermission, Permissi
 import com.officefoodplanner.domain.auth.repository.GroupPermissionRepository
 
 class GroupPermissionInMemoryRepository[F[_] : Applicative] extends GroupPermissionRepository[F] {
+  private val dao: InMemoryDao.Aux[F, GroupPermission, UUID] =
+    InMemoryDao[F, GroupPermission](InMemoryDao.derive[F, GroupPermission, UUID].apply(_.id))
 
-  private val repo = new InMemoryRepository[F, GroupPermission, UUID]
-
-  override def get(permissionId: UUID): F[Option[GroupPermission]] = repo.get(permissionId)
+  override def get(permissionId: UUID): F[Option[GroupPermission]] = dao.get(permissionId)
 
   override def create(permission: Permission, group: Group): F[GroupPermission] =
-    repo.create(GroupPermission(groupId = group.id, permissionId = permission.id))
+    dao.create(GroupPermission(groupId = group.id, permissionId = permission.id))
 
-  override def delete(userPermissionId: UUID): F[Int] = repo.deleteById(userPermissionId)
+  override def delete(userPermissionId: UUID): F[Int] = dao.deleteById(userPermissionId)
 
   override def listForGroup(groupId: UUID): F[List[GroupPermission]] =
-    Applicative[F].map(repo.listAll)(_.filter(_.groupId == groupId))
+    Applicative[F].map(dao.listAll)(_.filter(_.groupId == groupId))
 
 }
 

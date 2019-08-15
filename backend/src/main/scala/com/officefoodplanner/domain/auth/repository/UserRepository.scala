@@ -15,7 +15,5 @@ trait UserRepository[F[_]] {
 
   def findByUsername(userName: String): F[Option[User]]
 
-  def deleteByUserName(userName: String): F[Int]
-
   def list: F[List[User]]
 }

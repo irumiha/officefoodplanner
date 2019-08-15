@@ -8,21 +8,19 @@ import com.officefoodplanner.domain.auth.model.User
 import com.officefoodplanner.domain.auth.repository.UserRepository
 
 class UserInMemoryRepository[F[_]: Applicative] extends UserRepository[F] {
-  private val repo: InMemoryRepository[F, User, UUID]  = new InMemoryRepository[F, User, UUID]
+  private val dao: InMemoryDao.Aux[F, User, UUID] =
+    InMemoryDao[F, User](InMemoryDao.derive[F, User, UUID].apply(_.id))
 
-  override def create(user: User): F[User] = repo.create(user)
+  override def create(user: User): F[User] = dao.create(user)
 
-  override def update(user: User): F[Int] = repo.update(user)
+  override def update(user: User): F[Int] = dao.update(user)
 
-  override def get(userId: UUID): F[Option[User]] = repo.get(userId)
+  override def get(userId: UUID): F[Option[User]] = dao.get(userId)
 
-  override def deleteById(userId: UUID): F[Int] = repo.deleteById(userId)
+  override def deleteById(userId: UUID): F[Int] = dao.deleteById(userId)
 
   override def findByUsername(userName: String): F[Option[User]] =
-    repo.listAll.map { l => l.find(_.username == userName)}
+    dao.listAll.map { l => l.find(_.username == userName)}
 
-  override def deleteByUserName(userName: String): F[Int] =
-    repo.delete( _.username == userName).map(_.length)
-
-  override def list: F[List[User]] = repo.listAll
+  override def list: F[List[User]] = dao.listAll
 }

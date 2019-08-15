@@ -2,42 +2,29 @@ package com.officefoodplanner.infrastructure.repository.postgres
 
 import java.util.UUID
 
+import com.officefoodplanner.infrastructure.repository.postgres.TableDao
+import com.officefoodplanner.infrastructure.repository.{SchemaName, Table, TableName}
 import com.officefoodplanner.domain.auth.model.{Group, GroupPermission, Permission}
 import com.officefoodplanner.domain.auth.repository.GroupPermissionRepository
-import com.officefoodplanner.infrastructure.repository._
 import doobie._
 import doobie.implicits._
 import doobie.postgres.implicits._
 
-class GroupPermissionTableRepository extends GroupPermissionRepository[ConnectionIO] {
+object GroupPermissionTableRepository extends GroupPermissionRepository[ConnectionIO] {
+  private val table = Table(SchemaName("auth"), TableName("group_permissions"))
+  private val dao: TableDao.Aux[GroupPermission, UUID] =
+    TableDao[GroupPermission](TableDao.derive[GroupPermission, UUID](_.id, "id", table))
 
-  import GroupPermissionTableRepository.doobieSupport
-
-  private val repo: TableRepository[GroupPermission, UUID] = new TableRepository[GroupPermission, UUID] {
-    override val table = Table(SchemaName("auth"), TableName("group_permissions"))
-  }
-
-  override def get(permissionId: UUID): ConnectionIO[Option[GroupPermission]] = repo.get(permissionId)
+  override def get(permissionId: UUID): ConnectionIO[Option[GroupPermission]] = dao.get(permissionId)
 
   override def create(permission: Permission, group: Group): ConnectionIO[GroupPermission] =
-    repo.create(GroupPermission(groupId = group.id, permissionId = permission.id))
+    dao.create(GroupPermission(groupId = group.id, permissionId = permission.id))
 
-  override def delete(userPermissionId: UUID): ConnectionIO[Int] = repo.deleteById(userPermissionId)
+  override def delete(userPermissionId: UUID): ConnectionIO[Int] = dao.deleteById(userPermissionId)
 
   override def listForGroup(groupId: UUID): ConnectionIO[List[GroupPermission]] =
-    repo.find(fr"group_id = $groupId", None, None, None)
+    Query[UUID, GroupPermission](
+      s"select ${dao.columnsQuoted} from $table where group_id = ?"
+    ).stream(groupId).compile.toList
 
 }
-
-object GroupPermissionTableRepository {
-  implicit val doobieSupport: DoobieSupport[GroupPermission] = new DoobieSupport[GroupPermission] {
-    override val id: DoobieColumn[GroupPermission] = DoobieColumn[GroupPermission]("id", c => fr0"${c.id}")
-    override val columns: List[DoobieColumn[GroupPermission]] = List(
-      id,
-      DoobieColumn[GroupPermission]("group_id", c => fr0"${c.groupId}"),
-      DoobieColumn[GroupPermission]("permission_id", c => fr0"${c.permissionId}")
-    )
-  }
-}
-
-

@@ -59,9 +59,6 @@ abstract class UserService[F[_]: Monad, D[_]: Async, H] extends TransactingServi
   def deleteUser(userId: UUID): F[Unit] =
     transact(userRepo.deleteById(userId).as(()))
 
-  def deleteByUsername(username: String): F[Unit] =
-    transact(userRepo.deleteByUserName(username).as(()))
-
   def update(user: UpdateUser): EitherT[F, UserValidationError, User] =
     (for {
       maybeUser <- EitherT.right(userRepo.findByUsername(user.username))

@@ -5,8 +5,6 @@ import java.util.UUID
 
 import cats._
 import cats.data._
-import cats.implicits._
-import cats.effect.Timer
 import com.officefoodplanner.config.ApplicationConfig
 import com.officefoodplanner.domain.auth.model.User
 import com.officefoodplanner.domain.auth.repository.{SessionRepository, UserRepository}
