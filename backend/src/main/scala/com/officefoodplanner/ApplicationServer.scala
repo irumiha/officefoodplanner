@@ -1,7 +1,5 @@
 package com.officefoodplanner
 
-import java.util.UUID
-
 import cats.effect._
 import Blocker.liftExecutionContext
 import cats.implicits._
