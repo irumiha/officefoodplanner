@@ -26,7 +26,7 @@ trait OfficeFoodPlannerArbitraries {
       password <- randomStringGen
       id <- Gen.uuid
       now <- instant.arbitrary
-    } yield User(id, userName, firstName, lastName, email, password, initialized = false, active=true, now, now)
+    } yield User(id, userName, firstName, lastName, email, password, initialized = false, now, now, active=true)
   }
 
   implicit val userSignup: Arbitrary[CreateUser] = Arbitrary[CreateUser] {

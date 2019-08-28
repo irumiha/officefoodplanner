@@ -18,7 +18,7 @@ import org.http4s.{EntityDecoder, EntityEncoder, Request, Response}
 import tsec.passwordhashers.PasswordHasher
 import tsec.passwordhashers.jca.BCrypt
 
-object ApplicationSetup {
+object InMemoryApplicationSetup {
   implicit val userEnc: EntityEncoder[IO, User] = jsonEncoderOf
   implicit val userDec: EntityDecoder[IO, User] = jsonOf
   implicit val signupRequestEnc: EntityEncoder[IO, CreateUser] = jsonEncoderOf

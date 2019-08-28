@@ -20,7 +20,7 @@ class UserEndpointsSpec
     with Http4sDsl[IO]
     with Http4sClientDsl[IO] {
 
-  import ApplicationSetup._
+  import PgApplicationSetup._
 
 
   test("create user") {
