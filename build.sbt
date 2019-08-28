@@ -40,8 +40,8 @@ lazy val commonSettings = Seq(
 resolvers += Resolver.sonatypeRepo("snapshots")
 
 val ScalaVersion           = "2.13.0"
-val CatsVersion            = "2.0.0-RC1"
-val CirceVersion           = "0.12.0-RC3"
+val CatsVersion            = "2.0.0-RC2"
+val CirceVersion           = "0.12.0-RC4"
 val CirceConfigVersion     = "0.7.0-M1"
 val DoobieVersion          = "0.8.0-RC1"
 val EnumeratumVersion      = "1.5.13"
