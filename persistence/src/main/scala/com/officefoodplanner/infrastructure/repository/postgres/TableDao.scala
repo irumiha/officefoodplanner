@@ -83,15 +83,18 @@ object TableDao {
             .compile
             .toList
 
-        override def update(entity: E): ConnectionIO[Int] = {
+        override def update(entity: E): ConnectionIO[Int] = update(List(entity))
+
+        override def update(entities: List[E]): ConnectionIO[Int] = {
           Update[E](
             s"""UPDATE $table
                 SET ${columnsWithoutId.map(c => columnName(c) + " = __tmp_data."+columnName(c)).mkString(", ")}
                 FROM (
-                  SELECT (t::$table).* from (select ${columns.as("?").mkString(",")}) as t
+                  SELECT (___inner::$table).* from (select ${columns.as("?").mkString(",")}) as ___inner
                 ) as __tmp_data
                 WHERE $table.${columnName(idName)} = __tmp_data.${columnName(idName)}
-              """).run(entity)
+              """)
+          .updateMany(entities)
         }
 
         override def deleteById(entityId: Key): ConnectionIO[Int] = {

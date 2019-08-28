@@ -72,6 +72,10 @@ object InMemoryDao {
           }
         }
 
+        override def update(entities: List[E]): F[Int] = {
+          entities.map(update).sequence.map(_.sum)
+        }
+
         override def deleteById(entityId: Key): F[Int] =
           cache.remove(entityId).toList.length.pure[F]
 

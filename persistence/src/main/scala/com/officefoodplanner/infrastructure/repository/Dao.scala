@@ -11,6 +11,8 @@ trait WriteDao[F[_], E] {
 
   def update(entity: E): F[Int]
 
+  def update(entities: List[E]): F[Int]
+
   def deleteById(entityId: Key): F[Int]
 
   def deleteByIds(entityIds: List[Key]): F[Int]
