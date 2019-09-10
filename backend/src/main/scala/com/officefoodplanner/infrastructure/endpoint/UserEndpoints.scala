@@ -33,10 +33,6 @@ class UserEndpoints[F[_]: Effect, D[_], H](
       case req @ POST -> Root                         => signup(req)
     }
 
-  val onAuthFailure: AuthedRoutes[String, F] = Kleisli(req => OptionT.liftF(Forbidden(req.authInfo)))
-  val authM: AuthMiddleware[F, User] =
-    AuthMiddleware(authMiddleware.authUser, onAuthFailure)
-
   def authEndpoints: HttpRoutes[F] =
     authM(AuthedRoutes.of[User, F] {
       case       GET    -> Root :? PageSizeQ(ps) :? OffsetQ(o) as _            => list(ps, o)
@@ -45,6 +41,10 @@ class UserEndpoints[F[_]: Effect, D[_], H](
       case req @ PUT    -> Root / "change-password" / name     as _            => updatePassword(req, name)
       case       GET    -> Root / "loggedin"                   as loggedInUser => showLoggedInUser(loggedInUser)
     })
+
+  val onAuthFailure: AuthedRoutes[String, F] = Kleisli(req => OptionT.liftF(Forbidden(req.authInfo)))
+  val authM: AuthMiddleware[F, User] =
+    AuthMiddleware(authMiddleware.authUser, onAuthFailure)
 
   private def signup(req: Request[F]): F[Response[F]] = {
     val action = for {

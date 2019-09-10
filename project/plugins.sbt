@@ -17,4 +17,4 @@ addSbtPlugin("com.timushev.sbt" % "sbt-updates" % "0.4.2")
 
 addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
 
-resolvers += "jgit-repo" at "http://download.eclipse.org/jgit/maven"
+resolvers += "jgit-repo" at "https://download.eclipse.org/jgit/maven"
