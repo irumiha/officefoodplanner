@@ -8,28 +8,61 @@ import cats.arrow.FunctionK
 import cats.data.EitherT
 import cats.effect.Async
 import cats.implicits._
+
+import io.scalaland.chimney.dsl._
+import tsec.common.Verified
+import tsec.passwordhashers.{PasswordHash, PasswordHasher}
 import com.officefoodplanner.config.ApplicationConfig
+import com.officefoodplanner.domain.DomainError
 import com.officefoodplanner.domain.auth.command.{CreateUser, UpdateUser, UpdateUserPassword}
 import com.officefoodplanner.domain.auth.model.User
 import com.officefoodplanner.domain.auth.repository.UserRepository
 import com.officefoodplanner.domain.auth.view.UserSimpleView
 import com.officefoodplanner.infrastructure.service.TransactingService
-import io.scalaland.chimney.dsl._
-import tsec.common.Verified
-import tsec.passwordhashers.{PasswordHash, PasswordHasher}
 
-abstract class UserService[F[_]: Monad, D[_]: Async, H] extends TransactingService[F, D] with UserValidation[D] {
+trait ErrorT[E <: DomainError] {
+
+  implicit class feitherToEitherT[F[_], A](r: F[Either[E,A]]) {
+    def wrapT: EitherT[F, E, A] = EitherT(r)
+  }
+  implicit class foptionToEitherT[F[_]: Functor, A](o: F[Option[A]]) {
+    // Make a LeftF containing the error E if the option is empty
+    def orError(e: E): EitherT[F, E, A] = EitherT.fromOptionF(o, e)
+
+    // If the option is NOT empty make a LeftF with the contents of the option
+    def liftError: EitherT[F, A, Unit] = EitherT(Functor[F].map(o)(_.fold[Either[A, Unit]](Right(()))(Left(_))))
+
+    // Make a LeftF containing the error E if the option is FULL (inverse of orError)
+    def errorIfFull(e: E): EitherT[F, E, Unit] = EitherT(
+      Functor[F].map(o) {
+        case None => Right(())
+        case Some(_) => Left(e)
+      }
+    )
+    def errorIfFound(e: E): EitherT[F, E, Unit] = errorIfFull(e)
+  }
+
+  implicit class fanyToRightT[F[_]: Applicative, A](a: F[A]) {
+    def rightF: EitherT[F, E, A] = EitherT.right(a)
+  }
+
+}
+
+abstract class UserService[F[_]: Monad, D[_]: Async, H]
+  extends TransactingService[F, D]
+    with UserValidation[D]
+    with ErrorT[UserValidationError]
+{
   val userRepo: UserRepository[D]
   val cryptService: PasswordHasher[D, H]
   val applicationConfig: ApplicationConfig
 
   def createUser(user: CreateUser): EitherT[F, UserValidationError, User] = {
     val savedAction  = for {
-      maybeUser <- getUser(user)
-      _         <- userMustNotExist(maybeUser)
-      hashedPw  <- EitherT.right(cryptService.hashpw(user.password))
-      userToCreate = prepareUserFromCommand(user, hashedPw.toString)
-      saved     <- createUser(userToCreate)
+      _            <- userRepo.findByUsername(user.username).errorIfFound(UserAlreadyExistsError(user.username))
+      hashedPw     <- cryptService.hashpw(user.password).rightF
+      userToCreate  = prepareUserFromCommand(user, hashedPw.toString)
+      saved        <- userRepo.create(userToCreate).rightF
     } yield saved
 
     savedAction.mapK(FunctionK.lift(transact))
@@ -44,43 +77,32 @@ abstract class UserService[F[_]: Monad, D[_]: Async, H] extends TransactingServi
       .transform
   }
 
-  private def createUser(userToCreate: User) =
-    EitherT.liftF[D, UserValidationError, User](userRepo.create(userToCreate))
-
-  private def getUser(user: CreateUser): EitherT[D, UserValidationError, Option[User]] =
-    EitherT.right(userRepo.findByUsername(user.username))
-
   def getUser(userId: UUID): EitherT[F, UserValidationError, User] =
-    EitherT.fromOptionF(transact(userRepo.get(userId)), UserNotFoundError)
+    transact(userRepo.get(userId)).orError(UserNotFoundError)
 
   def getUserByUsername(username: String): EitherT[F, UserValidationError, User] =
-    EitherT.fromOptionF(transact(userRepo.findByUsername(username)), UserNotFoundError)
+    transact(userRepo.findByUsername(username)).orError(UserNotFoundError)
 
   def deleteUser(userId: UUID): F[Unit] =
     transact(userRepo.deleteById(userId).as(()))
 
   def update(user: UpdateUser): EitherT[F, UserValidationError, User] =
     (for {
-      maybeUser <- EitherT.right(userRepo.findByUsername(user.username))
-      storedUser <- userMustExist(maybeUser)
+      storedUser   <- userRepo.findByUsername(user.username).orError(UserNotFoundError)
       userToUpdate <- validChanges(storedUser, user)
-      _ <- EitherT.liftF[D, UserValidationError, Int](userRepo.update(userToUpdate))
+      _            <- userRepo.update(userToUpdate).rightF
     } yield userToUpdate).mapK(FunctionK.lift(transact))
 
   def updatePassword(username: String, updatePw: UpdateUserPassword): EitherT[F, UserValidationError, User] =
     (for {
-      maybeUser    <- EitherT.right(userRepo.findByUsername(username))
-      storedUser   <- userMustExist(maybeUser)
-      oldPasswordCheck <- EitherT.liftF(
-        cryptService.checkpw(updatePw.oldPassword, PasswordHash[H](storedUser.passwordHash))
-      )
-      newHash      <- EitherT.right(cryptService.hashpw(updatePw.newPassword))
-      userToUpdate <-
-        if (oldPasswordCheck == Verified)
-          checkNewPassword(applicationConfig, storedUser, updatePw.newPassword, newHash.toString)
-        else
-          EitherT.leftT[D, User](OldPasswordMismatch)
-      _ <- EitherT.liftF[D, UserValidationError, Int](userRepo.update(userToUpdate))
+      storedUser       <- userRepo.findByUsername(username).orError(UserNotFoundError)
+      oldPasswordCheck <- cryptService.checkpw(updatePw.oldPassword, PasswordHash[H](storedUser.passwordHash)).rightF
+      newHash          <- cryptService.hashpw(updatePw.newPassword).rightF
+      _                <- validateNewPassword(applicationConfig, updatePw.newPassword).liftError
+      userToUpdate     =  storedUser.copy(passwordHash = newHash, updatedOn = Instant.now())
+      _                <- Option.when(oldPasswordCheck != Verified)(OldPasswordMismatch).pure[D].liftError
+      _                <- userRepo.update(userToUpdate).rightF
+
     } yield userToUpdate).mapK(FunctionK.lift(transact))
 
   def list(pageSize: Int, offset: Int): F[List[UserSimpleView]] =

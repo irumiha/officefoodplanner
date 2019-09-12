@@ -43,20 +43,7 @@ trait UserValidation[F[_]] {
     EitherT.fromEither[F](validation)
   }
 
-  def checkNewPassword(
-      appConfig: ApplicationConfig,
-      storedUser: User,
-      newPassword: String,
-      newHash: String
-  )(implicit AP: Applicative[F]): EitherT[F, UserValidationError, User] = {
-
-    val validation =
-      if (newPassword.length < appConfig.auth.minimumPasswordLength)
-        Left[UserValidationError, User](NewPasswordError("Too short!"))
-      else
-        Right[UserValidationError, User](storedUser.copy(passwordHash = newHash, updatedOn = Instant.now())) // TODO take time from environment
-
-    EitherT.fromEither[F](validation)
-  }
+  def validateNewPassword(appConfig: ApplicationConfig, newPassword: String)(implicit AP: Applicative[F]): F[Option[UserValidationError]] =
+    AP.pure(Option.when(newPassword.length < appConfig.auth.minimumPasswordLength)(NewPasswordError("Too short!")))
 
 }
