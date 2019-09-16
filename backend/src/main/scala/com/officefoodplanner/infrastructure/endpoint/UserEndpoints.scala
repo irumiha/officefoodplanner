@@ -30,7 +30,7 @@ class UserEndpoints[F[_]: Effect, D[_], H](
 
   def nonAuthEndpoints: HttpRoutes[F] =
     HttpRoutes.of[F] {
-      case req @ POST -> Root                         => signup(req)
+      case req @ POST -> Root => signup(req)
     }
 
   def authEndpoints: HttpRoutes[F] =
@@ -53,9 +53,9 @@ class UserEndpoints[F[_]: Effect, D[_], H](
     } yield result
 
     action.flatMap {
-      case Right(saved) => Ok(saved.asJson)
-      case Left(UserAlreadyExistsError(existing)) =>
-        Conflict(s"The user with user name $existing already exists")
+      case Right(saved)                           => Ok(saved.asJson)
+      case Left(UserAlreadyExistsError(existing)) => Conflict(s"The user with user name $existing already exists")
+      case _                                      => InternalServerError(s"Oooof this error hurts!")
     }
   }
 
@@ -109,6 +109,7 @@ class UserEndpoints[F[_]: Effect, D[_], H](
     userService.getUserByUsername(username).value.flatMap {
       case Right(found)            => Ok(found.asJson)
       case Left(UserNotFoundError) => NotFound("The user was not found")
+      case _                       => InternalServerError(s"Oooof this error hurts even more!")
     }
 
   def showLoggedInUser(loggedInUser: User): F[Response[F]] = {
