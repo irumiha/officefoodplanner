@@ -39,23 +39,24 @@ lazy val commonSettings = Seq(
 
 resolvers += Resolver.sonatypeRepo("snapshots")
 
-val ScalaVersion           = "2.13.0"
-val CatsVersion            = "2.0.0"
-val CirceVersion           = "0.12.1"
-val CirceConfigVersion     = "0.7.0-M1"
-val DoobieVersion          = "0.8.0-RC1"
-val EnumeratumVersion      = "1.5.13"
-val EnumeratumCirceVersion = "1.5.21"
-val H2Version              = "1.4.199"
-val Http4sVersion          = "0.21.0-M4"
-val LogbackVersion         = "1.2.3"
-val ScalaCheckVersion      = "1.14.0"
-val ScalaTestVersion       = "3.0.8"
-val FlywayVersion          = "6.0.2"
-val TsecVersion            = "0.2.0-M1"
-val ChimneyVersion         = "0.3.2"
-val OctopusVersion         = "0.4.0"
-val SeleniumVersion        = "2.53.0"
+val ScalaVersion              = "2.13.0"
+val CatsVersion               = "2.0.0"
+val CirceVersion              = "0.12.1"
+val CirceGenericExtrasVersion = "0.12.2"
+val CirceConfigVersion        = "0.7.0"
+val DoobieVersion             = "0.8.0-RC1"
+val EnumeratumVersion         = "1.5.13"
+val EnumeratumCirceVersion    = "1.5.21"
+val H2Version                 = "1.4.199"
+val Http4sVersion             = "0.21.0-M4"
+val LogbackVersion            = "1.2.3"
+val ScalaCheckVersion         = "1.14.0"
+val ScalaTestVersion          = "3.0.8"
+val FlywayVersion             = "6.0.3"
+val TsecVersion               = "0.2.0-M1"
+val ChimneyVersion            = "0.3.2"
+val OctopusVersion            = "0.4.0"
+val SeleniumVersion           = "2.53.0"
 
 lazy val rootProject = (project in file("."))
   .settings(commonSettings: _*)
@@ -119,7 +120,7 @@ lazy val backend = (project in file("backend"))
       // Json serialization/deserialization
       "io.circe"              %% "circe-generic"            % CirceVersion,
       "io.circe"              %% "circe-literal"            % CirceVersion,
-      "io.circe"              %% "circe-generic-extras"     % CirceVersion,
+      "io.circe"              %% "circe-generic-extras"     % CirceGenericExtrasVersion,
       "io.circe"              %% "circe-parser"             % CirceVersion,
       "io.circe"              %% "circe-config"             % CirceConfigVersion,
       // Database access

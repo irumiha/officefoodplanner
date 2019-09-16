@@ -1,19 +1,19 @@
 package com.officefoodplanner
 
-import cats.data.{Kleisli, OptionT}
 import cats.effect.{ConcurrentEffect, ContextShift, Timer}
+import doobie.ConnectionIO
+import tsec.passwordhashers.jca.BCrypt
+
 import com.officefoodplanner.config.ApplicationConfig
 import com.officefoodplanner.infrastructure.endpoint.{AuthenticationEndpoints, StaticEndpoints, UserEndpoints, UtilityEndpoints}
 import com.officefoodplanner.infrastructure.middleware.Authenticate
 import com.officefoodplanner.infrastructure.repository.postgres.{SessionTableRepository, UserTableRepository}
 import com.officefoodplanner.infrastructure.service.authentication.DoobieAuthenticationService
 import com.officefoodplanner.infrastructure.service.user.DoobieUserService
-import doobie.ConnectionIO
-import org.http4s.{HttpRoutes, Request, Response}
-import tsec.passwordhashers.jca.BCrypt
 
 import scala.concurrent.ExecutionContext
 
+//noinspection TypeAnnotation
 class ApplicationModule[F[_] : ContextShift : ConcurrentEffect : Timer](
   config: ApplicationConfig,
   xa: doobie.Transactor[F],
@@ -32,9 +32,9 @@ class ApplicationModule[F[_] : ContextShift : ConcurrentEffect : Timer](
   )
   val authMiddleware: Authenticate[F, doobie.ConnectionIO, BCrypt] =  new Authenticate(config, authService)
 
-  val userEndpoints: HttpRoutes[F] = UserEndpoints.endpoints(userService, authMiddleware)
-  val authEndpoints: HttpRoutes[F] = AuthenticationEndpoints.endpoints(config, authService)
-  val utilityEndpoints: HttpRoutes[F] = UtilityEndpoints.endpoints()
-  val staticEndpoints: Kleisli[OptionT[F, *], Request[F], Response[F]] = StaticEndpoints.endpoints(blockingIoEc)
+  val userEndpoints    = UserEndpoints.endpoints(userService, authMiddleware)
+  val authEndpoints    = AuthenticationEndpoints.endpoints(config, authService)
+  val utilityEndpoints = UtilityEndpoints.endpoints()
+  val staticEndpoints  = StaticEndpoints.endpoints(blockingIoEc)
 
 }
