@@ -11,7 +11,7 @@ lazy val npmTask    = inputKey[Unit]("Run npm with arguments")
 lazy val distApp    = taskKey[Unit]("Build final app package")
 
 addCompilerPlugin("com.olegpy" %% "better-monadic-for" % "0.3.1")
-addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.10.3")
+addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.11.0" cross CrossVersion.full)
 
 ThisBuild / organization := "com.officefoodplanner"
 ThisBuild / version      := "0.0.1-SNAPSHOT"
