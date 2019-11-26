@@ -61,7 +61,7 @@ lazy val persistence = (project in file("persistence"))
       doobieScalatest,
       doobieHikari,
       catsCore,
-      circeGenerice,
+      circeGeneric,
       virceLiteral,
       circeGenericExtras,
       circeParser,
@@ -83,7 +83,7 @@ lazy val uiTests = (project in file("ui-tests"))
 val badConsoleFlags = Seq("-Xfatal-warnings", "-Ywarn-unused:imports")
 
 lazy val backend = (project in file("backend"))
-  .enablePlugins(ScalafmtPlugin, JavaServerAppPackaging, FlywayPlugin)
+  .enablePlugins(ScalafmtPlugin, JavaServerAppPackaging, SystemdPlugin, FlywayPlugin)
   .settings(
     name := "officefoodplanner-backend"
   )
@@ -97,7 +97,7 @@ lazy val backend = (project in file("backend"))
       doobieScalatest,
       doobieHikari,
       catsCore,
-      circeGenerice,
+      circeGeneric,
       virceLiteral,
       circeGenericExtras,
       circeParser,

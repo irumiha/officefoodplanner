@@ -3,20 +3,20 @@ import sbt._
 object Versions {
   val ScalaVersion              = "2.13.1"
   val CatsVersion               = "2.0.0"
-  val CirceVersion              = "0.12.2"
+  val CirceVersion              = "0.12.3"
   val CirceGenericExtrasVersion = "0.12.2"
   val CirceConfigVersion        = "0.7.0"
-  val DoobieVersion             = "0.8.4"
+  val DoobieVersion             = "0.8.6"
   val EnumeratumVersion         = "1.5.13"
   val EnumeratumCirceVersion    = "1.5.22"
-  val H2Version                 = "1.4.199"
+  val H2Version                 = "1.4.200"
   val Http4sVersion             = "0.21.0-M5"
   val LogbackVersion            = "1.2.3"
   val ScalaCheckVersion         = "1.14.2"
   val ScalaTestVersion          = "3.0.8"
-  val FlywayVersion             = "6.0.6"
-  val TsecVersion               = "0.2.0-M1"
-  val ChimneyVersion            = "0.3.2"
+  val FlywayVersion             = "6.0.8"
+  val TsecVersion               = "0.2.0-M2"
+  val ChimneyVersion            = "0.3.4"
   val OctopusVersion            = "0.4.0"
   val SeleniumVersion           = "2.53.0"
 }
@@ -32,7 +32,7 @@ object Dependencies {
   val doobieScalatest    = "org.tpolecat"             %% "doobie-scalatest"         % DoobieVersion
   val doobieHikari       = "org.tpolecat"             %% "doobie-hikari"            % DoobieVersion
   val catsCore           = "org.typelevel"            %% "cats-core"                % CatsVersion
-  val circeGenerice      = "io.circe"                 %% "circe-generic"            % CirceVersion
+  val circeGeneric       = "io.circe"                 %% "circe-generic"            % CirceVersion
   val virceLiteral       = "io.circe"                 %% "circe-literal"            % CirceVersion
   val circeGenericExtras = "io.circe"                 %% "circe-generic-extras"     % CirceGenericExtrasVersion
   val circeParser        = "io.circe"                 %% "circe-parser"             % CirceVersion
