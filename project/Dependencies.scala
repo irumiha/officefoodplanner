@@ -14,7 +14,8 @@ object Versions {
   val LogbackVersion            = "1.2.3"
   val ScalaCheckVersion         = "1.14.2"
   val ScalaTestVersion          = "3.1.0"
-  val FlywayVersion             = "6.1.0"
+  val STPVersion                = "3.1.0.0-RC2"
+  val FlywayVersion             = "6.1.1"
   val TsecVersion               = "0.2.0-M2"
   val ChimneyVersion            = "0.3.5"
   val OctopusVersion            = "0.4.0"
@@ -49,6 +50,7 @@ object Dependencies {
   val chimney             = "io.scalaland"            %% "chimney"                  % ChimneyVersion
   val scalacheck          = "org.scalacheck"          %% "scalacheck"               % ScalaCheckVersion % Test
   val scalatest           = "org.scalatest"           %% "scalatest"                % ScalaTestVersion  % Test
+  val scalatestPlus       = "org.scalatestplus"       %% "scalatestplus-scalacheck" % STPVersion % Test
   val tsecVersion         = "io.github.jmcardon"      %% "tsec-common"              % TsecVersion
   val tsecPassword        = "io.github.jmcardon"      %% "tsec-password"            % TsecVersion
   val tsecMac             = "io.github.jmcardon"      %% "tsec-mac"                 % TsecVersion

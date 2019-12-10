@@ -114,6 +114,7 @@ lazy val backend = (project in file("backend"))
       chimney,
       scalacheck,
       scalatest,
+      scalatestPlus,
       tsecVersion,
       tsecPassword,
       tsecMac,

@@ -9,8 +9,8 @@ import com.officefoodplanner.domain.auth.{AuthenticationService, UserAuthenticat
 import com.officefoodplanner.domain.auth.command.LoginRequest
 import com.officefoodplanner.domain.auth.model.Session
 import io.circe.generic.auto._
-import org.http4s._
 import org.http4s.circe._
+import org.http4s._
 import org.http4s.dsl.Http4sDsl
 import org.http4s.headers.Location
 
@@ -40,14 +40,13 @@ class AuthenticationEndpoints[F[_], D[_], H](
       nextUri  <- F.pure(Uri.fromString(nextJump)).rethrow
       request  <- req.as[LoginRequest]
       auth     <- authService.authenticate(request)
-    } yield (auth, nextUri)
+      resp     <- TemporaryRedirect(Location(nextUri))
+    } yield resp.addCookie(newSessionCookie(auth))
 
-    loginResult.attempt.flatMap {
-      case Right((session, uri)) =>
-        TemporaryRedirect(Location(uri)).map(_.addCookie(newSessionCookie(session)))
-      case Left(UserAuthenticationFailedError(name)) =>
+    loginResult.handleErrorWith {
+      case UserAuthenticationFailedError(name) =>
         BadRequest(s"Authentication failed for user $name")
-      case Left(ParseFailure(sanitized, details)) =>
+      case ParseFailure(_,_) =>
         BadRequest(s"Invalid next URI")
     }
   }

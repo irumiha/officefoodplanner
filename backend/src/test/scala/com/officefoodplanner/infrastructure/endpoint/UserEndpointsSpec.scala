@@ -1,26 +1,30 @@
 package com.officefoodplanner.infrastructure.endpoint
 
 import cats.effect._
-import com.officefoodplanner.domain.auth.command.{CreateUser, LoginRequest, UpdateUserPassword}
-import com.officefoodplanner.domain.auth.model.User
-import com.officefoodplanner.infrastructure.OfficeFoodPlannerArbitraries
 import org.http4s._
 import org.http4s.client.dsl.Http4sClientDsl
 import org.http4s.dsl._
 import org.http4s.headers.Location
 import org.http4s.implicits._
-import org.scalatest._
+
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.funsuite.AnyFunSuite
+
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 
+import com.officefoodplanner.domain.auth.command.{CreateUser, LoginRequest, UpdateUserPassword}
+import com.officefoodplanner.domain.auth.model.User
+import com.officefoodplanner.infrastructure.OfficeFoodPlannerArbitraries
+
 class UserEndpointsSpec
-    extends FunSuite
+    extends AnyFunSuite
     with Matchers
     with ScalaCheckPropertyChecks
     with OfficeFoodPlannerArbitraries
     with Http4sDsl[IO]
     with Http4sClientDsl[IO] {
 
-  import PgApplicationSetup._
+  import InMemoryApplicationSetup._
 
 
   test("create user") {
@@ -67,7 +71,7 @@ class UserEndpointsSpec
           loginResponse    <- endpoints.run(loginRequest)
           sessionCookie = loginResponse.cookies.find(_.name == "session")
           updatePwRequest  <- PUT(UpdateUserPassword(userCreate.password, "NewPw1", createdUser.id), Uri.fromString(s"/users/change-password/${userCreate.username}").toOption.get)
-          updateText       <- updatePwRequest.bodyAsText.compile.toList
+          _                <- updatePwRequest.bodyAsText.compile.toList
           updatePwResponse <- endpoints.run(updatePwRequest.addCookie("session", sessionCookie.map(_.content).getOrElse("")))
           updatedUser      <- updatePwResponse.as[User]
           testRedirect     <- TemporaryRedirect(Location(uri"/"))
