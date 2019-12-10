@@ -85,7 +85,7 @@ object PgApplicationSetup {
 
     Router(
       "/users" -> UserEndpoints.endpoints(userService,authMiddleware),
-      "/auth"  -> AuthenticationEndpoints.endpoints(TestConfig.appTestConfig,authService),
+      "/auth"  -> AuthenticationEndpoints.endpoints(TestConfig.appTestConfig, authService),
     ).orNotFound
   }
 }

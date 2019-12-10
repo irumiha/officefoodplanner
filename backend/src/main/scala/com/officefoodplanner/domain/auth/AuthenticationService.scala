@@ -5,14 +5,17 @@ import java.util.UUID
 
 import cats._
 import cats.data._
+import cats.syntax.all._
 import com.officefoodplanner.config.ApplicationConfig
-import com.officefoodplanner.domain.auth.model.{Session, User}
+import com.officefoodplanner.domain.auth.model.User
 import com.officefoodplanner.domain.auth.repository.{SessionRepository, UserRepository}
 import com.officefoodplanner.infrastructure.service.TransactingService
-import tsec.common.{VerificationStatus, Verified}
+import tsec.common.Verified
 import tsec.passwordhashers.{PasswordHash, PasswordHasher}
 
-abstract class AuthenticationService[F[_]: Monad, D[_]: Monad, H] extends TransactingService[F, D] {
+abstract class AuthenticationService[F[_], D[_], H]()
+  (implicit MEF: MonadError[F, Throwable], MED: MonadError[D, Throwable])
+  extends TransactingService[F, D] {
   val applicationConfig: ApplicationConfig
   val sessionRepository: SessionRepository[D]
   val userRepository: UserRepository[D]
@@ -24,45 +27,42 @@ abstract class AuthenticationService[F[_]: Monad, D[_]: Monad, H] extends Transa
     transact(
       (for {
         session <- OptionT(sessionRepository.get(sessionID))
-        user    <- OptionT(userRepository.get(session.userID))
-        _       <- OptionT.liftF(sessionRepository.update(session.copy(expiresOn = nextExpire, updatedOn = Instant.now())))
+        user <- OptionT(userRepository.get(session.userID))
+        _ <- OptionT.liftF(sessionRepository.update(session.copy(expiresOn = nextExpire, updatedOn = Instant.now())))
       } yield (user, session)).value
     )
   }
 
-  def authenticate(login: command.LoginRequest): F[Either[UserAuthenticationFailedError, model.Session]] = {
-    def getUserOrFailLogin(login: command.LoginRequest): EitherT[D, UserAuthenticationFailedError, User] =
-      EitherT.fromOptionF[D, UserAuthenticationFailedError, User](
-        userRepository.findByUsername(login.username),
-        UserAuthenticationFailedError(login.username)
-      )
+  def authenticate(login: command.LoginRequest): F[model.Session] = {
+    val failed = UserAuthenticationFailedError(login.username)
 
-    def checkUserPassword(login: command.LoginRequest, user: User): EitherT[D, UserAuthenticationFailedError, VerificationStatus] =
-      EitherT.liftF[D, UserAuthenticationFailedError, VerificationStatus](
-        cryptService.checkpw(login.password, PasswordHash[H](user.passwordHash)))
+    def getUserOrFailLogin(login: command.LoginRequest) =
+      userRepository
+        .findByUsername(login.username)
+        .ensure(failed)(_.isDefined)
+        .map(u => u.get)
 
-    def loggedInUser(user: User): EitherT[D, UserAuthenticationFailedError, User] =
-      EitherT.rightT[D, UserAuthenticationFailedError](user)
+    def checkUserPassword(login: command.LoginRequest, user: User) =
+      cryptService
+        .checkpw(login.password, PasswordHash[H](user.passwordHash))
+        .ensure(failed)(_ == Verified)
 
-    def failedLoginForUsername(login: command.LoginRequest): EitherT[D, UserAuthenticationFailedError, User] =
-      EitherT.leftT[D, User](UserAuthenticationFailedError(login.username))
+    def createSession(user: User) =
+      sessionRepository.create(
+        model.Session(
+          userID = user.id,
+          expiresOn = Instant.now().plusSeconds(applicationConfig.auth.sessionLength),
+          createdOn = Instant.now(),
+          updatedOn = Instant.now()
+        ))
 
-    def createSession(user: User): EitherT[D, UserAuthenticationFailedError, Session] =
-      EitherT.liftF[D, UserAuthenticationFailedError, model.Session](
-        sessionRepository.create(
-          model.Session(
-            userID = user.id,
-            expiresOn = Instant.now().plusSeconds(applicationConfig.auth.sessionLength),
-            createdOn = Instant.now(),
-            updatedOn = Instant.now()
-          )))
-
-    transact((for {
+    val session = for {
       user        <- getUserOrFailLogin(login)
       checkResult <- checkUserPassword(login, user)
-      resp        <- if (checkResult == Verified) loggedInUser(user) else failedLoginForUsername(login)
-      session     <- createSession(resp)
-    } yield session).value)
+      session     <- createSession(user)
+    } yield session
+
+    transact(session)
   }
 
 }

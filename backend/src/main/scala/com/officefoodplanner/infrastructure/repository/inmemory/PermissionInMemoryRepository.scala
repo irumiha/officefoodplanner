@@ -22,5 +22,3 @@ class PermissionInMemoryRepository[F[_] : Applicative] extends PermissionReposit
   def list: F[List[Permission]] = dao.listAll
 
 }
-
-

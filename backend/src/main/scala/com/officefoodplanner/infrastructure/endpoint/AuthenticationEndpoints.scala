@@ -2,7 +2,6 @@ package com.officefoodplanner.infrastructure.endpoint
 
 import java.time.Instant
 
-import cats.data._
 import cats.effect._
 import cats.implicits._
 import com.officefoodplanner.config.ApplicationConfig
@@ -15,15 +14,15 @@ import org.http4s.circe._
 import org.http4s.dsl.Http4sDsl
 import org.http4s.headers.Location
 
-class AuthenticationEndpoints[F[_]: Effect, D[_], H](
+class AuthenticationEndpoints[F[_], D[_], H](
     config: ApplicationConfig,
     authService: AuthenticationService[F, D, H]
-) extends Http4sDsl[F] {
+)(implicit F: Effect[F]) extends Http4sDsl[F] {
   implicit val loginReqDecoder: EntityDecoder[F, LoginRequest] = jsonOf
 
   def endpoints: HttpRoutes[F] =
     HttpRoutes.of[F] {
-      case req @ POST -> Root / "login" => login(req)
+      case req @ POST -> Root / "login" :? Qnext(next) => login(req, next)
     }
 
   private def newSessionCookie(sessionData: Session) = {
@@ -36,22 +35,24 @@ class AuthenticationEndpoints[F[_]: Effect, D[_], H](
     )
   }
 
-  private def login(req: Request[F]): F[Response[F]] = {
-    Uri.fromString(req.params("next")).map { nextJump =>
-      val loginResult = (for {
-        request  <- EitherT.liftF(req.as[LoginRequest])
-        auth     <- EitherT.apply(authService.authenticate(request))
-      } yield auth).value
+  private def login(req: Request[F], nextJump: String): F[Response[F]] = {
+    val loginResult = for {
+      nextUri  <- F.pure(Uri.fromString(nextJump)).rethrow
+      request  <- req.as[LoginRequest]
+      auth     <- authService.authenticate(request)
+    } yield (auth, nextUri)
 
-      loginResult.flatMap {
-        case Right(session) =>
-              TemporaryRedirect(Location(nextJump))
-                .map(_.addCookie(newSessionCookie(session)))
-        case Left(UserAuthenticationFailedError(name)) =>
-          BadRequest(s"Authentication failed for user $name")
-      }
-    }.getOrElse(BadRequest(s"Invalid next parameter"))
+    loginResult.attempt.flatMap {
+      case Right((session, uri)) =>
+        TemporaryRedirect(Location(uri)).map(_.addCookie(newSessionCookie(session)))
+      case Left(UserAuthenticationFailedError(name)) =>
+        BadRequest(s"Authentication failed for user $name")
+      case Left(ParseFailure(sanitized, details)) =>
+        BadRequest(s"Invalid next URI")
+    }
   }
+
+  object Qnext extends QueryParamDecoderMatcher[String]("next")
 }
 
 object AuthenticationEndpoints {
