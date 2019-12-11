@@ -6,12 +6,8 @@ import java.util.UUID
 import cats._
 import cats.arrow.FunctionK
 import cats.data.EitherT
-import cats.effect.Async
+import cats.effect.Sync
 import cats.implicits._
-import io.scalaland.chimney.dsl._
-import tsec.common.Verified
-import tsec.passwordhashers.{PasswordHash, PasswordHasher}
-
 import com.officefoodplanner.config.ApplicationConfig
 import com.officefoodplanner.domain.ErrorT
 import com.officefoodplanner.domain.auth.command.{CreateUser, UpdateUser, UpdateUserPassword}
@@ -19,8 +15,11 @@ import com.officefoodplanner.domain.auth.model.User
 import com.officefoodplanner.domain.auth.repository.UserRepository
 import com.officefoodplanner.domain.auth.view.UserSimpleView
 import com.officefoodplanner.infrastructure.service.TransactingService
+import io.scalaland.chimney.dsl._
+import tsec.common.Verified
+import tsec.passwordhashers.{PasswordHash, PasswordHasher}
 
-abstract class UserService[F[_]: Monad, D[_]: Async, H]
+abstract class UserService[F[_]: Monad, D[_]: Sync, H]
   extends TransactingService[F, D]
     with UserValidation[D]
     with ErrorT[UserValidationError]

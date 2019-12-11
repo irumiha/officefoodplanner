@@ -58,7 +58,7 @@ abstract class AuthenticationService[F[_], D[_], H]()
 
     val session = for {
       user        <- getUserOrFailLogin(login)
-      checkResult <- checkUserPassword(login, user)
+      _           <- checkUserPassword(login, user)
       session     <- createSession(user)
     } yield session
 
