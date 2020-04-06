@@ -7,6 +7,7 @@ import com.officefoodplanner.domain.auth.repository.SessionRepository
 import com.officefoodplanner.infrastructure.repository._
 import doobie._
 import doobie.postgres.implicits._
+import doobie.implicits.legacy.instant._
 
 object SessionTableRepository extends SessionRepository[ConnectionIO] {
   private val table = Table(SchemaName("auth"), TableName("sessions"))

@@ -7,7 +7,7 @@ import cats._
 import cats.data._
 import cats.syntax.all._
 import com.officefoodplanner.config.ApplicationConfig
-import com.officefoodplanner.domain.auth.model.User
+import com.officefoodplanner.domain.auth.model.{Session, User}
 import com.officefoodplanner.domain.auth.repository.{SessionRepository, UserRepository}
 import com.officefoodplanner.infrastructure.service.TransactingService
 import tsec.common.Verified
@@ -24,11 +24,16 @@ abstract class AuthenticationService[F[_], D[_], H]()
   def findAndProlongSession(sessionID: UUID): F[Option[(User, model.Session)]] = {
     val nextExpire = Instant.now().plusSeconds(applicationConfig.auth.sessionLength)
 
+    def updateSession(session: Session) =
+      sessionRepository.update(
+        session.copy(expiresOn = nextExpire, updatedOn = Instant.now())
+      )
+
     transact(
       (for {
         session <- OptionT(sessionRepository.get(sessionID))
-        user <- OptionT(userRepository.get(session.userID))
-        _ <- OptionT.liftF(sessionRepository.update(session.copy(expiresOn = nextExpire, updatedOn = Instant.now())))
+        user    <- OptionT(userRepository.get(session.userID))
+        _       <- OptionT.liftF(updateSession(session))
       } yield (user, session)).value
     )
   }

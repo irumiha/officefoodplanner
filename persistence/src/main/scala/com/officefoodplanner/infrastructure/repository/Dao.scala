@@ -1,7 +1,5 @@
 package com.officefoodplanner.infrastructure.repository
 
-import scala.language.higherKinds
-
 trait WriteDao[F[_], E] {
   type Key
 

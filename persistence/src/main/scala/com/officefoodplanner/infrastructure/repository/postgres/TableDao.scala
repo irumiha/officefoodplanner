@@ -13,7 +13,7 @@ import com.officefoodplanner.infrastructure.repository.{Dao, Table}
 object TableDao {
   type Aux[A0, B0] = Dao[ConnectionIO, A0] {type Key = B0}
 
-  def apply[E](implicit instance: Dao[ConnectionIO, E]): Aux[E, instance.Key] = instance
+  def apply[E](instance: Dao[ConnectionIO, E]): Aux[E, instance.Key] = instance
 
   object derive {
     def apply[E, K] = new Partial[E, K]
@@ -37,11 +37,9 @@ object TableDao {
         override val idColumn: String = idName
         val columns: List[String] = ks.apply.toList.map(s => s.name)
 
-        val columnsSelect: Fragment = Fragment.const(columnsQuoted)
-        val columnsWithoutKeySelect: Fragment = Fragment.const(columnsWithoutIdQuoted)
+        private val columnsSelect: Fragment = Fragment.const(columnsQuoted)
 
-        private def columnName(column: String) = s""""$column""""
-
+        private lazy val idColumnQuoted = s""""$idColumn""""
         private val tableNameFragment = Fragment.const(table.toString)
 
         override def get(entityId: Key): ConnectionIO[Option[E]] = {
@@ -56,7 +54,7 @@ object TableDao {
           val q =
             fr"SELECT " ++ columnsSelect ++
               fr"  FROM " ++ tableNameFragment ++
-              whereAndOpt(entityIds.toNel.map(r => in(Fragment.const(columnName(idName)), r)))
+              whereAndOpt(entityIds.toNel.map(r => in(Fragment.const(idColumnQuoted), r)))
 
           q.query[E].stream.compile.toList
         }
@@ -88,11 +86,11 @@ object TableDao {
         override def update(entities: List[E]): ConnectionIO[Int] = {
           Update[E](
             s"""UPDATE $table
-                SET ${columnsWithoutId.map(c => columnName(c) + " = __tmp_data."+columnName(c)).mkString(", ")}
+                SET ${columnsWithoutIdQuoted.map(c => c + " = __tmp_data." + c).mkString(", ")}
                 FROM (
                   SELECT (___inner::$table).* from (select ${columns.as("?").mkString(",")}) as ___inner
                 ) as __tmp_data
-                WHERE $table.${columnName(idName)} = __tmp_data.${columnName(idName)}
+                WHERE $table.$idColumnQuoted = __tmp_data.$idColumnQuoted
               """)
           .updateMany(entities)
         }
@@ -110,7 +108,7 @@ object TableDao {
           } else {
             val q =
               fr"DELETE FROM " ++ tableNameFragment ++
-                whereAndOpt(entityIds.toNel.map(r => in(Fragment.const(columnName(idName)), r)))
+                whereAndOpt(entityIds.toNel.map(r => in(Fragment.const(idColumnQuoted), r)))
 
             q.update.run
           }
