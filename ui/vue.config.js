@@ -1,5 +1,5 @@
 module.exports = {
   lintOnSave: false,
-  publicPath: '/officefoodplanner-app/',
+  publicPath: '/ui/',
   assetsDir: 'static'
 }

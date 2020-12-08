@@ -42,7 +42,7 @@ class UserEndpoints[F[_]: Effect, D[_], H](
       case       GET    -> Root / "loggedin"                   as loggedInUser => showLoggedInUser(loggedInUser)
     })
 
-  val onAuthFailure: AuthedRoutes[String, F] = Kleisli(req => OptionT.liftF(Forbidden(req.authInfo)))
+  val onAuthFailure: AuthedRoutes[String, F] = Kleisli(req => OptionT.liftF(Forbidden(req.context)))
   val authM: AuthMiddleware[F, User] =
     AuthMiddleware(authMiddleware.authUser, onAuthFailure)
 
@@ -77,7 +77,7 @@ class UserEndpoints[F[_]: Effect, D[_], H](
 
   private def updatePassword(req: AuthedRequest[F, User], name: String): F[Response[F]] = {
     val action =
-      if (req.authInfo.username == name) {
+      if (req.context.username == name) {
         for {
           updatePasswordRequest <- req.req.as[UpdateUserPassword]
           result                <- userService.updatePassword(name, updatePasswordRequest).value

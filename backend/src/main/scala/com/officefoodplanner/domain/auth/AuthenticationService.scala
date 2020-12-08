@@ -14,7 +14,7 @@ import tsec.common.Verified
 import tsec.passwordhashers.{PasswordHash, PasswordHasher}
 
 abstract class AuthenticationService[F[_], D[_], H]()
-  (implicit MEF: MonadError[F, Throwable], MED: MonadError[D, Throwable])
+  (implicit MED: MonadError[D, Throwable])
   extends TransactingService[F, D] {
   val applicationConfig: ApplicationConfig
   val sessionRepository: SessionRepository[D]

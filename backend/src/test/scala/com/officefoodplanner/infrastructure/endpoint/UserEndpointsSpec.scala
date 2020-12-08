@@ -36,7 +36,7 @@ class UserEndpointsSpec
         response <- userHttpEndpoints.run(request)
       } yield {
         response.status shouldEqual Ok
-      }).unsafeRunSync
+      }).unsafeRunSync()
     }
   }
 
@@ -55,7 +55,7 @@ class UserEndpointsSpec
           updateResponse.status shouldEqual Forbidden
 //          updatedUser.lastName shouldEqual createdUser.lastName.reverse
 //          createdUser.key shouldEqual updatedUser.key
-        }).unsafeRunSync
+        }).unsafeRunSync()
     }
   }
 
@@ -64,14 +64,14 @@ class UserEndpointsSpec
 
     forAll { userCreate: CreateUser =>
         (for {
-          createRequest    <- POST(userCreate, Uri.uri("/users/"))
+          createRequest    <- POST(userCreate, uri"/users/")
           createResponse   <- endpoints.run(createRequest)
           createdUser      <- createResponse.as[User]
           loginRequest     <- POST(LoginRequest(userCreate.username, userCreate.password), Uri.fromString("/auth/login?next=/").toOption.get)
           loginResponse    <- endpoints.run(loginRequest)
           sessionCookie = loginResponse.cookies.find(_.name == "session")
           updatePwRequest  <- PUT(UpdateUserPassword(userCreate.password, "NewPw1", createdUser.id), Uri.fromString(s"/users/change-password/${userCreate.username}").toOption.get)
-          _                <- updatePwRequest.bodyAsText.compile.toList
+          _                <- updatePwRequest.bodyText.compile.toList
           updatePwResponse <- endpoints.run(updatePwRequest.addCookie("session", sessionCookie.map(_.content).getOrElse("")))
           updatedUser      <- updatePwResponse.as[User]
           testRedirect     <- TemporaryRedirect(Location(uri"/"))
@@ -79,7 +79,7 @@ class UserEndpointsSpec
           loginResponse.status.code shouldEqual testRedirect.status.code
           updatePwResponse.status shouldEqual Ok
           updatedUser.passwordHash should not equal createdUser.passwordHash
-        }).unsafeRunSync
+        }).unsafeRunSync()
     }
   }
 
@@ -97,7 +97,7 @@ class UserEndpointsSpec
       } yield {
         getResponse.status shouldEqual Forbidden
 //        createdUser.userName shouldEqual getUser.userName
-      }).unsafeRunSync
+      }).unsafeRunSync()
     }
   }
 
@@ -117,7 +117,7 @@ class UserEndpointsSpec
         createResponse.status shouldEqual Ok
         deleteResponse.status shouldEqual Forbidden
         getResponse.status shouldEqual Forbidden
-      }).unsafeRunSync
+      }).unsafeRunSync()
     }
   }
 }

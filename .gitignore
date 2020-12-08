@@ -3,6 +3,7 @@
 .idea
 .metals
 .bloop
+.bsp
 target
 project/target
 .virtualenv
