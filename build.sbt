@@ -10,9 +10,6 @@ lazy val updateNpm  = taskKey[Unit]("Update npm")
 lazy val npmTask    = inputKey[Unit]("Run npm with arguments")
 lazy val distApp    = taskKey[Unit]("Build final app package")
 
-addCompilerPlugin("com.olegpy" %% "better-monadic-for" % "0.3.1")
-addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.11.2" cross CrossVersion.full)
-
 ThisBuild / organization := "com.officefoodplanner"
 ThisBuild / version      := "0.0.1-SNAPSHOT"
 ThisBuild / scalaVersion := Versions.ScalaVersion
@@ -66,6 +63,9 @@ lazy val persistence = (project in file("persistence"))
       circeGenericExtras,
       circeParser,
     ),
+    addCompilerPlugin("com.olegpy" %% "better-monadic-for" % "0.3.1"),
+    addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.11.2" cross CrossVersion.full),
+    addCompilerPlugin("org.augustjune" %% "context-applied" % "0.1.4")
   )
 
 lazy val ui = (project in file("ui"))
@@ -146,5 +146,8 @@ lazy val backend = (project in file("backend"))
 
       compilationResult
     },
-    distApp := dist.dependsOn((npmTask in ui).toTask(" run build")).value
+    distApp := dist.dependsOn((npmTask in ui).toTask(" run build")).value,
+    addCompilerPlugin("com.olegpy" %% "better-monadic-for" % "0.3.1"),
+    addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.11.2" cross CrossVersion.full),
+    addCompilerPlugin("org.augustjune" %% "context-applied" % "0.1.4")
   ) dependsOn persistence

@@ -3,6 +3,8 @@ package com.officefoodplanner.infrastructure.repository.postgres
 import cats.implicits._
 import doobie._
 import doobie.implicits._
+import doobie.postgres._
+import doobie.postgres.implicits._
 import doobie.util.fragments._
 import shapeless._
 import shapeless.ops.record._
@@ -30,7 +32,8 @@ object TableDao {
         tl: ToList[S, Symbol],
         rk: Read[K],
         wk: Write[K],
-        pk: Put[K]
+        pk: Put[K],
+        wlk: Write[List[K]]
       ): Aux[E, K] = new Dao[ConnectionIO, E] {
 
         override type Key = K
@@ -86,31 +89,24 @@ object TableDao {
         override def update(entities: List[E]): ConnectionIO[Int] = {
           Update[E](
             s"""UPDATE $table
-                SET ${columnsWithoutIdQuoted.map(c => c + " = __tmp_data." + c).mkString(", ")}
+                SET ${columnsWithoutId.map{c => "\""+c+"\"" + " = __tmp_update_data." + "\""+c+"\""}.mkString(", ")}
                 FROM (
                   SELECT (___inner::$table).* from (select ${columns.as("?").mkString(",")}) as ___inner
-                ) as __tmp_data
-                WHERE $table.$idColumnQuoted = __tmp_data.$idColumnQuoted
+                ) as __tmp_update_data
+                WHERE $table.$idColumnQuoted = __tmp_update_data.$idColumnQuoted
               """)
           .updateMany(entities)
         }
 
-        override def deleteById(entityId: Key): ConnectionIO[Int] = {
-          Update[Key](
-            s"""DELETE FROM $table
-                WHERE $idName = ?
-              """).run(entityId)
-        }
+        override def deleteById(entityId: Key): ConnectionIO[Int] = deleteByIds(List(entityId))
 
         override def deleteByIds(entityIds: List[Key]): ConnectionIO[Int] = {
           if (entityIds.isEmpty) {
             0.pure[ConnectionIO]
           } else {
-            val q =
-              fr"DELETE FROM " ++ tableNameFragment ++
-                whereAndOpt(entityIds.toNel.map(r => in(Fragment.const(idColumnQuoted), r)))
-
-            q.update.run
+            Update[List[Key]](
+              s"""DELETE FROM $table where id=ANY(?)"""
+            ).run(entityIds)
           }
         }
 

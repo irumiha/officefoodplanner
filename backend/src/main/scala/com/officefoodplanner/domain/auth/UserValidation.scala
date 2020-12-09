@@ -28,8 +28,7 @@ trait UserValidation[F[_]] {
     EitherT.fromEither[F](validation)
   }
 
-  def validChanges(storedUser: User, newUser: UpdateUser)(
-      implicit AP: Applicative[F]): EitherT[F, UserValidationError, User] = {
+  def validChanges(storedUser: User, newUser: UpdateUser)(implicit AP: Applicative[F]): F[User] = {
     val changed =
       newUser
         .into[User]
@@ -38,12 +37,11 @@ trait UserValidation[F[_]] {
         .withFieldComputed(_.passwordHash, _ => storedUser.passwordHash)
         .withFieldConst(_.updatedOn, Instant.now()) // TODO take current time from environment
         .transform
-    val validation = Right[UserValidationError, User](changed)
 
-    EitherT.fromEither[F](validation)
+    AP.pure[User](changed)
   }
 
-  def validateNewPassword(appConfig: ApplicationConfig, newPassword: String)(implicit AP: Applicative[F]): F[Option[UserValidationError]] =
-    AP.pure(Option.when(newPassword.length < appConfig.auth.minimumPasswordLength)(NewPasswordError("Too short!")))
+  def validateNewPassword(appConfig: ApplicationConfig, newPassword: String): Option[UserValidationError] =
+    Option.when(newPassword.length < appConfig.auth.minimumPasswordLength)(NewPasswordError("Too short!"))
 
 }

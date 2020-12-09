@@ -71,7 +71,6 @@ class UserEndpointsSpec
           loginResponse    <- endpoints.run(loginRequest)
           sessionCookie = loginResponse.cookies.find(_.name == "session")
           updatePwRequest  <- PUT(UpdateUserPassword(userCreate.password, "NewPw1", createdUser.id), Uri.fromString(s"/users/change-password/${userCreate.username}").toOption.get)
-          _                <- updatePwRequest.bodyText.compile.toList
           updatePwResponse <- endpoints.run(updatePwRequest.addCookie("session", sessionCookie.map(_.content).getOrElse("")))
           updatedUser      <- updatePwResponse.as[User]
           testRedirect     <- TemporaryRedirect(Location(uri"/"))
