@@ -1,19 +1,19 @@
 package com.officefoodplanner.infrastructure.repository.postgres
 
 import java.util.UUID
-
 import com.officefoodplanner.domain.auth.model.User
 import com.officefoodplanner.domain.auth.repository.UserRepository
 import com.officefoodplanner.infrastructure.repository.{SchemaName, Table, TableName}
 import doobie._
 import doobie.postgres.implicits._
 import doobie.implicits.legacy.instant._
+import net.liftio.persistence.doobie.postgres.TableDao
 
 object UserTableRepository extends UserRepository[ConnectionIO] {
   private val table = Table(SchemaName("auth"), TableName("users"))
 
   private val dao =
-    TableDao[User](TableDao.derive[User, UUID](_.id, "id", table))
+    TableDao.make[User](TableDao.derive[User, UUID](_.id, "id", table))
 
   def create(user: User): ConnectionIO[User] = dao.create(user)
 

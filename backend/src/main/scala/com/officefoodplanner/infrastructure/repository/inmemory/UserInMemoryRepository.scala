@@ -1,15 +1,16 @@
 package com.officefoodplanner.infrastructure.repository.inmemory
 
 import java.util.UUID
-
 import cats._
 import cats.implicits._
 import com.officefoodplanner.domain.auth.model.User
 import com.officefoodplanner.domain.auth.repository.UserRepository
+import net.liftio.persistence.doobie.inmemory
+import net.liftio.persistence.doobie.inmemory.InMemoryDao
 
 class UserInMemoryRepository[F[_]: Applicative] extends UserRepository[F] {
   private val dao: InMemoryDao.Aux[F, User, UUID] =
-    InMemoryDao[F, User](InMemoryDao.derive[F, User, UUID].apply(_.id))
+    inmemory.InMemoryDao.make[F, User](InMemoryDao.derive[F, User, UUID].apply(_.id))
 
   override def create(user: User): F[User] = dao.create(user)
 

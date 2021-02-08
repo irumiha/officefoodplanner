@@ -1,7 +1,6 @@
 package com.officefoodplanner.domain.auth
 
 import cats.MonadError
-import cats.data.OptionT
 import cats.effect.Sync
 import cats.implicits._
 import com.officefoodplanner.config.ApplicationConfig

@@ -1,19 +1,19 @@
 package com.officefoodplanner.infrastructure.repository.postgres
 
 import java.util.UUID
-
-import com.officefoodplanner.infrastructure.repository.postgres.TableDao
 import com.officefoodplanner.infrastructure.repository.{SchemaName, Table, TableName}
 import com.officefoodplanner.domain.auth.model.{Group, GroupPermission, Permission}
 import com.officefoodplanner.domain.auth.repository.GroupPermissionRepository
 import doobie._
 import doobie.implicits._
 import doobie.postgres.implicits._
+import net.liftio.persistence
+import net.liftio.persistence.doobie.postgres.TableDao
 
 object GroupPermissionTableRepository extends GroupPermissionRepository[ConnectionIO] {
   private val table = Table(SchemaName("auth"), TableName("group_permissions"))
   private val dao: TableDao.Aux[GroupPermission, UUID] =
-    TableDao[GroupPermission](TableDao.derive[GroupPermission, UUID](_.id, "id", table))
+    persistence.doobie.postgres.TableDao.make(TableDao.derive[GroupPermission, UUID](_.id, "id", table))
 
   override def get(permissionId: UUID): ConnectionIO[Option[GroupPermission]] = dao.get(permissionId)
 

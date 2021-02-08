@@ -1,19 +1,20 @@
 package com.officefoodplanner.infrastructure.repository.postgres
 
 import java.util.UUID
-
 import com.officefoodplanner.domain.auth.model.{Permission, User, UserPermission}
 import com.officefoodplanner.domain.auth.repository.UserPermissionRepository
 import com.officefoodplanner.infrastructure.repository._
 import doobie._
 import doobie.implicits._
 import doobie.postgres.implicits._
+import net.liftio.persistence
+import net.liftio.persistence.doobie.postgres.TableDao
 
 object UserPermissionTableRepository extends UserPermissionRepository[ConnectionIO] {
   private val table = Table(SchemaName("auth"), TableName("user_permissions"))
 
   private val dao: TableDao.Aux[UserPermission, UUID] =
-    TableDao[UserPermission](TableDao.derive[UserPermission, UUID](_.id, "id", table))
+    persistence.doobie.postgres.TableDao.make[UserPermission](TableDao.derive[UserPermission, UUID](_.id, "id", table))
 
   override def get(permissionId: UUID): ConnectionIO[Option[UserPermission]] = dao.get(permissionId)
 
