@@ -64,7 +64,7 @@ lazy val persistence = (project in file("persistence"))
       circeParser,
     ),
     addCompilerPlugin("com.olegpy" %% "better-monadic-for" % "0.3.1"),
-    addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.11.2" cross CrossVersion.full),
+    addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.11.3" cross CrossVersion.full),
     addCompilerPlugin("org.augustjune" %% "context-applied" % "0.1.4")
   )
 
@@ -148,6 +148,6 @@ lazy val backend = (project in file("backend"))
     },
     distApp := dist.dependsOn((npmTask in ui).toTask(" run build")).value,
     addCompilerPlugin("com.olegpy" %% "better-monadic-for" % "0.3.1"),
-    addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.11.2" cross CrossVersion.full),
+    addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.11.3" cross CrossVersion.full),
     addCompilerPlugin("org.augustjune" %% "context-applied" % "0.1.4")
   ) dependsOn persistence
