@@ -13,7 +13,7 @@ object ApplicationServer extends IOApp {
   def createServer[F[_] : ContextShift : ConcurrentEffect : Timer]: Resource[F, Server[F]] = {
 
     for {
-      conf        <- Resource.liftF(parser.decodePathF[F, config.ApplicationConfig]("application"))
+      conf        <- Resource.eval(parser.decodePathF[F, config.ApplicationConfig]("application"))
       connEc      <- ExecutionContexts.fixedThreadPool[F](conf.db.connections.poolSize)
       unboundedEc <- ExecutionContexts.cachedThreadPool[F]
       xa          <- config.DatabaseConfig.dbTransactor[F](conf.db, connEc, liftExecutionContext(unboundedEc))
@@ -24,7 +24,7 @@ object ApplicationServer extends IOApp {
         "/util"   -> app.utilityEndpoints,
         "/ui"     -> app.staticEndpoints
       ).orNotFound
-      _              <- Resource.liftF[F, Unit](config.DatabaseConfig.initializeDb[F](conf.db))
+      _              <- Resource.eval[F, Unit](config.DatabaseConfig.initializeDb[F](conf.db))
       server <-
         BlazeServerBuilder[F](scala.concurrent.ExecutionContext.global)
           .bindHttp(conf.server.port, conf.server.host)

@@ -2,7 +2,7 @@ import sbt._
 
 object Versions {
   val ScalaVersion              = "2.13.5"
-  val CatsVersion               = "2.3.1"
+  val CatsVersion               = "2.5.0"
   val CirceVersion              = "0.13.0"
   val CirceGenericExtrasVersion = "0.13.0"
   val CirceConfigVersion        = "0.8.0"
@@ -10,10 +10,10 @@ object Versions {
   val EnumeratumVersion         = "1.6.1"
   val EnumeratumCirceVersion    = "1.6.1"
   val H2Version                 = "1.4.200"
-  val Http4sVersion             = "0.21.18"
+  val Http4sVersion             = "0.21.21"
   val LogbackVersion            = "1.2.3"
-  val ScalaCheckVersion         = "1.15.2"
-  val ScalaTestVersion          = "3.2.3"
+  val ScalaCheckVersion         = "1.15.3"
+  val ScalaTestVersion          = "3.2.7"
   val STPVersion                = "3.1.0.0-RC2"
   val FlywayVersion             = "7.5.2"
   val TsecVersion               = "0.2.1"

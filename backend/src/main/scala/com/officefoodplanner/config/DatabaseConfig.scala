@@ -18,9 +18,9 @@ object DatabaseConfig {
     transEc : Blocker
   ): Resource[F, HikariTransactor[F]] =
     for {
-      _ <- Resource.liftF(Async[F].delay(Class.forName(dbc.driver)))
+      _ <- Resource.eval(Async[F].delay(Class.forName(dbc.driver)))
       t <- initial[F](connEc, transEc)
-      _ <- Resource.liftF {
+      _ <- Resource.eval {
         t.configure { ds =>
           Async[F].delay {
             ds.setJdbcUrl(dbc.url)
