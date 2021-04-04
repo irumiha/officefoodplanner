@@ -14,7 +14,7 @@ object UserPermissionTableRepository extends UserPermissionRepository[Connection
   private val table = Table(SchemaName("auth"), TableName("user_permissions"))
 
   private val dao: TableDao.Aux[UserPermission, UUID] =
-    persistence.doobie.postgres.TableDao.make[UserPermission](TableDao.derive[UserPermission, UUID](_.id, "id", table))
+    persistence.doobie.postgres.TableDao.make[UserPermission](TableDao.derive[UserPermission, UUID]("id", table))
 
   override def get(permissionId: UUID): ConnectionIO[Option[UserPermission]] = dao.get(permissionId)
 

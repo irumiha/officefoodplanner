@@ -7,7 +7,6 @@ import com.officefoodplanner.infrastructure.repository._
 import doobie._
 import doobie.implicits._
 import doobie.postgres.implicits._
-import net.liftio.persistence
 import net.liftio.persistence.doobie.postgres.TableDao
 
 object UserGroupTableRepository extends UserGroupRepository[ConnectionIO] {
@@ -15,7 +14,7 @@ object UserGroupTableRepository extends UserGroupRepository[ConnectionIO] {
   private val table = Table(SchemaName("auth"), TableName("user_groups"))
 
   private val dao: TableDao.Aux[UserGroup, UUID] =
-    persistence.doobie.postgres.TableDao.make[UserGroup](TableDao.derive[UserGroup, UUID](_.id, "id", table))
+   TableDao.make[UserGroup](TableDao.derive[UserGroup, UUID]("id", table))
 
   override def get(userGroupId: UUID): ConnectionIO[Option[UserGroup]] = dao.get(userGroupId)
 

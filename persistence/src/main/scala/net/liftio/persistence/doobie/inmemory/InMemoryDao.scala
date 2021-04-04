@@ -3,9 +3,6 @@ package net.liftio.persistence.doobie.inmemory
 import cats._
 import cats.implicits._
 import com.officefoodplanner.infrastructure.repository.Dao
-import shapeless.ops.hlist.ToList
-import shapeless.ops.record.Keys
-import shapeless.{HList, LabelledGeneric}
 
 import scala.collection.concurrent.TrieMap
 
@@ -18,11 +15,7 @@ object InMemoryDao {
     def apply[F[_]: Applicative, E, K] = new Partial[F, E, K]
 
     class Partial[F[_]: Applicative, E, K] {
-      def apply[R <: HList, S <: HList](getId: E => K)(implicit
-        ev: LabelledGeneric.Aux[E, R],
-        ks: Keys.Aux[R, S],
-        tl: ToList[S, Symbol],
-      ): Aux[F, E, K] =
+      def apply(getId: E => K): Aux[F, E, K] =
         new Dao[F, E] {
           override type Key = K
           override val idColumn: String      = ""
@@ -78,13 +71,6 @@ object InMemoryDao {
           override def deleteByIds(entityIds: List[Key]): F[Int] =
             entityIds.map(deleteById).sequence.map(_.sum)
 
-          override def deleteEntity(entity: E): F[Int] = {
-            val key = getId(entity)
-            deleteById(key)
-          }
-
-          override def deleteEntities(entities: List[E]): F[Int] =
-            entities.map(deleteEntity).sequence.map(_.sum)
         }
     }
 

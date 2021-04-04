@@ -5,9 +5,9 @@ import cats.implicits._
 import doobie.util.fragments.{in, whereAndOpt}
 import doobie._
 import doobie.implicits._
-import shapeless.ops.hlist.ToList
-import shapeless.ops.record.Keys
-import shapeless.{HList, LabelledGeneric}
+import shapeless._
+import shapeless.ops.record._
+import shapeless.ops.hlist._
 
 object TableDao {
   // https://stackoverflow.com/questions/43900674/understanding-the-aux-pattern-in-scala-type-system
@@ -20,7 +20,6 @@ object TableDao {
 
     class Partial[E, K] {
       def apply[R <: HList, S <: HList](
-        getId: E => K,
         idName: String,
         table: Table,
       )(implicit
@@ -29,9 +28,7 @@ object TableDao {
         wa: Write[E],
         ks: Keys.Aux[R, S],
         tl: ToList[S, Symbol],
-        rk: Read[K],
-        wk: Write[K],
-        pk: Put[K],
+        mk: Meta[K],
         wlk: Write[List[K]],
       ): Aux[E, K] =
         new Dao[ConnectionIO, E] {
@@ -104,12 +101,6 @@ object TableDao {
               ).run(entityIds)
             }
           }
-
-          override def deleteEntity(entity: E): ConnectionIO[Int] =
-            deleteById(getId(entity))
-
-          override def deleteEntities(entities: List[E]): ConnectionIO[Int] =
-            deleteByIds(entities.map(getId))
         }
     }
 

@@ -1,6 +1,6 @@
 package com.officefoodplanner
 
-import cats.effect.{ConcurrentEffect, ContextShift, Timer}
+import cats.effect.{ConcurrentEffect, ContextShift}
 import doobie.ConnectionIO
 import tsec.passwordhashers.jca.BCrypt
 
@@ -14,7 +14,7 @@ import com.officefoodplanner.infrastructure.service.user.DoobieUserService
 import scala.concurrent.ExecutionContext
 
 //noinspection TypeAnnotation
-class ApplicationModule[F[_] : ContextShift : ConcurrentEffect : Timer](
+class ApplicationModule[F[_] : ContextShift : ConcurrentEffect](
   config: ApplicationConfig,
   xa: doobie.Transactor[F],
   blockingIoEc: ExecutionContext

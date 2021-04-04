@@ -15,10 +15,6 @@ trait WriteDao[F[_], E] {
 
   def deleteByIds(entityIds: List[Key]): F[Int]
 
-  def deleteEntity(entity: E): F[Int]
-
-  def deleteEntities(entities: List[E]): F[Int]
-
 }
 
 trait ReadDao[F[_], E] {

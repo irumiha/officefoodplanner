@@ -12,7 +12,7 @@ import net.liftio.persistence.doobie.postgres.TableDao
 object GroupTableRepository extends GroupRepository[ConnectionIO] {
   private val table = Table(SchemaName("auth"), TableName("groups"))
   private val dao: TableDao.Aux[Group, UUID] =
-    persistence.doobie.postgres.TableDao.make[Group](TableDao.derive[Group, UUID](_.id, "id", table))
+    persistence.doobie.postgres.TableDao.make[Group](TableDao.derive[Group, UUID]("id", table))
 
   def create(user: Group): ConnectionIO[Group] = dao.create(user)
 

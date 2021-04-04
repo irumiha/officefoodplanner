@@ -1,12 +1,12 @@
 import sbt._
 
 object Versions {
-  val ScalaVersion              = "2.13.4"
+  val ScalaVersion              = "2.13.5"
   val CatsVersion               = "2.3.1"
   val CirceVersion              = "0.13.0"
   val CirceGenericExtrasVersion = "0.13.0"
   val CirceConfigVersion        = "0.8.0"
-  val DoobieVersion             = "0.10.0"
+  val DoobieVersion             = "0.12.1"
   val EnumeratumVersion         = "1.6.1"
   val EnumeratumCirceVersion    = "1.6.1"
   val H2Version                 = "1.4.200"

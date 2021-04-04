@@ -6,13 +6,13 @@ import com.officefoodplanner.domain.auth.repository.PermissionRepository
 import com.officefoodplanner.infrastructure.repository._
 import doobie._
 import doobie.postgres.implicits._
-import net.liftio.persistence
+
 import net.liftio.persistence.doobie.postgres.TableDao
 
 object PermissionTableRepository extends PermissionRepository[ConnectionIO] {
   private val table = Table(SchemaName("auth"), TableName("permissions"))
   private val dao: TableDao.Aux[Permission, UUID] =
-    persistence.doobie.postgres.TableDao.make[Permission](TableDao.derive[Permission, UUID](_.id, "id", table))
+    TableDao.make[Permission](TableDao.derive[Permission, UUID]("id", table))
 
   override def create(permission: Permission): ConnectionIO[Permission] = dao.create(permission)
 
