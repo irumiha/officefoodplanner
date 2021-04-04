@@ -69,14 +69,14 @@ lazy val persistence = (project in file("persistence"))
   )
 
 lazy val ui = (project in file("ui"))
-  .settings(test in Test := (test in Test).dependsOn(npmTask.toTask(" run test")).value)
+  .settings(Test / test := (Test / test).dependsOn(npmTask.toTask(" run test")).value)
 
 lazy val uiTests = (project in file("ui-tests"))
   .settings(
     parallelExecution := false,
     fork := true,
     libraryDependencies ++= seleniumStack,
-    test in Test := (test in Test).dependsOn(npmTask.toTask(" run build")).value
+    Test / test := (Test / test).dependsOn(npmTask.toTask(" run build")).value
   ) dependsOn backend
 
 // Filter out compiler flags to make the repl experience functional...
@@ -128,25 +128,25 @@ lazy val backend = (project in file("backend"))
     flywayUser := "officefoodplanner",
     flywayPassword := "officefoodplanner",
     flywayLocations += "db/migration",
-    flywayUrl in Test := "jdbc:postgresql://localhost:5432/officefoodplanner",
-    flywayUser in Test := "officefoodplanner",
-    flywayPassword in Test := "officefoodplanner",
-    scalacOptions in (Compile, console) ~= (_.filterNot(badConsoleFlags.contains(_))),
+    Test / flywayUrl := "jdbc:postgresql://localhost:5432/officefoodplanner",
+    Test / flywayUser := "officefoodplanner",
+    Test / flywayPassword := "officefoodplanner",
+    Compile / console / scalacOptions ~= (_.filterNot(badConsoleFlags.contains(_))),
     // Support stopping the running server
-    mainClass in reStart := Some("com.officefoodplanner.ApplicationServer"),
+    reStart / mainClass := Some("com.officefoodplanner.ApplicationServer"),
     fork := true,
-    unmanagedResourceDirectories in Compile := {
-      (unmanagedResourceDirectories in Compile).value ++ List(
+    Compile / unmanagedResourceDirectories := {
+      (Compile / unmanagedResourceDirectories).value ++ List(
         baseDirectory.value.getParentFile / ui.base.getName / "dist"
       )
     },
-    compile in Compile := {
-      val compilationResult = (compile in Compile).value
+    Compile / compile := {
+      val compilationResult = (Compile / compile).value
       IO.touch(target.value / "compilationFinished")
 
       compilationResult
     },
-    distApp := dist.dependsOn((npmTask in ui).toTask(" run build")).value,
+    distApp := dist.dependsOn((ui / npmTask).toTask(" run build")).value,
     addCompilerPlugin("com.olegpy" %% "better-monadic-for" % "0.3.1"),
     addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.11.3" cross CrossVersion.full),
     addCompilerPlugin("org.augustjune" %% "context-applied" % "0.1.4")
