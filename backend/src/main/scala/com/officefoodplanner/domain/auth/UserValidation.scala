@@ -5,7 +5,7 @@ import java.time.Instant
 import cats.Applicative
 import cats.data.EitherT
 import com.officefoodplanner.config.ApplicationConfig
-import com.officefoodplanner.domain.auth.command.UpdateUser
+import com.officefoodplanner.domain.auth.command.UpdateUserContactData
 import com.officefoodplanner.domain.auth.model.User
 import io.scalaland.chimney.dsl._
 
@@ -28,7 +28,7 @@ trait UserValidation[F[_]] {
     EitherT.fromEither[F](validation)
   }
 
-  def validChanges(storedUser: User, newUser: UpdateUser)(implicit AP: Applicative[F]): F[User] = {
+  def validChanges(storedUser: User, newUser: UpdateUserContactData)(implicit AP: Applicative[F]): F[User] = {
     val changed =
       newUser
         .into[User]

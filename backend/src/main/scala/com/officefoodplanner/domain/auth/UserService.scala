@@ -4,7 +4,7 @@ import cats.MonadError
 import cats.effect.Sync
 import cats.implicits._
 import com.officefoodplanner.config.ApplicationConfig
-import com.officefoodplanner.domain.auth.command.{CreateUser, UpdateUser, UpdateUserPassword}
+import com.officefoodplanner.domain.auth.command.{CreateUser, UpdateUserContactData, UpdateUserPassword}
 import com.officefoodplanner.domain.auth.model.User
 import com.officefoodplanner.domain.auth.repository.UserRepository
 import com.officefoodplanner.domain.auth.view.UserSimpleView
@@ -56,7 +56,7 @@ abstract class UserService[F[_]: MonadError[*[_], Throwable], D[_]: Sync, H] ext
   def deleteUser(userId: UUID): F[Unit] =
     transact(userRepo.deleteById(userId).as(()))
 
-  def update(user: UpdateUser): F[User] =
+  def update(user: UpdateUserContactData): F[User] =
     transact(for {
       storedUser   <- userRepo.findByUsername(user.username).ensure(UserNotFoundError)(_.isDefined)
       userToUpdate <- validChanges(storedUser.get, user)

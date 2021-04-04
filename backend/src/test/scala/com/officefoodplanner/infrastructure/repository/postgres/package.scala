@@ -20,7 +20,7 @@ package object postgres {
   /*
    * Provide a transactor for testing once schema has been migrated.
    */
-  def initializedTransactor[F[_] : Effect : Async : ContextShift] : F[Transactor[F]] = for {
+  def initializedTransactor[F[_] : Async : ContextShift] : F[Transactor[F]] = for {
     appConfig <- parser.decodePathF[F, ApplicationConfig]("application")
     _         <- DatabaseConfig.initializeDb(appConfig.db)
   } yield getTransactor(appConfig.db)

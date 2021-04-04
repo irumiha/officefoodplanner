@@ -4,7 +4,7 @@ import cats.data.{Kleisli, OptionT}
 import cats.effect._
 import cats.implicits._
 import com.officefoodplanner.domain.auth._
-import com.officefoodplanner.domain.auth.command.{CreateUser, LoginRequest, UpdateUser, UpdateUserPassword}
+import com.officefoodplanner.domain.auth.command.{CreateUser, LoginRequest, UpdateUserContactData, UpdateUserPassword}
 import com.officefoodplanner.domain.auth.model.User
 import com.officefoodplanner.domain.auth.view.UserSimpleView
 import com.officefoodplanner.infrastructure.endpoint.Pagination.{OffsetQ, PageSizeQ}
@@ -22,7 +22,7 @@ class UserEndpoints[F[_]: Effect, D[_], H](
   authMiddleware: Authenticate[F, D, H],
 ) extends Http4sDsl[F] {
 
-  implicit val userUpdateDecoder: EntityDecoder[F, UpdateUser]       = jsonOf
+  implicit val userUpdateDecoder: EntityDecoder[F, UpdateUserContactData]       = jsonOf
   implicit val userCreateDecoder: EntityDecoder[F, CreateUser]       = jsonOf
   implicit val updatePwDecoder: EntityDecoder[F, UpdateUserPassword] = jsonOf
   implicit val loginReqDecoder: EntityDecoder[F, LoginRequest]       = jsonOf
@@ -60,7 +60,7 @@ class UserEndpoints[F[_]: Effect, D[_], H](
 
   private def update(req: AuthedRequest[F, User], name: String): F[Response[F]] = {
     val action = for {
-      user <- req.req.as[UpdateUser]
+      user <- req.req.as[UpdateUserContactData]
       updated = user.copy(username = name)
       updatedUser <- userService.update(updated)
       result <- Ok(updatedUser.asJson)
